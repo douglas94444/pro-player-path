@@ -7,8 +7,8 @@ import { getTreino } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 
 export const Route = createFileRoute("/treino/$treinoId")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    plano: typeof search["plano"] === "string" ? (search["plano"] as string) : "",
+  validateSearch: (search: Record<string, unknown>): { plano?: string } => ({
+    plano: typeof search["plano"] === "string" ? (search["plano"] as string) : undefined,
   }),
   head: () => ({
     meta: [
