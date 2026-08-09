@@ -21,6 +21,7 @@ export type Database = {
           id: string
           nome: string
           plano: string | null
+          role: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           mp_payer_id: string | null
@@ -33,6 +34,7 @@ export type Database = {
           id: string
           nome?: string
           plano?: string | null
+          role?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           mp_payer_id?: string | null
@@ -45,6 +47,7 @@ export type Database = {
           id?: string
           nome?: string
           plano?: string | null
+          role?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           mp_payer_id?: string | null
@@ -118,7 +121,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

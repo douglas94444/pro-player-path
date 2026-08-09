@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { PLANO_FLAT, PLANO_MANUTENCAO, TREINOS, getTreino, type Nivel } from "@/data/training";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
+import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
 
 const STORAGE_KEY = "jogador-pro-state-v2";
@@ -15,6 +16,7 @@ export type PlayerState = {
   nome: string;
   assinante: boolean;
   plano: string | null;
+  role: "user" | "admin";
   sessoes: Sessao[];
   ultimoTreinoId: string | null;
   onboardingDone: boolean;
@@ -26,6 +28,7 @@ const initialState: PlayerState = {
   nome: "Jogador",
   assinante: false,
   plano: null,
+  role: "user",
   sessoes: [],
   ultimoTreinoId: null,
   onboardingDone: false,
@@ -76,6 +79,8 @@ function lerLocal(): PlayerState {
       ...initialState,
       ...parsed,
       nome: parsed.nome && parsed.nome !== "Douglas" ? parsed.nome : initialState.nome,
+      // role só vem do servidor — nunca confiar no localStorage
+      role: "user",
       onboardingDone,
       sessoes: Array.isArray(parsed.sessoes) ? parsed.sessoes : [],
     };
@@ -129,6 +134,7 @@ type Ctx = {
   hydrated: boolean;
   logado: boolean;
   email: string | null;
+  isAdmin: boolean;
 };
 
 const PlayerContext = createContext<Ctx | null>(null);
@@ -160,10 +166,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
 
       const local = lerLocal();
+      const role = await ensureAdminRole();
       const [{ data: perfil }, { data: sessoes }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("nome, assinante, plano")
+          .select("nome, assinante, plano, role")
           .eq("id", user.id)
           .maybeSingle(),
         supabase
@@ -216,6 +223,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         nome: nomeFinal,
         assinante: perfil?.assinante ?? false,
         plano: perfil?.plano ?? null,
+        role: perfil?.role === "admin" || role === "admin" ? "admin" : "user",
         sessoes: merged,
         ultimoTreinoId: merged.length ? merged[merged.length - 1]!.treinoId : null,
         onboardingDone: true,
@@ -266,7 +274,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const { data: perfil } = await supabase
       .from("profiles")
-      .select("assinante, plano, nome")
+      .select("assinante, plano, nome, role")
       .eq("id", user.id)
       .maybeSingle();
     if (!perfil) return;
@@ -275,6 +283,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       assinante: perfil.assinante,
       plano: perfil.plano,
       nome: perfil.nome || s.nome,
+      role: perfil.role === "admin" ? "admin" : "user",
     }));
   }, [user]);
 
@@ -350,6 +359,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       hydrated,
       logado,
       email: user?.email ?? null,
+      isAdmin: state.role === "admin",
       streak: calcStreak(state.sessoes),
       nivel: nivelPor(totalTreinos),
       totalTreinos,

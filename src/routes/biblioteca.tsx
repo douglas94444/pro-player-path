@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Lock, Timer } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { CATEGORIAS, TREINOS, type Categoria } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
+import { categoriaPorObjetivo, labelObjetivo } from "@/lib/recommendations";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 
@@ -22,41 +23,79 @@ export const Route = createFileRoute("/biblioteca")({
   component: Biblioteca,
 });
 
+const CAT_TINT: Record<Categoria, string> = {
+  casa: "from-sky-100 to-sky-50",
+  campo: "from-emerald-100 to-emerald-50",
+  core: "from-violet-100 to-violet-50",
+  explosao: "from-amber-100 to-amber-50",
+  forca: "from-lime-100 to-lime-50",
+};
+
 function Biblioteca() {
-  const [filtro, setFiltro] = useState<Categoria | null>(null);
   const { state } = usePlayer();
+  const sugerida = categoriaPorObjetivo(state.objetivo);
+  const [filtro, setFiltro] = useState<Categoria | null>(null);
+  const [usouSugestao, setUsouSugestao] = useState(false);
+
+  useEffect(() => {
+    if (!usouSugestao && sugerida) {
+      setFiltro(sugerida);
+      setUsouSugestao(true);
+    }
+  }, [sugerida, usouSugestao]);
+
   const lista = filtro ? TREINOS.filter((t) => t.categorias.includes(filtro)) : TREINOS;
+  const foco = labelObjetivo(state.objetivo);
 
   return (
-    <AppShell title="Biblioteca" subtitle="Treinos extras pra quando quiser mais">
-      <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
+    <AppShell
+      wide
+      title="Treinos"
+      subtitle={foco ? `Sugestão pelo seu foco: ${foco}` : "Biblioteca para quando quiser mais volume"}
+    >
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         <button
           onClick={() => setFiltro(null)}
           className={cn(
-            "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
-            filtro === null ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground",
+            "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-soft transition-colors",
+            filtro === null
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border/60 bg-card text-muted-foreground",
           )}
         >
           Todos
         </button>
+        {sugerida ? (
+          <button
+            onClick={() => setFiltro(sugerida)}
+            className={cn(
+              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-soft transition-colors",
+              filtro === sugerida
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-primary/40 bg-primary/10 text-primary",
+            )}
+          >
+            Pra você
+          </button>
+        ) : null}
         {CATEGORIAS.map((c) => (
           <button
             key={c.id}
             onClick={() => setFiltro(c.id)}
             className={cn(
-              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
+              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-soft transition-colors",
               filtro === c.id
                 ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-muted-foreground",
+                : "border-border/60 bg-card text-muted-foreground",
             )}
           >
-            {c.emoji} {c.label}
+            {c.label}
           </button>
         ))}
       </div>
 
       {lista.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+        <div className="mt-10 rounded-[1.5rem] border border-dashed border-border bg-card p-8 text-center shadow-soft">
           <p className="text-sm font-bold text-foreground">Nenhum treino nesta categoria</p>
           <p className="mt-1 text-xs text-muted-foreground">Troque o filtro ou veja todos os treinos.</p>
           <button
@@ -68,29 +107,35 @@ function Biblioteca() {
           </button>
         </div>
       ) : (
-        <div className="mt-5 grid gap-3">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {lista.map((t) => {
             const bloqueado = t.premium && !state.assinante;
+            const tint = CAT_TINT[t.categorias[0] ?? "casa"];
             const card = (
               <div
                 className={cn(
-                  "rounded-2xl border border-border bg-card p-4 transition-colors",
-                  bloqueado ? "opacity-70" : "hover:border-primary/50",
+                  "overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft transition-transform hover:-translate-y-0.5",
+                  bloqueado && "opacity-90",
                 )}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-base font-extrabold text-foreground">{t.nome}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground">{t.descricao}</p>
-                  </div>
-                  {bloqueado ? <Lock className="mt-1 h-4 w-4 text-muted-foreground" /> : null}
+                <div className={cn("relative h-28 bg-gradient-to-br px-4 pt-4", tint)}>
+                  <p className="text-sm font-extrabold text-foreground">{t.nome}</p>
+                  {bloqueado ? (
+                    <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-card/90 shadow-soft">
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                    </span>
+                  ) : null}
                 </div>
-                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Timer className="h-3.5 w-3.5" /> {t.duracaoMin} min
-                  <span>·</span>
-                  {t.nivel}
-                  <span>·</span>
-                  {t.categorias.map((c) => CATEGORIAS.find((x) => x.id === c)?.emoji).join(" ")}
+                <div className="p-4">
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{t.descricao}</p>
+                  {bloqueado ? (
+                    <p className="mt-2 text-[11px] font-semibold text-primary">PRO · destrava com a assinatura</p>
+                  ) : null}
+                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Timer className="h-3.5 w-3.5" /> {t.duracaoMin} min
+                    <span>·</span>
+                    {t.nivel}
+                  </div>
                 </div>
               </div>
             );
@@ -99,7 +144,10 @@ function Biblioteca() {
               <Link
                 key={t.id}
                 to="/planos"
-                search={{ from: `treino:${t.id}` }}
+                search={{
+                  from: `treino:${t.id}`,
+                  teaser: `${t.nome} — ${t.descricao}`,
+                }}
                 onClick={() => trackMetaCustom("PaywallHit", { from: "biblioteca", treino_id: t.id })}
               >
                 {card}

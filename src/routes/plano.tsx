@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, Lock, Play } from "lucide-react";
+import { Check, Eye, Lock, Play } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PLANO, getTreino } from "@/data/training";
 import { isSemanaPremium } from "@/lib/access";
@@ -22,17 +22,25 @@ export const Route = createFileRoute("/plano")({
   component: PlanoPage,
 });
 
+const WEEK_ACCENTS = [
+  "bg-sky-100 text-sky-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-amber-100 text-amber-800",
+  "bg-lime-100 text-lime-800",
+];
+
 function PlanoPage() {
   const { planoConcluidos, proximoPlano, state, planoCompleto } = usePlayer();
   const navigate = useNavigate();
 
   return (
     <AppShell
-      title="Plano guiado"
-      subtitle={planoCompleto ? "Ciclo de manutenção ativo" : "Um caminho só: siga os dias em ordem"}
+      wide
+      title="Meu plano"
+      subtitle={planoCompleto ? "Ciclo de manutenção ativo" : "Programas e rotinas que você está fazendo"}
     >
       {planoCompleto ? (
-        <div className="mb-6 rounded-2xl border border-primary/30 bg-primary/10 p-4">
+        <div className="mb-6 rounded-[1.5rem] border border-primary/25 bg-primary/10 p-5 shadow-soft">
           <p className="text-sm font-bold text-foreground">4 semanas concluídas</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Você entrou no ciclo de manutenção. Continue o hábito com treinos diários rotativos.
@@ -50,22 +58,70 @@ function PlanoPage() {
         </div>
       ) : null}
 
-      <div className="space-y-6">
-        {PLANO.map((semana) => {
+      <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
+        {PLANO.map((semana, si) => {
           const semanaPremium = Boolean(semana.premium) || isSemanaPremium(semana.semana);
+          const feitos = semana.dias.filter((d) => planoConcluidos.includes(`${semana.semana}-${d.dia}`)).length;
           return (
-            <section key={semana.semana} className="rounded-2xl border border-border bg-card p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h2 className="text-lg font-extrabold text-foreground">{semana.titulo}</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">{semana.foco}</p>
+            <section
+              key={semana.semana}
+              className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft sm:p-6"
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  className={cn(
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
+                    WEEK_ACCENTS[si % WEEK_ACCENTS.length],
+                  )}
+                >
+                  S{semana.semana}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h2 className="text-lg font-extrabold text-foreground">{semana.titulo}</h2>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Programa · {semana.dias.length} treinos · {feitos}/{semana.dias.length} feitos
+                      </p>
+                    </div>
+                    {semanaPremium ? (
+                      <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-primary">
+                        PRO
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">{semana.foco}</p>
+                  {semanaPremium && !state.assinante ? (
+                    <p className="mt-1 text-[11px] font-semibold text-primary">
+                      O que você ganha: {semana.foco.toLowerCase()}
+                    </p>
+                  ) : null}
                 </div>
-                {semanaPremium ? (
-                  <span className="shrink-0 rounded-full bg-primary/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-primary">
-                    PRO
-                  </span>
-                ) : null}
               </div>
+
+              <div className="mt-4 flex gap-2">
+                {semana.dias.map((dia) => {
+                  const key = `${semana.semana}-${dia.dia}`;
+                  const concluido = planoConcluidos.includes(key);
+                  const atual = proximoPlano?.key === key;
+                  const treino = getTreino(dia.treinoId);
+                  return (
+                    <span
+                      key={key}
+                      title={`Dia ${dia.dia}: ${treino?.nome ?? ""}`}
+                      className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold",
+                        concluido || atual
+                          ? "bg-foreground text-background"
+                          : "bg-secondary text-muted-foreground",
+                      )}
+                    >
+                      {dia.dia}
+                    </span>
+                  );
+                })}
+              </div>
+
               <ul className="mt-4 space-y-2">
                 {semana.dias.map((dia) => {
                   const key = `${semana.semana}-${dia.dia}`;
@@ -73,50 +129,64 @@ function PlanoPage() {
                   const concluido = planoConcluidos.includes(key);
                   const atual = proximoPlano?.key === key;
                   const precisaAssinatura = semanaPremium && !state.assinante;
-                  const bloqueadoOrdem = !concluido && !atual;
+                  const bloqueadoOrdem = !concluido && !atual && !precisaAssinatura;
+
+                  const statusLabel = concluido
+                    ? "Concluído"
+                    : atual
+                      ? "Hoje — próximo passo"
+                      : precisaAssinatura
+                        ? `Preview PRO · ${semana.foco}`
+                        : `Preview · libera depois do dia atual`;
 
                   const inner = (
                     <div
                       className={cn(
-                        "flex items-center gap-3 rounded-xl border px-4 py-3",
+                        "flex items-center gap-3 rounded-2xl border px-4 py-3",
                         atual
-                          ? "border-primary bg-primary/10"
+                          ? "border-primary/40 bg-primary/10"
                           : concluido
-                            ? "border-border bg-secondary"
-                            : "border-border bg-background opacity-60",
+                            ? "border-transparent bg-secondary/70"
+                            : "border-border/50 bg-background/80",
                       )}
                     >
                       <span
                         className={cn(
-                          "flex h-8 w-8 items-center justify-center rounded-lg",
-                          atual ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground",
+                          "flex h-9 w-9 items-center justify-center rounded-xl",
+                          atual
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card text-muted-foreground shadow-soft",
                         )}
                       >
                         {concluido ? (
                           <Check className="h-4 w-4 text-primary" />
-                        ) : atual || precisaAssinatura ? (
-                          precisaAssinatura && !concluido ? (
-                            <Lock className="h-4 w-4" />
-                          ) : (
-                            <Play className="h-4 w-4" />
-                          )
-                        ) : (
+                        ) : atual ? (
+                          <Play className="h-4 w-4" />
+                        ) : precisaAssinatura ? (
                           <Lock className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
                         )}
                       </span>
-                      <span className="flex-1">
-                        <span className="block text-sm font-bold text-foreground">
+                      <span className="flex-1 min-w-0">
+                        <span className="flex flex-wrap items-center gap-2 text-sm font-bold text-foreground">
                           Dia {dia.dia} · {treino.nome}
+                          {atual ? (
+                            <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                              Next
+                            </span>
+                          ) : null}
                         </span>
-                        <span className="block text-xs text-muted-foreground">
-                          {treino.duracaoMin} min ·{" "}
-                          {concluido
-                            ? "Concluído"
-                            : precisaAssinatura
-                              ? "PRO"
-                              : atual
-                                ? "Hoje"
-                                : "Bloqueado"}
+                        <span className="mt-0.5 block text-xs text-muted-foreground line-clamp-2">
+                          ~{treino.duracaoMin}m · {treino.descricao}
+                        </span>
+                        <span
+                          className={cn(
+                            "mt-1 block text-[11px] font-semibold",
+                            precisaAssinatura || bloqueadoOrdem ? "text-primary" : "text-muted-foreground",
+                          )}
+                        >
+                          {statusLabel}
                         </span>
                       </span>
                     </div>
@@ -124,15 +194,23 @@ function PlanoPage() {
 
                   return (
                     <li key={key}>
-                      {bloqueadoOrdem && !precisaAssinatura ? (
-                        inner
+                      {bloqueadoOrdem ? (
+                        <div className="opacity-90" aria-label={`Preview do dia ${dia.dia}`}>
+                          {inner}
+                        </div>
                       ) : precisaAssinatura && !concluido ? (
                         <button
                           type="button"
                           className="w-full text-left"
                           onClick={() => {
                             trackMetaCustom("PaywallHit", { from: "plano", semana: semana.semana });
-                            void navigate({ to: "/planos", search: { from: "plano" } });
+                            void navigate({
+                              to: "/planos",
+                              search: {
+                                from: "plano",
+                                teaser: `${semana.titulo}: ${treino.nome} — ${semana.foco}`,
+                              },
+                            });
                           }}
                         >
                           {inner}

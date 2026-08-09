@@ -55,13 +55,6 @@ export function MercadoPagoCheckout({ planoId, email, onApproved, onPending }: P
           },
         }}
         onSubmit={async ({ formData }) => {
-          trackMeta("InitiateCheckout", {
-            content_name: planoId,
-            currency: "BRL",
-            value: amount,
-            num_items: 1,
-          });
-
           const { data, error } = await supabase.functions.invoke("process-payment", {
             body: { plano: planoId, formData },
           });

@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageFrame } from "@/components/PageFrame";
+import { getTreino, PLANO } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
@@ -33,6 +36,9 @@ const DISPONIBILIDADE = [
   { id: "30", label: "20+ min" },
 ];
 
+const PRIMEIRO = PLANO[0]!.dias[0]!;
+const primeiroTreino = getTreino(PRIMEIRO.treinoId)!;
+
 function OnboardingPage() {
   const { completeOnboarding, state, hydrated } = usePlayer();
   const navigate = useNavigate();
@@ -54,81 +60,101 @@ function OnboardingPage() {
     }
     completeOnboarding({ nome, objetivo, disponibilidade });
     trackMetaCustom("CompleteOnboarding", { objetivo, disponibilidade });
-    void navigate({ to: "/" });
+    void navigate({
+      to: "/treino/$treinoId",
+      params: { treinoId: primeiroTreino.id },
+      search: { plano: "1-1" },
+    });
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-10">
-      <p className="text-xs font-bold uppercase tracking-widest text-primary">Jogador PRO</p>
-      <h1 className="mt-2 text-3xl font-extrabold text-foreground">
-        {step === 0 && "Como podemos te chamar?"}
-        {step === 1 && "Qual seu foco agora?"}
-        {step === 2 && "Quanto tempo você tem?"}
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">Passo {step + 1} de 3 — menos de 1 minuto.</p>
+    <PageFrame max="sm" className="justify-center">
+      <div className="w-full rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft-lg sm:p-8">
+        <p className="text-xs font-bold uppercase tracking-widest text-primary">Jogador PRO</p>
+        <h1 className="mt-2 text-2xl font-extrabold text-foreground sm:text-3xl">
+          {step === 0 && "Como podemos te chamar?"}
+          {step === 1 && "Qual seu foco agora?"}
+          {step === 2 && "Quanto tempo você tem?"}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">Passo {step + 1} de 3 — menos de 1 minuto.</p>
 
-      <div className="mt-8">
-        {step === 0 ? (
-          <div>
-            <Label htmlFor="nome">Seu nome</Label>
-            <Input
-              id="nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Ex: Rafa"
-              className="mt-2 h-12"
-              autoFocus
-            />
-          </div>
-        ) : null}
+        <div className="mt-8">
+          {step === 0 ? (
+            <div>
+              <Label htmlFor="nome">Seu nome</Label>
+              <Input
+                id="nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex: Rafa"
+                className="mt-2 h-12"
+                autoFocus
+              />
+            </div>
+          ) : null}
 
-        {step === 1 ? (
-          <div className="grid gap-2">
-            {OBJETIVOS.map((o) => (
-              <button
-                key={o.id}
-                type="button"
-                onClick={() => setObjetivo(o.id)}
-                className={cn(
-                  "rounded-2xl border px-4 py-3 text-left text-sm font-semibold",
-                  objetivo === o.id ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-muted-foreground",
-                )}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
+          {step === 1 ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {OBJETIVOS.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => setObjetivo(o.id)}
+                  className={cn(
+                    "rounded-2xl border px-4 py-3 text-left text-sm font-semibold",
+                    objetivo === o.id
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-card text-muted-foreground",
+                  )}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
-        {step === 2 ? (
-          <div className="grid gap-2">
-            {DISPONIBILIDADE.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setDisponibilidade(d.id)}
-                className={cn(
-                  "rounded-2xl border px-4 py-3 text-left text-sm font-semibold",
-                  disponibilidade === d.id
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-card text-muted-foreground",
-                )}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
+          {step === 2 ? (
+            <>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {DISPONIBILIDADE.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => setDisponibilidade(d.id)}
+                    className={cn(
+                      "rounded-2xl border px-4 py-3 text-left text-sm font-semibold sm:text-center",
+                      disponibilidade === d.id
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border bg-card text-muted-foreground",
+                    )}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-primary/25 bg-primary/10 p-4">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Seu 1º treino</p>
+                <p className="mt-1 text-base font-extrabold text-foreground">{primeiroTreino.nome}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{primeiroTreino.descricao}</p>
+                <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Timer className="h-3.5 w-3.5 text-primary" />
+                  {primeiroTreino.duracaoMin} min · Semana 1 · Dia 1
+                </p>
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        <Button
+          size="lg"
+          className="mt-8 h-14 w-full text-base font-extrabold"
+          disabled={step === 0 && nome.trim().length < 2}
+          onClick={next}
+        >
+          {step === 2 ? "Começar meu 1º treino" : "Continuar"}
+        </Button>
       </div>
-
-      <Button
-        size="lg"
-        className="mt-8 h-14 w-full rounded-2xl text-base font-extrabold"
-        disabled={step === 0 && nome.trim().length < 2}
-        onClick={next}
-      >
-        {step === 2 ? "Começar meu plano" : "Continuar"}
-      </Button>
-    </main>
+    </PageFrame>
   );
 }

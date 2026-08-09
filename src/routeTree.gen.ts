@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BemVindoProRouteImport } from './routes/bem-vindo-pro'
 import { Route as BibliotecaRouteImport } from './routes/biblioteca'
 import { Route as CampanhaRouteImport } from './routes/campanha'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -18,6 +20,10 @@ import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanoRouteImport } from './routes/plano'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as ProgressoRouteImport } from './routes/progresso'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
+import { Route as AdminSessoesRouteImport } from './routes/admin.sessoes'
+import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as TreinoTreinoIdRouteImport } from './routes/treino.$treinoId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -25,9 +31,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BemVindoProRoute = BemVindoProRouteImport.update({
+  id: '/bem-vindo-pro',
+  path: '/bem-vindo-pro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BibliotecaRoute = BibliotecaRouteImport.update({
@@ -65,6 +81,26 @@ const ProgressoRoute = ProgressoRouteImport.update({
   path: '/progresso',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPagamentosRoute = AdminPagamentosRouteImport.update({
+  id: '/pagamentos',
+  path: '/pagamentos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSessoesRoute = AdminSessoesRouteImport.update({
+  id: '/sessoes',
+  path: '/sessoes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AdminRoute,
+} as any)
 const TreinoTreinoIdRoute = TreinoTreinoIdRouteImport.update({
   id: '/treino/$treinoId',
   path: '/treino/$treinoId',
@@ -73,7 +109,9 @@ const TreinoTreinoIdRoute = TreinoTreinoIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
   '/onboarding': typeof OnboardingRoute
@@ -81,11 +119,16 @@ export interface FileRoutesByFullPath {
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
+  '/admin/sessoes': typeof AdminSessoesRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
   '/onboarding': typeof OnboardingRoute
@@ -93,12 +136,18 @@ export interface FileRoutesByTo {
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
+  '/admin/sessoes': typeof AdminSessoesRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
   '/onboarding': typeof OnboardingRoute
@@ -106,13 +155,19 @@ export interface FileRoutesById {
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
+  '/admin/sessoes': typeof AdminSessoesRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
+    | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
     | '/onboarding'
@@ -120,11 +175,16 @@ export interface FileRouteTypes {
     | '/plano'
     | '/planos'
     | '/progresso'
+    | '/admin/pagamentos'
+    | '/admin/sessoes'
+    | '/admin/usuarios'
     | '/treino/$treinoId'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
     | '/onboarding'
@@ -132,11 +192,17 @@ export interface FileRouteTypes {
     | '/plano'
     | '/planos'
     | '/progresso'
+    | '/admin/pagamentos'
+    | '/admin/sessoes'
+    | '/admin/usuarios'
     | '/treino/$treinoId'
+    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/auth'
+    | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
     | '/onboarding'
@@ -144,12 +210,18 @@ export interface FileRouteTypes {
     | '/plano'
     | '/planos'
     | '/progresso'
+    | '/admin/pagamentos'
+    | '/admin/sessoes'
+    | '/admin/usuarios'
     | '/treino/$treinoId'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  BemVindoProRoute: typeof BemVindoProRoute
   BibliotecaRoute: typeof BibliotecaRoute
   CampanhaRoute: typeof CampanhaRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -169,11 +241,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bem-vindo-pro': {
+      id: '/bem-vindo-pro'
+      path: '/bem-vindo-pro'
+      fullPath: '/bem-vindo-pro'
+      preLoaderRoute: typeof BemVindoProRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/biblioteca': {
@@ -225,6 +311,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgressoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pagamentos': {
+      id: '/admin/pagamentos'
+      path: '/pagamentos'
+      fullPath: '/admin/pagamentos'
+      preLoaderRoute: typeof AdminPagamentosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sessoes': {
+      id: '/admin/sessoes'
+      path: '/sessoes'
+      fullPath: '/admin/sessoes'
+      preLoaderRoute: typeof AdminSessoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/usuarios': {
+      id: '/admin/usuarios'
+      path: '/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AdminUsuariosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/treino/$treinoId': {
       id: '/treino/$treinoId'
       path: '/treino/$treinoId'
@@ -235,9 +349,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminPagamentosRoute: typeof AdminPagamentosRoute
+  AdminSessoesRoute: typeof AdminSessoesRoute
+  AdminUsuariosRoute: typeof AdminUsuariosRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminPagamentosRoute: AdminPagamentosRoute,
+  AdminSessoesRoute: AdminSessoesRoute,
+  AdminUsuariosRoute: AdminUsuariosRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  BemVindoProRoute: BemVindoProRoute,
   BibliotecaRoute: BibliotecaRoute,
   CampanhaRoute: CampanhaRoute,
   OnboardingRoute: OnboardingRoute,
@@ -250,3 +382,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

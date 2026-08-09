@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, Flame, Pause, Play, SkipBack, SkipForward, Trophy } from "lucide-react";
+import { ArrowLeft, Check, Flame, Lock, Pause, Play, SkipBack, SkipForward, Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { ExerciseDemo } from "@/components/ExerciseDemo";
-import { getTreino, CONQUISTAS } from "@/data/training";
+import { ProgressRing } from "@/components/ProgressRing";
+import { getTreino, CONQUISTAS, PLANO } from "@/data/training";
 import { canAccessTreino } from "@/lib/access";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
@@ -54,11 +54,7 @@ function TreinoPage() {
   useEffect(() => {
     if (!treino || !bloqueado) return;
     trackMetaCustom("PaywallHit", { treino_id: treino.id, from: "treino" });
-    void navigate({
-      to: "/planos",
-      search: { from: `treino:${treino.id}` },
-    });
-  }, [bloqueado, treino, navigate]);
+  }, [bloqueado, treino]);
 
   const [idx, setIdx] = useState(0);
   const [restante, setRestante] = useState(treino?.exercicios[0]?.duracaoSeg ?? 0);
@@ -112,9 +108,47 @@ function TreinoPage() {
   }
 
   if (bloqueado) {
+    const semana3 = PLANO.find((s) => s.semana === 3);
+    const teaser = `${treino.nome} · ${treino.duracaoMin} min · ${treino.descricao}`;
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-6 text-center">
-        <p className="text-sm text-muted-foreground">Redirecionando para os planos…</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-10 sm:px-6">
+        <div className="w-full max-w-md rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-soft-lg sm:p-8">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <Lock className="h-7 w-7" />
+          </div>
+          <p className="mt-4 text-center text-xs font-bold uppercase tracking-[0.16em] text-primary">Conteúdo PRO</p>
+          <h1 className="mt-2 text-center text-2xl font-extrabold text-foreground">{treino.nome}</h1>
+          <p className="mt-2 text-center text-sm text-muted-foreground">{treino.descricao}</p>
+          <ul className="mt-6 space-y-2 text-left text-sm text-foreground">
+            <li className="flex gap-2">
+              <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              {semana3?.titulo}: {semana3?.foco}
+            </li>
+            <li className="flex gap-2">
+              <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              Biblioteca premium + Semana 4 Performance
+            </li>
+            <li className="flex gap-2">
+              <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              Você já treinou no free — agora sobe o nível
+            </li>
+          </ul>
+          <Button
+            size="lg"
+            className="mt-6 h-12 w-full font-extrabold"
+            onClick={() =>
+              void navigate({
+                to: "/planos",
+                search: { from: `treino:${treino.id}`, teaser },
+              })
+            }
+          >
+            Desbloquear este treino
+          </Button>
+          <Button asChild variant="ghost" className="mt-2 w-full">
+            <Link to="/">Voltar ao treino free</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -171,20 +205,22 @@ function TreinoPage() {
 
   if (fim && !concluido) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/15">
-          <Trophy className="h-12 w-12 text-primary" />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center sm:px-6">
+        <div className="w-full max-w-md">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-primary/15">
+            <Trophy className="h-12 w-12 text-primary" />
+          </div>
+          <h1 className="mt-6 text-3xl font-extrabold text-foreground">Treino concluído</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {treino.nome} · {treino.duracaoMin} min. Você ficou mais perto do próximo nível.
+          </p>
+          <Button onClick={() => void concluir()} size="lg" className="mt-8 h-14 w-full text-base font-extrabold">
+            <Check className="h-5 w-5" /> Marcar como concluído
+          </Button>
+          <Button asChild variant="ghost" className="mt-2 w-full">
+            <Link to="/">Voltar depois</Link>
+          </Button>
         </div>
-        <h1 className="mt-6 text-3xl font-extrabold text-foreground">Treino concluído</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {treino.nome} · {treino.duracaoMin} min. Você ficou mais perto do próximo nível.
-        </p>
-        <Button onClick={() => void concluir()} size="lg" className="mt-8 h-14 w-full max-w-sm rounded-2xl text-base font-extrabold">
-          <Check className="h-5 w-5" /> Marcar como concluído
-        </Button>
-        <Button asChild variant="ghost" className="mt-2">
-          <Link to="/">Voltar depois</Link>
-        </Button>
       </div>
     );
   }
@@ -192,99 +228,156 @@ function TreinoPage() {
   if (fim && concluido) {
     const next = proximoPlano;
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
-        <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-bold">
-          <Flame className="h-4 w-4 text-primary" />
-          Streak {streak || 1} · Nível {nivel}
-        </div>
-        <h1 className="mt-6 text-3xl font-extrabold text-foreground">Mandou bem</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {treino.nome} registrado. Volte amanhã para manter a sequência.
-        </p>
-
-        {mostrarPaywallSoft ? (
-          <div className="mt-6 w-full max-w-sm rounded-2xl border border-primary/40 bg-primary/10 p-4 text-left">
-            <p className="text-sm font-bold text-foreground">Próximo nível é PRO</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Semanas 3 e 4 + biblioteca premium desbloqueiam com a assinatura.
-            </p>
-            <Button asChild className="mt-3 w-full rounded-xl font-extrabold">
-              <Link to="/planos" search={{ from: "soft-paywall" }}>
-                Ver planos
-              </Link>
-            </Button>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center sm:px-6">
+        <div className="w-full max-w-md">
+          <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-bold">
+            <Flame className="h-4 w-4 text-primary" />
+            Streak {streak || 1} · Nível {nivel}
           </div>
-        ) : null}
+          <h1 className="mt-6 text-3xl font-extrabold text-foreground">Mandou bem</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {treino.nome} registrado. Volte amanhã para manter a sequência.
+          </p>
 
-        {mostrarAuth ? (
-          <div className="mt-4 w-full max-w-sm rounded-2xl border border-border bg-card p-4 text-left">
-            <p className="text-sm font-bold text-foreground">Salve seu progresso</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Crie uma conta grátis para não perder streak se trocar de celular.
-            </p>
-            <div className="mt-3 flex gap-2">
-              <Button asChild className="flex-1 rounded-xl font-extrabold">
-                <Link to="/auth" search={{ from: "pos-treino" }}>
-                  Criar conta
+          {mostrarPaywallSoft ? (
+            <div className="mt-6 w-full rounded-2xl border border-primary/40 bg-primary/10 p-4 text-left">
+              <p className="text-sm font-bold text-foreground">Semana 3 te espera: Explosão</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Arranque, salto e velocidade — o salto de desempenho que o free não cobre. Você já fez a base;
+                agora vem o nível PRO.
+              </p>
+              <ul className="mt-3 space-y-1.5 text-xs text-foreground">
+                <li className="flex gap-2">
+                  <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> Força de pernas + resistência de campo
+                </li>
+                <li className="flex gap-2">
+                  <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> Semana 4 Performance + biblioteca premium
+                </li>
+              </ul>
+              <Button asChild className="mt-3 w-full font-extrabold">
+                <Link
+                  to="/planos"
+                  search={{
+                    from: "soft-paywall",
+                    teaser: "Semana 3 — Explosão: arranque, salto e velocidade",
+                  }}
+                >
+                  Continuar minha evolução PRO
                 </Link>
               </Button>
-              <Button
-                variant="ghost"
-                className="rounded-xl"
-                onClick={() => {
-                  markAuthPromptSeen();
-                  setMostrarAuth(false);
-                }}
-              >
-                Agora não
-              </Button>
             </div>
-          </div>
-        ) : null}
-
-        <div className="mt-8 flex w-full max-w-sm flex-col gap-2">
-          {next ? (
-            <Button asChild size="lg" className="h-14 rounded-2xl text-base font-extrabold">
-              <Link to="/">Ver treino de amanhã</Link>
-            </Button>
+          ) : next ? (
+            <div className="mt-6 w-full rounded-2xl border border-border/60 bg-card p-4 text-left shadow-soft">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Amanhã</p>
+              <p className="mt-1 text-sm font-extrabold text-foreground">
+                {getTreino(next.treinoId)?.nome ?? "Próximo treino do plano"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">Volte para manter o streak.</p>
+            </div>
           ) : null}
-          <Button asChild variant="outline" className="h-12 rounded-2xl">
-            <Link to="/progresso">Ver minha evolução</Link>
-          </Button>
+
+          {mostrarAuth ? (
+            <div className="mt-4 w-full rounded-2xl border border-border bg-card p-4 text-left">
+              <p className="text-sm font-bold text-foreground">Salve seu progresso</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Crie uma conta grátis para não perder streak se trocar de celular.
+              </p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Button asChild className="flex-1 font-extrabold">
+                  <Link to="/auth" search={{ from: "pos-treino" }}>
+                    Criar conta
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    markAuthPromptSeen();
+                    setMostrarAuth(false);
+                  }}
+                >
+                  Agora não
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-8 flex w-full flex-col gap-2">
+            {next ? (
+              <Button asChild size="lg" className="h-14 text-base font-extrabold">
+                <Link to="/">Ver treino de amanhã</Link>
+              </Button>
+            ) : null}
+            <Button asChild variant="outline" className="h-12">
+              <Link to="/progresso">Ver minha evolução</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
+  const exercisePct =
+    atual.duracaoSeg > 0 ? Math.round(((atual.duracaoSeg - restante) / atual.duracaoSeg) * 100) : 0;
+  const sessionPct = total > 0 ? Math.round((feito / total) * 100) : 0;
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-md px-5 pb-10 pt-6">
-        <div className="flex items-center justify-between">
-          <button onClick={() => navigate({ to: "/" })} className="text-muted-foreground" aria-label="Voltar">
+    <div className="relative min-h-screen bg-background">
+      <div className="relative mx-auto w-full max-w-lg px-4 pb-28 pt-6 sm:px-6 md:max-w-xl md:pb-12 md:pt-10">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={() => navigate({ to: "/" })}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-card text-muted-foreground shadow-soft"
+            aria-label="Voltar"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <span className="text-sm font-semibold text-foreground">{treino.nome}</span>
-          <span className="text-sm text-muted-foreground">
-            {idx + 1}/{treino.exercicios.length}
+          <div className="min-w-0 text-center">
+            <p className="truncate text-sm font-bold text-foreground">{treino.nome}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {treino.duracaoMin} min · exercício {idx + 1}/{treino.exercicios.length}
+            </p>
+          </div>
+          <span className="flex h-10 min-w-10 items-center justify-center rounded-full bg-card px-2 text-xs font-bold text-muted-foreground shadow-soft">
+            {sessionPct}%
           </span>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-5 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft sm:p-5">
           <ExerciseDemo demo={atual.demo ?? "cardio"} nome={atual.nome} />
-          <p className="mt-6 text-center text-6xl font-black tabular-nums text-foreground">{fmt(restante)}</p>
         </div>
 
-        <Progress value={Math.round((feito / total) * 100)} className="mt-5" />
-        <p className="mt-2 text-center text-xs text-muted-foreground">{atual.dica}</p>
+        <div className="mt-8 flex flex-col items-center">
+          <ProgressRing value={exercisePct} size={200} stroke={14}>
+            <p className="text-4xl font-black tabular-nums tracking-tight text-foreground sm:text-5xl">
+              {fmt(restante)}
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-muted-foreground">restante</p>
+          </ProgressRing>
+          <p className="mt-5 max-w-sm text-center text-sm text-muted-foreground">{atual.dica}</p>
+        </div>
 
-        <div className="mt-8 flex items-center justify-center gap-4">
-          <Button variant="secondary" size="icon" className="h-14 w-14 rounded-2xl" onClick={() => irPara(idx - 1)}>
+        <div className="mt-8 flex items-center justify-center gap-3 sm:gap-4">
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-12 w-12 shadow-soft sm:h-14 sm:w-14"
+            onClick={() => irPara(idx - 1)}
+          >
             <SkipBack className="h-5 w-5" />
           </Button>
-          <Button size="icon" className="h-20 w-20 rounded-3xl" onClick={() => setRodando((r) => !r)}>
-            {rodando ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+          <Button
+            size="icon"
+            className="h-16 w-16 shadow-soft-lg sm:h-20 sm:w-20"
+            onClick={() => setRodando((r) => !r)}
+          >
+            {rodando ? <Pause className="h-7 w-7 sm:h-8 sm:w-8" /> : <Play className="h-7 w-7 sm:h-8 sm:w-8" />}
           </Button>
-          <Button variant="secondary" size="icon" className="h-14 w-14 rounded-2xl" onClick={() => irPara(idx + 1)}>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-12 w-12 shadow-soft sm:h-14 sm:w-14"
+            onClick={() => irPara(idx + 1)}
+          >
             <SkipForward className="h-5 w-5" />
           </Button>
         </div>
@@ -293,9 +386,15 @@ function TreinoPage() {
           {proximo ? `Próximo: ${proximo.nome}` : "Último exercício"}
         </p>
 
-        <Button variant="outline" className="mt-8 w-full rounded-2xl" onClick={() => setFim(true)}>
-          Finalizar treino
-        </Button>
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-card/90 p-3 backdrop-blur md:static md:mt-8 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+          <Button
+            variant="outline"
+            className="h-12 w-full font-bold sm:mx-auto sm:max-w-sm"
+            onClick={() => setFim(true)}
+          >
+            Finalizar treino
+          </Button>
+        </div>
       </div>
     </div>
   );

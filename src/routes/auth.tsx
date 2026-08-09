@@ -5,13 +5,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageFrame } from "@/components/PageFrame";
 import { trackMeta } from "@/lib/meta-pixel";
 
+export type AuthSearch = {
+  from?: string;
+  plano?: string;
+};
+
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    from: typeof search["from"] === "string" ? (search["from"] as string) : undefined,
-    plano: typeof search["plano"] === "string" ? (search["plano"] as string) : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): AuthSearch => {
+    const out: AuthSearch = {};
+    if (typeof search["from"] === "string") out.from = search["from"];
+    if (typeof search["plano"] === "string") out.plano = search["plano"];
+    return out;
+  },
   head: () => ({
     meta: [
       { title: "Entrar ou criar conta — Jogador PRO System" },
@@ -63,7 +71,18 @@ function AuthPage() {
       }
 
       if (from === "planos") {
-        await navigate({ to: "/planos", search: { from: "auth" } });
+        await navigate({
+          to: "/planos",
+          search: {
+            from: "auth",
+            ...(plano ? { plano } : {}),
+            checkout: "1",
+          },
+        });
+        return;
+      }
+      if (from === "admin") {
+        await navigate({ to: "/admin" });
         return;
       }
       await navigate({ to: "/" });
@@ -75,58 +94,89 @@ function AuthPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-10">
-      <Link to="/" className="mb-8 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-        <ArrowLeft className="h-4 w-4" /> Voltar
-      </Link>
+    <PageFrame max="sm" className="justify-center">
+      <div className="w-full rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft-lg sm:p-8">
+        <Link
+          to="/"
+          className="mb-6 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </Link>
 
-      <h1 className="text-3xl font-extrabold leading-tight text-foreground">
-        {modo === "login" ? "Bora treinar de novo" : "Salve sua evolução"}
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {from === "planos"
-          ? "Entre para continuar o checkout da assinatura PRO."
-          : from === "pos-treino"
-            ? "Crie sua conta agora e não perca o streak deste dispositivo."
-            : "Sua conta guarda streak, plano guiado e histórico de treinos."}
-      </p>
-      {plano ? <p className="mt-1 text-xs text-primary">Plano selecionado: {plano}</p> : null}
+        <h1 className="text-2xl font-extrabold leading-tight text-foreground sm:text-3xl">
+          {modo === "login" ? "Bora treinar de novo" : "Salve sua evolução"}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {from === "planos"
+            ? "Entre para continuar o checkout da assinatura PRO."
+            : from === "admin"
+              ? "Entre com uma conta admin para acessar o painel."
+              : from === "pos-treino"
+                ? "Crie sua conta agora e não perca o streak deste dispositivo."
+                : "Sua conta guarda streak, plano guiado e histórico de treinos."}
+        </p>
+        {plano ? <p className="mt-1 text-xs text-primary">Plano selecionado: {plano}</p> : null}
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        {modo === "cadastro" ? (
+        <form onSubmit={onSubmit} className="mt-8 space-y-4">
+          {modo === "cadastro" ? (
+            <div>
+              <Label htmlFor="nome">Nome</Label>
+              <Input
+                id="nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Seu nome"
+                className="mt-2"
+                required
+              />
+            </div>
+          ) : null}
           <div>
-            <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="mt-2" required />
+            <Label htmlFor="email">E-mail</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="voce@email.com"
+              className="mt-2"
+              required
+            />
           </div>
-        ) : null}
-        <div>
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" className="mt-2" required />
-        </div>
-        <div>
-          <Label htmlFor="senha">Senha</Label>
-          <Input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="mínimo 6 caracteres" minLength={6} className="mt-2" required />
-        </div>
+          <div>
+            <Label htmlFor="senha">Senha</Label>
+            <Input
+              id="senha"
+              type="password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="mínimo 6 caracteres"
+              minLength={6}
+              className="mt-2"
+              required
+            />
+          </div>
 
-        {erro ? <p className="text-sm text-destructive">{erro}</p> : null}
-        {msg ? <p className="text-sm text-primary">{msg}</p> : null}
+          {erro ? <p className="text-sm text-destructive">{erro}</p> : null}
+          {msg ? <p className="text-sm text-primary">{msg}</p> : null}
 
-        <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl font-extrabold">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : modo === "login" ? "Entrar" : "Criar conta"}
-        </Button>
-      </form>
+          <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl font-extrabold">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : modo === "login" ? "Entrar" : "Criar conta"}
+          </Button>
+        </form>
 
-      <button
-        type="button"
-        onClick={() => {
-          setModo(modo === "login" ? "cadastro" : "login");
-          setErro(null);
-          setMsg(null);
-        }}
-        className="mt-6 text-sm text-muted-foreground underline underline-offset-4"
-      >
-        {modo === "login" ? "Ainda não tenho conta" : "Já tenho conta"}
-      </button>
-    </main>
+        <button
+          type="button"
+          onClick={() => {
+            setModo(modo === "login" ? "cadastro" : "login");
+            setErro(null);
+            setMsg(null);
+          }}
+          className="mt-6 text-sm text-muted-foreground underline underline-offset-4"
+        >
+          {modo === "login" ? "Ainda não tenho conta" : "Já tenho conta"}
+        </button>
+      </div>
+    </PageFrame>
   );
 }
