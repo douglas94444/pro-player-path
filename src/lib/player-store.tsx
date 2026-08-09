@@ -68,42 +68,105 @@ type Ctx = {
   cancelar: () => void;
   setNome: (n: string) => void;
   reset: () => void;
+  sair: () => Promise<void>;
   hydrated: boolean;
+  logado: boolean;
+  email: string | null;
 };
 
 const PlayerContext = createContext<Ctx | null>(null);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
   const [state, setState] = useState<PlayerState>(initialState);
   const [hydrated, setHydrated] = useState(false);
+  const logado = !!user;
 
+  // Hidrata do dispositivo (visitante) ou do Supabase (logado)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setState({ ...initialState, ...JSON.parse(raw) });
-    } catch {
-      /* ignore */
+    if (loading) return;
+    let cancelado = false;
+
+    async function carregar() {
+      if (!user) {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          setState(raw ? { ...initialState, ...JSON.parse(raw) } : initialState);
+        } catch {
+          setState(initialState);
+        }
+        setHydrated(true);
+        return;
+      }
+
+      const [{ data: perfil }, { data: sessoes }] = await Promise.all([
+        supabase.from("profiles").select("nome, assinante, plano").eq("id", user.id).maybeSingle(),
+        supabase.from("sessoes").select("treino_id, plano_key, data, minutos").eq("user_id", user.id).order("data", { ascending: true }),
+      ]);
+      if (cancelado) return;
+
+      setState({
+        nome: perfil?.nome ?? user.email?.split("@")[0] ?? "Jogador",
+        assinante: perfil?.assinante ?? false,
+        plano: perfil?.plano ?? null,
+        sessoes: (sessoes ?? []).map((s) => ({
+          treinoId: s.treino_id,
+          data: s.data,
+          minutos: s.minutos,
+          planoKey: s.plano_key ?? undefined,
+        })),
+        ultimoTreinoId: sessoes?.length ? sessoes[sessoes.length - 1]!.treino_id : null,
+      });
+      setHydrated(true);
     }
-    setHydrated(true);
-  }, []);
 
+    setHydrated(false);
+    void carregar();
+    return () => {
+      cancelado = true;
+    };
+  }, [user, loading]);
+
+  // Persiste no dispositivo apenas para visitantes
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || logado) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       /* ignore */
     }
-  }, [state, hydrated]);
+  }, [state, hydrated, logado]);
 
-  const concluirTreino = useCallback((treinoId: string, planoKey?: string) => {
-    const t = getTreino(treinoId);
-    setState((s) => ({
-      ...s,
-      ultimoTreinoId: treinoId,
-      sessoes: [...s.sessoes, { treinoId, data: hoje(), minutos: t?.duracaoMin ?? 10, planoKey }],
-    }));
-  }, []);
+  const salvarPerfil = useCallback(
+    (patch: { nome?: string; assinante?: boolean; plano?: string | null }) => {
+      if (!user) return;
+      void supabase.from("profiles").upsert({ id: user.id, ...patch }, { onConflict: "id" });
+    },
+    [user],
+  );
+
+  const concluirTreino = useCallback(
+    (treinoId: string, planoKey?: string) => {
+      const t = getTreino(treinoId);
+      const minutos = t?.duracaoMin ?? 10;
+      const data = hoje();
+      setState((s) => ({
+        ...s,
+        ultimoTreinoId: treinoId,
+        sessoes: [...s.sessoes, { treinoId, data, minutos, planoKey }],
+      }));
+      if (user) {
+        void supabase.from("sessoes").insert({
+          user_id: user.id,
+          treino_id: treinoId,
+          plano_key: planoKey ?? null,
+          data,
+          minutos,
+        });
+      }
+    },
+    [user],
+  );
 
   const value = useMemo<Ctx>(() => {
     const planoConcluidos = state.sessoes.map((s) => s.planoKey).filter(Boolean) as string[];
@@ -119,6 +182,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return {
       state,
       hydrated,
+      logado,
+      email: user?.email ?? null,
       streak: calcStreak(state.sessoes),
       nivel: nivelPor(totalTreinos),
       totalTreinos,
@@ -129,15 +194,32 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       semanaAtual,
       progressoSemana: Math.round((feitosNaSemana / totalSemana) * 100),
       concluirTreino,
-      assinar: (plano: string) => setState((s) => ({ ...s, assinante: true, plano })),
-      cancelar: () => setState((s) => ({ ...s, assinante: false, plano: null })),
-      setNome: (nome: string) => setState((s) => ({ ...s, nome })),
-      reset: () => setState(initialState),
+      assinar: (plano: string) => {
+        setState((s) => ({ ...s, assinante: true, plano }));
+        salvarPerfil({ assinante: true, plano });
+      },
+      cancelar: () => {
+        setState((s) => ({ ...s, assinante: false, plano: null }));
+        salvarPerfil({ assinante: false, plano: null });
+      },
+      setNome: (nome: string) => {
+        setState((s) => ({ ...s, nome }));
+        salvarPerfil({ nome });
+      },
+      reset: () => {
+        setState((s) => ({ ...s, sessoes: [], ultimoTreinoId: null }));
+        if (user) void supabase.from("sessoes").delete().eq("user_id", user.id);
+      },
+      sair: async () => {
+        await supabase.auth.signOut();
+        setState(initialState);
+      },
     };
-  }, [state, hydrated, concluirTreino]);
+  }, [state, hydrated, logado, user, concluirTreino, salvarPerfil]);
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
 }
+
 
 export function usePlayer() {
   const ctx = useContext(PlayerContext);
