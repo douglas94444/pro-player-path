@@ -11,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BibliotecaRouteImport } from './routes/biblioteca'
+import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanoRouteImport } from './routes/plano'
+import { Route as PlanosRouteImport } from './routes/planos'
+import { Route as ProgressoRouteImport } from './routes/progresso'
+import { Route as TreinoTreinoIdRouteImport } from './routes/treino.$treinoId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,40 +27,98 @@ const BibliotecaRoute = BibliotecaRouteImport.update({
   path: '/biblioteca',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlanoRoute = PlanoRouteImport.update({
   id: '/plano',
   path: '/plano',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanosRoute = PlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgressoRoute = ProgressoRouteImport.update({
+  id: '/progresso',
+  path: '/progresso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TreinoTreinoIdRoute = TreinoTreinoIdRouteImport.update({
+  id: '/treino/$treinoId',
+  path: '/treino/$treinoId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/biblioteca': typeof BibliotecaRoute
+  '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
+  '/planos': typeof PlanosRoute
+  '/progresso': typeof ProgressoRoute
+  '/treino/$treinoId': typeof TreinoTreinoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/biblioteca': typeof BibliotecaRoute
+  '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
+  '/planos': typeof PlanosRoute
+  '/progresso': typeof ProgressoRoute
+  '/treino/$treinoId': typeof TreinoTreinoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/biblioteca': typeof BibliotecaRoute
+  '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
+  '/planos': typeof PlanosRoute
+  '/progresso': typeof ProgressoRoute
+  '/treino/$treinoId': typeof TreinoTreinoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/biblioteca' | '/plano'
+  fullPaths:
+    | '/'
+    | '/biblioteca'
+    | '/perfil'
+    | '/plano'
+    | '/planos'
+    | '/progresso'
+    | '/treino/$treinoId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/biblioteca' | '/plano'
-  id: '__root__' | '/' | '/biblioteca' | '/plano'
+  to:
+    | '/'
+    | '/biblioteca'
+    | '/perfil'
+    | '/plano'
+    | '/planos'
+    | '/progresso'
+    | '/treino/$treinoId'
+  id:
+    | '__root__'
+    | '/'
+    | '/biblioteca'
+    | '/perfil'
+    | '/plano'
+    | '/planos'
+    | '/progresso'
+    | '/treino/$treinoId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BibliotecaRoute: typeof BibliotecaRoute
+  PerfilRoute: typeof PerfilRoute
   PlanoRoute: typeof PlanoRoute
+  PlanosRoute: typeof PlanosRoute
+  ProgressoRoute: typeof ProgressoRoute
+  TreinoTreinoIdRoute: typeof TreinoTreinoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,11 +137,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BibliotecaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/plano': {
       id: '/plano'
       path: '/plano'
       fullPath: '/plano'
       preLoaderRoute: typeof PlanoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planos': {
+      id: '/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof PlanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progresso': {
+      id: '/progresso'
+      path: '/progresso'
+      fullPath: '/progresso'
+      preLoaderRoute: typeof ProgressoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/treino/$treinoId': {
+      id: '/treino/$treinoId'
+      path: '/treino/$treinoId'
+      fullPath: '/treino/$treinoId'
+      preLoaderRoute: typeof TreinoTreinoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -88,7 +178,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BibliotecaRoute: BibliotecaRoute,
+  PerfilRoute: PerfilRoute,
   PlanoRoute: PlanoRoute,
+  PlanosRoute: PlanosRoute,
+  ProgressoRoute: ProgressoRoute,
+  TreinoTreinoIdRoute: TreinoTreinoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
