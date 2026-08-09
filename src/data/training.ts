@@ -5,6 +5,8 @@ export type Exercicio = {
   nome: string;
   duracaoSeg: number;
   dica: string;
+  /** Hint visual no player (animação CSS). */
+  demo?: "mobilidade" | "forca" | "cardio" | "core" | "bola";
 };
 
 export type Treino = {
@@ -26,10 +28,16 @@ export const CATEGORIAS: { id: Categoria; label: string; emoji: string }[] = [
   { id: "core", label: "Core", emoji: "🧠" },
 ];
 
-const ex = (nome: string, duracaoSeg: number, dica: string): Exercicio => ({
+const ex = (
+  nome: string,
+  duracaoSeg: number,
+  dica: string,
+  demo: Exercicio["demo"] = "cardio",
+): Exercicio => ({
   nome,
   duracaoSeg,
   dica,
+  demo,
 });
 
 export const TREINOS: Treino[] = [
@@ -42,12 +50,12 @@ export const TREINOS: Treino[] = [
     categorias: ["casa", "core"],
     premium: false,
     exercicios: [
-      ex("Mobilidade de quadril", 60, "Movimento lento, sem dor."),
-      ex("Agachamento livre", 45, "Joelho alinhado com o pé."),
-      ex("Prancha frontal", 40, "Abdômen contraído, quadril na linha."),
-      ex("Afundo alternado", 60, "Tronco ereto, passo firme."),
-      ex("Corrida estacionária", 60, "Ritmo constante."),
-      ex("Alongamento posterior", 55, "Respire fundo e solte."),
+      ex("Mobilidade de quadril", 60, "Movimento lento, sem dor.", "mobilidade"),
+      ex("Agachamento livre", 45, "Joelho alinhado com o pé.", "forca"),
+      ex("Prancha frontal", 40, "Abdômen contraído, quadril na linha.", "core"),
+      ex("Afundo alternado", 60, "Tronco ereto, passo firme.", "forca"),
+      ex("Corrida estacionária", 60, "Ritmo constante.", "cardio"),
+      ex("Alongamento posterior", 55, "Respire fundo e solte.", "mobilidade"),
     ],
   },
   {
@@ -59,11 +67,11 @@ export const TREINOS: Treino[] = [
     categorias: ["campo", "casa"],
     premium: false,
     exercicios: [
-      ex("Toques com o peito do pé", 60, "Bola baixa e controlada."),
-      ex("Condução em zigue-zague", 75, "Toques curtos."),
-      ex("Domínio na parede", 60, "Amorteça e devolva."),
-      ex("Sola frente e trás", 45, "Pés rápidos."),
-      ex("Passe forte alternado", 60, "Trave o tornozelo."),
+      ex("Toques com o peito do pé", 60, "Bola baixa e controlada.", "bola"),
+      ex("Condução em zigue-zague", 75, "Toques curtos.", "bola"),
+      ex("Domínio na parede", 60, "Amorteça e devolva.", "bola"),
+      ex("Sola frente e trás", 45, "Pés rápidos.", "bola"),
+      ex("Passe forte alternado", 60, "Trave o tornozelo.", "bola"),
     ],
   },
   {
@@ -75,11 +83,11 @@ export const TREINOS: Treino[] = [
     categorias: ["core", "casa"],
     premium: false,
     exercicios: [
-      ex("Prancha isométrica", 45, "Não deixe o quadril cair."),
-      ex("Prancha lateral direita", 35, "Corpo em linha reta."),
-      ex("Prancha lateral esquerda", 35, "Corpo em linha reta."),
-      ex("Abdominal remador", 45, "Controle a descida."),
-      ex("Superman", 40, "Peito e pernas fora do chão."),
+      ex("Prancha isométrica", 45, "Não deixe o quadril cair.", "core"),
+      ex("Prancha lateral direita", 35, "Corpo em linha reta.", "core"),
+      ex("Prancha lateral esquerda", 35, "Corpo em linha reta.", "core"),
+      ex("Abdominal remador", 45, "Controle a descida.", "core"),
+      ex("Superman", 40, "Peito e pernas fora do chão.", "core"),
     ],
   },
   {
@@ -184,7 +192,14 @@ export function getTreino(id: string): Treino | undefined {
 }
 
 export type DiaPlano = { dia: number; treinoId: string };
-export type SemanaPlano = { semana: number; titulo: string; foco: string; dias: DiaPlano[] };
+export type SemanaPlano = {
+  semana: number;
+  titulo: string;
+  foco: string;
+  dias: DiaPlano[];
+  /** Semanas 3–4 exigem assinatura no plano guiado. */
+  premium?: boolean;
+};
 
 export const PLANO: SemanaPlano[] = [
   {
@@ -215,6 +230,7 @@ export const PLANO: SemanaPlano[] = [
     semana: 3,
     titulo: "Semana 3 — Explosão",
     foco: "Arranque, salto e velocidade",
+    premium: true,
     dias: [
       { dia: 1, treinoId: "explosao-core" },
       { dia: 2, treinoId: "forca-pernas" },
@@ -227,6 +243,7 @@ export const PLANO: SemanaPlano[] = [
     semana: 4,
     titulo: "Semana 4 — Performance",
     foco: "Juntar tudo em ritmo de jogo",
+    premium: true,
     dias: [
       { dia: 1, treinoId: "resistencia-campo" },
       { dia: 2, treinoId: "forca-pernas" },
@@ -237,12 +254,38 @@ export const PLANO: SemanaPlano[] = [
   },
 ];
 
+/** Ciclo de manutenção após as 4 semanas (repete com chaves m-N). */
+export const PLANO_MANUTENCAO: DiaPlano[] = [
+  { dia: 1, treinoId: "base-mobilidade" },
+  { dia: 2, treinoId: "controle-bola" },
+  { dia: 3, treinoId: "explosao-core" },
+  { dia: 4, treinoId: "core-forte" },
+  { dia: 5, treinoId: "rapido-10" },
+  { dia: 6, treinoId: "controle-bola" },
+  { dia: 7, treinoId: "explosao-core" },
+];
+
 export const PLANO_FLAT = PLANO.flatMap((s) =>
-  s.dias.map((d) => ({ key: `${s.semana}-${d.dia}`, semana: s.semana, ...d })),
+  s.dias.map((d) => ({
+    key: `${s.semana}-${d.dia}`,
+    semana: s.semana,
+    premium: Boolean(s.premium),
+    ...d,
+  })),
 );
 
 export const PLANOS_ASSINATURA = [
-  { id: "mensal", nome: "Mensal", preco: "R$47", periodo: "/mês", destaque: false, nota: "Sem fidelidade" },
+  {
+    id: "mensal",
+    nome: "Mensal",
+    preco: "R$47",
+    periodo: "/mês",
+    destaque: false,
+    nota: "Sem fidelidade",
+    precoCentavos: 4700,
+    intervalo: "month" as const,
+    intervaloCount: 1,
+  },
   {
     id: "semestral",
     nome: "Semestral",
@@ -250,8 +293,28 @@ export const PLANOS_ASSINATURA = [
     periodo: "/6 meses",
     destaque: true,
     nota: "Mais vendido — R$24,50/mês",
+    precoCentavos: 14700,
+    intervalo: "month" as const,
+    intervaloCount: 6,
   },
-  { id: "anual", nome: "Anual", preco: "R$197", periodo: "/ano", destaque: false, nota: "Melhor valor — R$16,41/mês" },
+  {
+    id: "anual",
+    nome: "Anual",
+    preco: "R$197",
+    periodo: "/ano",
+    destaque: false,
+    nota: "Melhor valor — R$16,41/mês",
+    precoCentavos: 19700,
+    intervalo: "year" as const,
+    intervaloCount: 1,
+  },
+];
+
+export const BENEFICIOS_PRO = [
+  "Semanas 3 e 4 do plano guiado",
+  "Biblioteca premium (força, resistência e performance)",
+  "Ciclo de manutenção avançado pós 4 semanas",
+  "Sincronização e histórico na nuvem com conta",
 ];
 
 export const CONQUISTAS = [

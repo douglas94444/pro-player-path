@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Flame, Clock, Dumbbell, Lock, Trophy } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Flame, Clock, Dumbbell, Lock, Trophy, Play } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
 import { CONQUISTAS } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,8 @@ export const Route = createFileRoute("/progresso")({
 });
 
 function ProgressoPage() {
-  const { streak, totalTreinos, totalMinutos, nivel, planoConcluidos, state } = usePlayer();
+  const { streak, totalTreinos, totalMinutos, nivel, planoConcluidos, state, treinoDeHoje, proximoPlano } =
+    usePlayer();
 
   const valorDe = (tipo: "treinos" | "streak" | "plano") =>
     tipo === "treinos" ? totalTreinos : tipo === "streak" ? streak : planoConcluidos.length;
@@ -29,6 +31,31 @@ function ProgressoPage() {
     const iso = d.toISOString().slice(0, 10);
     return { label: ["D", "S", "T", "Q", "Q", "S", "S"][d.getDay()], ativo: state.sessoes.some((s) => s.data === iso) };
   });
+
+  if (totalTreinos === 0) {
+    return (
+      <AppShell title="Sua evolução" subtitle={`Jogador ${nivel}`}>
+        <div className="rounded-3xl border border-dashed border-border bg-card p-8 text-center">
+          <Trophy className="mx-auto h-10 w-10 text-primary" />
+          <h2 className="mt-4 text-xl font-extrabold text-foreground">Seu placar começa hoje</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Conclua o primeiro treino para liberar streak, calendário e conquistas.
+          </p>
+          {treinoDeHoje ? (
+            <Button asChild size="lg" className="mt-6 h-12 w-full rounded-2xl font-extrabold">
+              <Link
+                to="/treino/$treinoId"
+                params={{ treinoId: treinoDeHoje.id }}
+                search={{ plano: proximoPlano?.key ?? "" }}
+              >
+                <Play className="h-4 w-4" /> Começar primeiro treino
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Sua evolução" subtitle={`Jogador ${nivel}`}>

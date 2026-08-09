@@ -5,8 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { trackMeta } from "@/lib/meta-pixel";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: typeof search["from"] === "string" ? (search["from"] as string) : undefined,
+    plano: typeof search["plano"] === "string" ? (search["plano"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Entrar ou criar conta — Jogador PRO System" },
@@ -25,7 +30,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [modo, setModo] = useState<"login" | "cadastro">("login");
+  const { from, plano } = Route.useSearch();
+  const [modo, setModo] = useState<"login" | "cadastro">(from === "pos-treino" ? "cadastro" : "login");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -46,6 +52,7 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin, data: { nome } },
         });
         if (error) throw error;
+        trackMeta("CompleteRegistration", { content_name: "email_signup", status: true });
         if (!data.session) {
           setMsg("Conta criada! Confirme o e-mail que enviamos para começar a treinar.");
           return;
@@ -53,6 +60,11 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
         if (error) throw error;
+      }
+
+      if (from === "planos") {
+        await navigate({ to: "/planos", search: { from: "auth" } });
+        return;
       }
       await navigate({ to: "/" });
     } catch (e) {
@@ -69,11 +81,16 @@ function AuthPage() {
       </Link>
 
       <h1 className="text-3xl font-extrabold leading-tight text-foreground">
-        {modo === "login" ? "Bora treinar de novo" : "Comece sua evolução"}
+        {modo === "login" ? "Bora treinar de novo" : "Salve sua evolução"}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Sua conta guarda streak, plano guiado e histórico de treinos.
+        {from === "planos"
+          ? "Entre para continuar o checkout da assinatura PRO."
+          : from === "pos-treino"
+            ? "Crie sua conta agora e não perca o streak deste dispositivo."
+            : "Sua conta guarda streak, plano guiado e histórico de treinos."}
       </p>
+      {plano ? <p className="mt-1 text-xs text-primary">Plano selecionado: {plano}</p> : null}
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         {modo === "cadastro" ? (

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { usePlayer } from "@/lib/player-store";
+import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({
@@ -18,7 +20,7 @@ export const Route = createFileRoute("/perfil")({
 });
 
 function PerfilPage() {
-  const { state, nivel, totalTreinos, setNome, cancelar, reset, logado, email, sair } = usePlayer();
+  const { state, nivel, totalTreinos, setNome, cancelar, reset, logado, email, sair, streak } = usePlayer();
 
   return (
     <AppShell title="Perfil" subtitle={`Jogador ${nivel} · ${totalTreinos} treinos`}>
@@ -54,17 +56,53 @@ function PerfilPage() {
       <section className="mt-4 rounded-2xl border border-border bg-card p-5">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Plano ativo</p>
         <p className="mt-2 text-lg font-extrabold text-foreground">
-          {state.assinante ? `Assinatura ${state.plano}` : "Gratuito (acesso limitado)"}
+          {state.assinante ? `Assinatura ${state.plano}` : "Gratuito (semanas 1–2)"}
         </p>
         {state.assinante ? (
-          <Button variant="outline" className="mt-4 w-full rounded-xl" onClick={cancelar}>
+          <Button
+            variant="outline"
+            className="mt-4 w-full rounded-xl"
+            onClick={() => {
+              void cancelar().then((r) => {
+                if (r.error) toast.error("Não foi possível cancelar", { description: r.error });
+                else toast.message("Assinatura cancelada");
+              });
+            }}
+          >
             Cancelar assinatura
           </Button>
         ) : (
           <Button asChild className="mt-4 h-12 w-full rounded-xl font-extrabold">
-            <Link to="/planos">Liberar acesso completo</Link>
+            <Link to="/planos" search={{ from: "perfil" }}>
+              Liberar acesso completo
+            </Link>
           </Button>
         )}
+      </section>
+
+      <section className="mt-4 rounded-2xl border border-border bg-card p-5">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Lembrete de streak</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Ative notificações locais para avisar quando o streak estiver em risco.
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4 w-full rounded-xl"
+          onClick={() => {
+            void requestStreakReminderPermission().then((perm) => {
+              if (perm === "granted") {
+                scheduleStreakReminder(state.nome, streak);
+                toast.success("Lembrete ativado", { description: "Avisaremos por volta das 20h." });
+              } else if (perm === "denied") {
+                toast.error("Notificações bloqueadas no navegador");
+              } else {
+                toast.message("Notificações não suportadas neste dispositivo");
+              }
+            });
+          }}
+        >
+          Ativar lembrete
+        </Button>
       </section>
 
       <section className="mt-4 rounded-2xl border border-border bg-card p-5">
@@ -79,4 +117,3 @@ function PerfilPage() {
     </AppShell>
   );
 }
-

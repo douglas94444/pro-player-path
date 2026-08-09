@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BibliotecaRouteImport } from './routes/biblioteca'
+import { Route as CampanhaRouteImport } from './routes/campanha'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanoRouteImport } from './routes/plano'
 import { Route as PlanosRouteImport } from './routes/planos'
@@ -31,6 +33,16 @@ const AuthRoute = AuthRouteImport.update({
 const BibliotecaRoute = BibliotecaRouteImport.update({
   id: '/biblioteca',
   path: '/biblioteca',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CampanhaRoute = CampanhaRouteImport.update({
+  id: '/campanha',
+  path: '/campanha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfilRoute = PerfilRouteImport.update({
@@ -63,6 +75,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/biblioteca': typeof BibliotecaRoute
+  '/campanha': typeof CampanhaRoute
+  '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
@@ -73,6 +87,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/biblioteca': typeof BibliotecaRoute
+  '/campanha': typeof CampanhaRoute
+  '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
@@ -84,6 +100,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/biblioteca': typeof BibliotecaRoute
+  '/campanha': typeof CampanhaRoute
+  '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
@@ -96,6 +114,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/biblioteca'
+    | '/campanha'
+    | '/onboarding'
     | '/perfil'
     | '/plano'
     | '/planos'
@@ -106,6 +126,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/biblioteca'
+    | '/campanha'
+    | '/onboarding'
     | '/perfil'
     | '/plano'
     | '/planos'
@@ -116,6 +138,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/biblioteca'
+    | '/campanha'
+    | '/onboarding'
     | '/perfil'
     | '/plano'
     | '/planos'
@@ -127,6 +151,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   BibliotecaRoute: typeof BibliotecaRoute
+  CampanhaRoute: typeof CampanhaRoute
+  OnboardingRoute: typeof OnboardingRoute
   PerfilRoute: typeof PerfilRoute
   PlanoRoute: typeof PlanoRoute
   PlanosRoute: typeof PlanosRoute
@@ -155,6 +181,20 @@ declare module '@tanstack/react-router' {
       path: '/biblioteca'
       fullPath: '/biblioteca'
       preLoaderRoute: typeof BibliotecaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campanha': {
+      id: '/campanha'
+      path: '/campanha'
+      fullPath: '/campanha'
+      preLoaderRoute: typeof CampanhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfil': {
@@ -199,6 +239,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   BibliotecaRoute: BibliotecaRoute,
+  CampanhaRoute: CampanhaRoute,
+  OnboardingRoute: OnboardingRoute,
   PerfilRoute: PerfilRoute,
   PlanoRoute: PlanoRoute,
   PlanosRoute: PlanosRoute,

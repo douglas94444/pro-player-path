@@ -21,6 +21,10 @@ export type Database = {
           id: string
           nome: string
           plano: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          mp_payer_id: string | null
+          mp_payment_id: string | null
           updated_at: string
         }
         Insert: {
@@ -29,6 +33,10 @@ export type Database = {
           id: string
           nome?: string
           plano?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          mp_payer_id?: string | null
+          mp_payment_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -37,7 +45,41 @@ export type Database = {
           id?: string
           nome?: string
           plano?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          mp_payer_id?: string | null
+          mp_payment_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_events: {
+        Row: {
+          id: string
+          user_id: string | null
+          stripe_event_id: string | null
+          event_type: string
+          plano: string | null
+          payload: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          stripe_event_id?: string | null
+          event_type: string
+          plano?: string | null
+          payload?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          stripe_event_id?: string | null
+          event_type?: string
+          plano?: string | null
+          payload?: Json | null
+          created_at?: string
         }
         Relationships: []
       }
