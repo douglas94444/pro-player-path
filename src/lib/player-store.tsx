@@ -3,7 +3,7 @@ import { PLANO_FLAT, TREINOS, getTreino, type Nivel } from "@/data/training";
 
 const STORAGE_KEY = "jogador-pro-state-v1";
 
-export type Sessao = { treinoId: string; data: string; minutos: number; planoKey?: string };
+export type Sessao = { treinoId: string; data: string; minutos: number; planoKey?: string | undefined };
 
 export type PlayerState = {
   nome: string;
