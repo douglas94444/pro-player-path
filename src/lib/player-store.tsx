@@ -1,9 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { PLANO_FLAT, TREINOS, getTreino, type Nivel } from "@/data/training";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/use-auth";
 
 const STORAGE_KEY = "jogador-pro-state-v1";
 
 export type Sessao = { treinoId: string; data: string; minutos: number; planoKey?: string | undefined };
+
 
 export type PlayerState = {
   nome: string;
