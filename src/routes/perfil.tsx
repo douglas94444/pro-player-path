@@ -29,12 +29,28 @@ const MOTIVOS_CANCEL = [
 ];
 
 function PerfilPage() {
-  const { state, nivel, totalTreinos, setNome, cancelar, reset, logado, email, sair, streak, isAdmin } =
-    usePlayer();
+  const {
+    state,
+    nivel,
+    totalTreinos,
+    setNome,
+    cancelar,
+    pausarAssinatura,
+    retomarAssinatura,
+    downgradeMensal,
+    isPaused,
+    reset,
+    logado,
+    email,
+    sair,
+    streak,
+    isAdmin,
+  } = usePlayer();
   const [mostrarCancel, setMostrarCancel] = useState(false);
   const [motivo, setMotivo] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [cancelando, setCancelando] = useState(false);
+  const [salvandoOffer, setSalvandoOffer] = useState(false);
 
   const confirmarCancelamento = async () => {
     if (!motivo) {
@@ -56,6 +72,44 @@ function PerfilPage() {
       setCancelando(false);
     }
   };
+
+  const pausar = async () => {
+    setSalvandoOffer(true);
+    try {
+      const r = await pausarAssinatura(7, motivo ?? "save_offer");
+      if (r.error) toast.error("Não foi possível pausar", { description: r.error });
+      else {
+        toast.success("Pausa de 7 dias ativada", {
+          description: "Acesso PRO segue liberado. Sem pressão de treino até a data.",
+        });
+        setMostrarCancel(false);
+        setMotivo(null);
+      }
+    } finally {
+      setSalvandoOffer(false);
+    }
+  };
+
+  const mudarParaMensal = async () => {
+    setSalvandoOffer(true);
+    try {
+      const r = await downgradeMensal(motivo ?? "save_offer");
+      if (r.error) toast.error("Não foi possível alterar o plano", { description: r.error });
+      else {
+        toast.success("Plano ajustado para mensal", {
+          description: "Você mantém o acesso PRO com cobrança mais leve.",
+        });
+        setMostrarCancel(false);
+        setMotivo(null);
+      }
+    } finally {
+      setSalvandoOffer(false);
+    }
+  };
+
+  const pauseLabel = state.pausedUntil
+    ? new Date(state.pausedUntil).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+    : null;
 
   return (
     <AppShell title="Perfil" subtitle={`Jogador ${nivel} · ${totalTreinos} treinos`}>
@@ -100,10 +154,31 @@ function PerfilPage() {
         <p className="mt-2 text-lg font-extrabold text-foreground">
           {state.assinante ? `Assinatura ${state.plano}` : "Sem assinatura ativa"}
         </p>
+        {isPaused && pauseLabel ? (
+          <div className="mt-3 rounded-xl border border-primary/30 bg-primary/10 p-3">
+            <p className="text-sm font-bold text-foreground">Modo pausa até {pauseLabel}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Acesso PRO permanece ativo. Sem cobrança extra por pausar — só alívio de ritmo.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-3 w-full"
+              onClick={() => {
+                void retomarAssinatura().then((r) => {
+                  if (r.error) toast.error(r.error);
+                  else toast.success("Pausa encerrada — bora treinar");
+                });
+              }}
+            >
+              Encerrar pausa agora
+            </Button>
+          </div>
+        ) : null}
         {state.affiliateCode ? (
           <p className="mt-2 text-xs text-muted-foreground">
             Seu link de indicação:{" "}
             <span className="font-semibold text-foreground">/planos?ref={state.affiliateCode}</span>
+            {" · "}cupom afiliado: use o código no checkout (desconto + atribuição).
           </p>
         ) : null}
 
@@ -116,8 +191,7 @@ function PerfilPage() {
             <div className="mt-4 rounded-2xl border border-border/60 bg-secondary/40 p-4">
               <p className="text-sm font-bold text-foreground">Antes de sair…</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Você perde o plano diário, a comunidade e o ritmo de evolução. Prefere pausar mentalmente e
-                manter PRO?
+                Prefere pausar 7 dias (mantém acesso) ou mudar para o plano mensal?
               </p>
               <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Por que está cancelando?
@@ -153,16 +227,21 @@ function PerfilPage() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => {
-                    setMostrarCancel(false);
-                    setMotivo(null);
-                    toast.message("Pausa mental de 7 dias", {
-                      description: "Assinatura segue ativa. Volte quando quiser treinar.",
-                    });
-                  }}
+                  disabled={salvandoOffer}
+                  onClick={() => void pausar()}
                 >
-                  Pausar 7 dias (manter acesso)
+                  {salvandoOffer ? "Salvando…" : "Pausar 7 dias (manter acesso)"}
                 </Button>
+                {state.plano && state.plano !== "mensal" ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={salvandoOffer}
+                    onClick={() => void mudarParaMensal()}
+                  >
+                    Mudar para mensal (R$47)
+                  </Button>
+                ) : null}
                 <Button
                   variant="outline"
                   className="w-full text-destructive"

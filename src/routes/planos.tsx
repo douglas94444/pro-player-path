@@ -3,8 +3,10 @@ import { ArrowLeft, Check, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
 import { BENEFICIOS_PRO, PLANOS_ASSINATURA } from "@/data/training";
+import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/lib/player-store";
 import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
@@ -53,6 +55,9 @@ function PlanosPage() {
   const [escolhido, setEscolhido] = useState(plano ?? "semestral");
   const [mostrarBrick, setMostrarBrick] = useState(false);
   const [pendingPix, setPendingPix] = useState(false);
+  const [cupomInput, setCupomInput] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState<{ code: string; discount: number } | null>(null);
+  const [validandoCupom, setValidandoCupom] = useState(false);
 
   useEffect(() => {
     if (plano) setEscolhido(plano);
@@ -65,11 +70,61 @@ function PlanosPage() {
       } catch {
         /* ignore */
       }
-      void import("@/integrations/supabase/client").then(({ supabase }) => {
-        void supabase.from("affiliate_clicks").insert({ code: ref });
-      });
+      void supabase.from("affiliate_clicks").insert({ code: ref });
+      // Cupom afiliado: code = ref OU affiliate_code = ref
+      void supabase
+        .from("coupons")
+        .select("code, discount_percent")
+        .eq("active", true)
+        .or(`code.eq.${ref.toUpperCase()},affiliate_code.eq.${ref}`)
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setCupomInput(data.code);
+            setCupomAplicado({ code: data.code, discount: data.discount_percent });
+          }
+        });
     }
   }, [ref]);
+
+  const aplicarCupom = async () => {
+    const code = cupomInput.trim().toUpperCase();
+    if (!code) {
+      toast.message("Digite um cupom");
+      return;
+    }
+    setValidandoCupom(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("code, discount_percent, active, max_redemptions, redemptions, affiliate_code")
+        .eq("code", code)
+        .maybeSingle();
+      if (error || !data || !data.active) {
+        toast.error("Cupom inválido");
+        setCupomAplicado(null);
+        return;
+      }
+      if (data.max_redemptions != null && data.redemptions >= data.max_redemptions) {
+        toast.error("Cupom esgotado");
+        setCupomAplicado(null);
+        return;
+      }
+      if (data.affiliate_code) {
+        try {
+          sessionStorage.setItem("jogador-pro-affiliate-ref", data.affiliate_code);
+        } catch {
+          /* ignore */
+        }
+      }
+      setCupomAplicado({ code: data.code, discount: data.discount_percent });
+      setMostrarBrick(false);
+      toast.success(`Cupom ${data.code} · −${data.discount_percent}%`);
+    } finally {
+      setValidandoCupom(false);
+    }
+  };
 
   useEffect(() => {
     trackMeta("ViewContent", {
@@ -180,6 +235,31 @@ function PlanosPage() {
       </div>
 
       <div className="mx-auto mt-6 w-full max-w-xl">
+        {!state.assinante ? (
+          <div className="mb-4 flex gap-2">
+            <Input
+              value={cupomInput}
+              onChange={(e) => setCupomInput(e.target.value.toUpperCase())}
+              placeholder="Cupom (ex. PRO10)"
+              className="h-11"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 shrink-0"
+              disabled={validandoCupom}
+              onClick={() => void aplicarCupom()}
+            >
+              Aplicar
+            </Button>
+          </div>
+        ) : null}
+        {cupomAplicado ? (
+          <p className="mb-3 text-center text-xs font-semibold text-primary">
+            {cupomAplicado.code} ativo · {cupomAplicado.discount}% off
+          </p>
+        ) : null}
+
         {state.assinante ? (
           <Button size="lg" className="h-14 w-full text-base font-extrabold" disabled>
             Você já é PRO
@@ -210,6 +290,8 @@ function PlanosPage() {
           <MercadoPagoCheckout
             planoId={escolhido}
             email={email}
+            couponCode={cupomAplicado?.code ?? null}
+            discountPercent={cupomAplicado?.discount ?? 0}
             onApproved={(planoId) => {
               activateLocalPlan(planoId);
               void refreshEntitlement().then(() => {

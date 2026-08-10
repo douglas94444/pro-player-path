@@ -9,16 +9,29 @@ import { toast } from "sonner";
 type Props = {
   planoId: string;
   email?: string | null;
+  couponCode?: string | null;
+  discountPercent?: number;
   onApproved: (plano: string) => void;
   onPending?: () => void;
 };
 
-export function MercadoPagoCheckout({ planoId, email, onApproved, onPending }: Props) {
+export function MercadoPagoCheckout({
+  planoId,
+  email,
+  couponCode,
+  discountPercent = 0,
+  onApproved,
+  onPending,
+}: Props) {
   const [ready, setReady] = useState(false);
   const publicKey = import.meta.env["VITE_MERCADOPAGO_PUBLIC_KEY"] as string | undefined;
 
   const plano = useMemo(() => PLANOS_ASSINATURA.find((p) => p.id === planoId), [planoId]);
-  const amount = (plano?.precoCentavos ?? 0) / 100;
+  const baseAmount = (plano?.precoCentavos ?? 0) / 100;
+  const amount = Math.max(
+    1,
+    Math.round(baseAmount * (1 - Math.min(50, Math.max(0, discountPercent)) / 100) * 100) / 100,
+  );
 
   useEffect(() => {
     if (!publicKey) return;
@@ -41,8 +54,14 @@ export function MercadoPagoCheckout({ planoId, email, onApproved, onPending }: P
 
   return (
     <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card p-2">
+      {discountPercent > 0 && couponCode ? (
+        <p className="px-2 pt-2 text-xs text-muted-foreground">
+          Cupom <span className="font-semibold text-foreground">{couponCode}</span> · −{discountPercent}% ·{" "}
+          <span className="font-semibold text-foreground">R${amount.toFixed(2)}</span>
+        </p>
+      ) : null}
       <Payment
-        key={planoId}
+        key={`${planoId}-${couponCode ?? ""}-${amount}`}
         initialization={{
           amount,
           ...(email ? { payer: { email } } : {}),
@@ -68,6 +87,7 @@ export function MercadoPagoCheckout({ planoId, email, onApproved, onPending }: P
               formData,
               utm: getStoredUtm(),
               affiliate_ref,
+              coupon_code: couponCode || null,
             },
           });
 
@@ -76,10 +96,16 @@ export function MercadoPagoCheckout({ planoId, email, onApproved, onPending }: P
             throw error;
           }
 
-          const status = (data as { status?: string } | null)?.status;
+          const payload = data as {
+            status?: string;
+            status_detail?: string;
+            amount?: number;
+          } | null;
+          const status = payload?.status;
+          const paid = payload?.amount ?? amount;
           if (status === "approved") {
-            trackMeta("Purchase", { value: amount, currency: "BRL" });
-            trackMeta("Subscribe", { value: amount, currency: "BRL" });
+            trackMeta("Purchase", { value: paid, currency: "BRL" });
+            trackMeta("Subscribe", { value: paid, currency: "BRL" });
             toast.success("Pagamento aprovado");
             onApproved(planoId);
             return;
@@ -94,7 +120,7 @@ export function MercadoPagoCheckout({ planoId, email, onApproved, onPending }: P
           }
 
           toast.error("Pagamento não aprovado", {
-            description: (data as { status_detail?: string } | null)?.status_detail ?? status,
+            description: payload?.status_detail ?? status,
           });
           throw new Error(status ?? "rejected");
         }}

@@ -1,3 +1,5 @@
+import { DEMO_VIDEOS, PROVA_SLOTS, TEASER_TREINO_VIDEO } from "@/data/media";
+
 export type ProofSlot =
   | { type: "video"; src: string; title: string }
   | { type: "image"; src: string; title: string }
@@ -18,8 +20,7 @@ export const CAMPANHA = {
     nome: "Base + Mobilidade · Dia 1",
     duracao: "14 min",
     descricao: "O primeiro treino do arco: aquecimento, ativação e ritmo — sem improvisar.",
-    /** URL de vídeo (MP4/YouTube embed) quando disponível */
-    videoSrc: "",
+    videoSrc: TEASER_TREINO_VIDEO,
   },
 
   problemas: [
@@ -77,33 +78,23 @@ export const CAMPANHA = {
   },
 
   prova: {
-    title: "Resultados em campo",
-    body: "Mais de 2.000 jogadores já estão usando esses treinos para evoluir com consistência.",
+    title: "O método em ação",
+    body: "Prova visual do tipo de treino e do ritmo do sistema — sem números inventados. Cases filmados dos assinantes entram aqui conforme forem gravados.",
     depoimentos: [
       {
         quote: "Treino de 15 min e já sinto diferença no arranque no campo.",
-        autor: "Lucas, lateral",
+        autor: "Perfil típico · lateral",
       },
       {
         quote: "Antes eu improvisava. Agora abro o app e faço o dia.",
-        autor: "Rafa, meia",
+        autor: "Perfil típico · meia",
       },
       {
-        quote: "Consegui manter streak de 12 dias treinando sozinho.",
-        autor: "Pedro, atacante",
+        quote: "Consegui manter streak treinando sozinho com pouco tempo.",
+        autor: "Perfil típico · atacante",
       },
     ],
-    /**
-     * Prova social — troque `placeholder` por `video`/`image` com `src` real.
-     * Ex.: { type: "video", src: "https://...", title: "Case Lucas" }
-     */
-    slots: [
-      { type: "placeholder", title: "Vídeo: antes e depois no campo" },
-      { type: "placeholder", title: "Print: streak de 14 dias" },
-      { type: "placeholder", title: "Depoimento em vídeo (15s)" },
-      { type: "placeholder", title: "Print: evolução Semana 1→4" },
-      { type: "placeholder", title: "UGC: treino em casa" },
-    ] as ProofSlot[],
+    slots: PROVA_SLOTS as ProofSlot[],
   },
 
   oferta: {
@@ -135,3 +126,5 @@ export const CAMPANHA = {
     "Virar Jogador PRO",
   ],
 } as const;
+
+export { DEMO_VIDEOS };

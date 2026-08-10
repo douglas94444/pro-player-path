@@ -58,8 +58,11 @@ export function treinoRetorno(objetivo: string | null | undefined): Treino {
   return TREINOS.find((t) => t.id === "base-mobilidade") ?? TREINOS[0]!;
 }
 
-/** Sugere ciclo temático pós-4 semanas conforme objetivo. */
-export function cicloSugerido(objetivo: string | null | undefined) {
+/** Sugere ciclo temático pós-4 semanas conforme objetivo/posição. */
+export function cicloSugerido(objetivo: string | null | undefined, posicao?: string | null) {
+  if (posicao === "goleiro") {
+    return CICLOS_TEMATICOS.find((c) => c.id === "goleiro") ?? CICLOS_TEMATICOS[0]!;
+  }
   if (objetivo === "explosao" || objetivo === "jogo") {
     return CICLOS_TEMATICOS.find((c) => c.id === "explosao") ?? CICLOS_TEMATICOS[0]!;
   }

@@ -1,3 +1,5 @@
+import { DEMO_VIDEOS } from "@/data/media";
+
 export type Categoria = "casa" | "campo" | "forca" | "explosao" | "core";
 export type Nivel = "Iniciante" | "Intermediário" | "Avançado" | "PRO";
 
@@ -40,20 +42,19 @@ const ex = (
   dica: string,
   demo: Exercicio["demo"] = "cardio",
   videoUrl?: string,
-): Exercicio => ({
-  nome,
-  duracaoSeg,
-  dica,
-  demo,
-  ...(videoUrl ? { videoUrl } : {}),
-});
+): Exercicio => {
+  const resolved = videoUrl ?? (demo ? DEMO_VIDEOS[demo] : undefined);
+  return {
+    nome,
+    duracaoSeg,
+    dica,
+    demo,
+    ...(resolved ? { videoUrl: resolved } : {}),
+  };
+};
 
-/**
- * Cole URLs MP4/YouTube nos exercícios da Semana 1 (prioridade Dia 1).
- * Ex.: ex("Mobilidade…", 60, "…", "mobilidade", "https://…/mobilidade.mp4")
- */
 export const VIDEO_DEMO_NOTES =
-  "Priorize filmar: mobilidade de quadril, agachamento, prancha, condução de bola e salto.";
+  "Demos stock nos exercícios; substitua por filmagens próprias do método quando tiver.";
 
 export const TREINOS: Treino[] = [
   {
@@ -64,6 +65,8 @@ export const TREINOS: Treino[] = [
     nivel: "Iniciante",
     categorias: ["casa", "core"],
     premium: true,
+    temporada: "base",
+    posicoes: ["qualquer", "lateral", "meia", "atacante", "goleiro"],
     exercicios: [
       ex("Mobilidade de quadril", 60, "Movimento lento, sem dor.", "mobilidade"),
       ex("Agachamento livre", 45, "Joelho alinhado com o pé.", "forca"),
@@ -81,6 +84,8 @@ export const TREINOS: Treino[] = [
     nivel: "Iniciante",
     categorias: ["campo", "casa"],
     premium: true,
+    temporada: "base",
+    posicoes: ["qualquer", "lateral", "meia", "atacante"],
     exercicios: [
       ex("Toques com o peito do pé", 60, "Bola baixa e controlada.", "bola"),
       ex("Condução em zigue-zague", 75, "Toques curtos.", "bola"),
@@ -97,6 +102,8 @@ export const TREINOS: Treino[] = [
     nivel: "Intermediário",
     categorias: ["core", "casa"],
     premium: true,
+    temporada: "base",
+    posicoes: ["qualquer", "meia", "goleiro"],
     exercicios: [
       ex("Prancha isométrica", 45, "Não deixe o quadril cair.", "core"),
       ex("Prancha lateral direita", 35, "Corpo em linha reta.", "core"),
@@ -113,12 +120,14 @@ export const TREINOS: Treino[] = [
     nivel: "Intermediário",
     categorias: ["explosao", "core"],
     premium: true,
+    temporada: "explosao",
+    posicoes: ["qualquer", "lateral", "atacante"],
     exercicios: [
-      ex("Salto vertical", 40, "Aterrisse com joelho semiflexionado."),
-      ex("Tiro de 10 metros", 50, "Explosão nos 3 primeiros passos."),
-      ex("Agachamento com salto", 45, "Descida controlada."),
-      ex("Prancha com toque no ombro", 45, "Quadril estável."),
-      ex("Skipping alto", 40, "Joelho na altura do quadril."),
+      ex("Salto vertical", 40, "Aterrisse com joelho semiflexionado.", "cardio"),
+      ex("Tiro de 10 metros", 50, "Explosão nos 3 primeiros passos.", "cardio"),
+      ex("Agachamento com salto", 45, "Descida controlada.", "forca"),
+      ex("Prancha com toque no ombro", 45, "Quadril estável.", "core"),
+      ex("Skipping alto", 40, "Joelho na altura do quadril.", "cardio"),
     ],
   },
   {
@@ -129,12 +138,14 @@ export const TREINOS: Treino[] = [
     nivel: "Avançado",
     categorias: ["campo", "explosao"],
     premium: true,
+    temporada: "explosao",
+    posicoes: ["qualquer", "meia", "lateral"],
     exercicios: [
-      ex("Corrida contínua", 180, "Ritmo confortável."),
-      ex("Tiros de 30 metros", 90, "Recupere andando."),
-      ex("Vai e vem", 90, "Mude de direção rápido."),
-      ex("Corrida com mudança de ritmo", 120, "Alterne forte e leve."),
-      ex("Volta à calma", 90, "Respiração controlada."),
+      ex("Corrida contínua", 180, "Ritmo confortável.", "cardio"),
+      ex("Tiros de 30 metros", 90, "Recupere andando.", "cardio"),
+      ex("Vai e vem", 90, "Mude de direção rápido.", "cardio"),
+      ex("Corrida com mudança de ritmo", 120, "Alterne forte e leve.", "cardio"),
+      ex("Volta à calma", 90, "Respiração controlada.", "mobilidade"),
     ],
   },
   {
@@ -145,12 +156,14 @@ export const TREINOS: Treino[] = [
     nivel: "Avançado",
     categorias: ["forca", "casa"],
     premium: true,
+    temporada: "manutencao",
+    posicoes: ["qualquer", "atacante", "goleiro"],
     exercicios: [
-      ex("Agachamento búlgaro", 60, "Desça devagar."),
-      ex("Passada longa", 60, "Joelho não passa do pé."),
-      ex("Elevação de panturrilha", 50, "Amplitude total."),
-      ex("Ponte de glúteo", 50, "Aperte o glúteo no topo."),
-      ex("Isometria na parede", 60, "Aguente firme."),
+      ex("Agachamento búlgaro", 60, "Desça devagar.", "forca"),
+      ex("Passada longa", 60, "Joelho não passa do pé.", "forca"),
+      ex("Elevação de panturrilha", 50, "Amplitude total.", "forca"),
+      ex("Ponte de glúteo", 50, "Aperte o glúteo no topo.", "forca"),
+      ex("Isometria na parede", 60, "Aguente firme.", "forca"),
     ],
   },
   {
@@ -161,11 +174,13 @@ export const TREINOS: Treino[] = [
     nivel: "Iniciante",
     categorias: ["casa", "explosao"],
     premium: true,
+    temporada: "explosao",
+    posicoes: ["qualquer"],
     exercicios: [
-      ex("Polichinelo", 45, "Aquecimento rápido."),
-      ex("Agachamento com salto", 40, "Explosivo."),
-      ex("Prancha", 40, "Firme."),
-      ex("Tiro curto no lugar", 40, "Máxima frequência."),
+      ex("Polichinelo", 45, "Aquecimento rápido.", "cardio"),
+      ex("Agachamento com salto", 40, "Explosivo.", "forca"),
+      ex("Prancha", 40, "Firme.", "core"),
+      ex("Tiro curto no lugar", 40, "Máxima frequência.", "cardio"),
     ],
   },
   {
@@ -176,11 +191,13 @@ export const TREINOS: Treino[] = [
     nivel: "Iniciante",
     categorias: ["casa", "core"],
     premium: true,
+    temporada: "base",
+    posicoes: ["qualquer", "goleiro"],
     exercicios: [
-      ex("Prancha", 45, "Sem cair o quadril."),
-      ex("Abdominal infra", 40, "Controle."),
-      ex("Prancha lateral", 40, "Cada lado."),
-      ex("Superman", 40, "Segure 2 segundos."),
+      ex("Prancha", 45, "Sem cair o quadril.", "core"),
+      ex("Abdominal infra", 40, "Controle.", "core"),
+      ex("Prancha lateral", 40, "Cada lado.", "core"),
+      ex("Superman", 40, "Segure 2 segundos.", "core"),
     ],
   },
   {
@@ -192,13 +209,14 @@ export const TREINOS: Treino[] = [
     categorias: ["campo", "explosao", "forca"],
     premium: true,
     temporada: "manutencao",
+    posicoes: ["qualquer", "meia", "atacante"],
     exercicios: [
-      ex("Aquecimento dinâmico", 90, "Solte as articulações."),
-      ex("Tiros progressivos", 120, "Aumente a cada série."),
-      ex("Saltos laterais", 60, "Aterrissagem suave."),
-      ex("Condução em velocidade", 90, "Cabeça erguida."),
-      ex("Finalizações", 90, "Pé de apoio firme."),
-      ex("Volta à calma", 60, "Respire."),
+      ex("Aquecimento dinâmico", 90, "Solte as articulações.", "mobilidade"),
+      ex("Tiros progressivos", 120, "Aumente a cada série.", "cardio"),
+      ex("Saltos laterais", 60, "Aterrissagem suave.", "cardio"),
+      ex("Condução em velocidade", 90, "Cabeça erguida.", "bola"),
+      ex("Finalizações", 90, "Pé de apoio firme.", "bola"),
+      ex("Volta à calma", 60, "Respire.", "mobilidade"),
     ],
   },
   {
@@ -235,6 +253,60 @@ export const TREINOS: Treino[] = [
       ex("Mobilidade de quadril", 50, "Amplitude confortável.", "mobilidade"),
       ex("Prancha leve", 30, "Só ativar o core.", "core"),
       ex("Respiração diafragmática", 45, "Expire longo.", "mobilidade"),
+    ],
+  },
+  {
+    id: "ciclo-potencia",
+    nome: "Bloco Potência",
+    descricao: "Novo bloco do ciclo Explosão — saltos e aceleração.",
+    duracaoMin: 14,
+    nivel: "Avançado",
+    categorias: ["explosao", "forca"],
+    premium: true,
+    temporada: "explosao",
+    posicoes: ["qualquer", "lateral", "atacante"],
+    exercicios: [
+      ex("Salto em caixa (sem caixa)", 45, "Exploda e aterrisse macio.", "forca"),
+      ex("Aceleração 8s", 50, "Máxima intenção.", "cardio"),
+      ex("Afundo com impulso", 45, "Empurre o chão.", "forca"),
+      ex("Prancha dinâmica", 40, "Core firme.", "core"),
+      ex("Volta à calma", 40, "Respire.", "mobilidade"),
+    ],
+  },
+  {
+    id: "ciclo-agilidade",
+    nome: "Bloco Agilidade",
+    descricao: "Mudança de direção para o ciclo Pré-pelada.",
+    duracaoMin: 12,
+    nivel: "Intermediário",
+    categorias: ["campo", "explosao"],
+    premium: true,
+    temporada: "pre_partida",
+    posicoes: ["qualquer", "meia", "lateral"],
+    exercicios: [
+      ex("Cone imaginário — zigue", 50, "Toques curtos.", "bola"),
+      ex("Corte 45°", 45, "Freie e saia.", "cardio"),
+      ex("Skipping lateral", 40, "Quadril estável.", "cardio"),
+      ex("Toques sola", 40, "Ritmo alto.", "bola"),
+      ex("Respiração", 30, "Baixe o pulso.", "mobilidade"),
+    ],
+  },
+  {
+    id: "ciclo-goleiro",
+    nome: "Bloco Goleiro",
+    descricao: "Reação e mobilidade específicas para goleiro.",
+    duracaoMin: 12,
+    nivel: "Intermediário",
+    categorias: ["casa", "core"],
+    premium: true,
+    temporada: "manutencao",
+    posicoes: ["goleiro"],
+    exercicios: [
+      ex("Queda lateral controlada", 40, "Proteja o ombro.", "mobilidade"),
+      ex("Prancha + toque", 40, "Core ativo.", "core"),
+      ex("Salto + aterrissagem", 40, "Joelhos semiflexionados.", "forca"),
+      ex("Mobilidade de ombro", 45, "Amplitude sem dor.", "mobilidade"),
+      ex("Respiração", 30, "Foco.", "mobilidade"),
     ],
   },
 ];
@@ -386,13 +458,43 @@ export const CICLOS_TEMATICOS: { id: string; titulo: string; foco: string; trein
     id: "explosao",
     titulo: "Ciclo Explosão",
     foco: "Arranque e potência por 7 dias",
-    treinoIds: ["explosao-core", "forca-pernas", "rapido-10", "explosao-core", "resistencia-campo", "rapido-10", "performance-final"],
+    treinoIds: [
+      "ciclo-potencia",
+      "explosao-core",
+      "rapido-10",
+      "ciclo-potencia",
+      "resistencia-campo",
+      "forca-pernas",
+      "performance-final",
+    ],
   },
   {
     id: "pre-pelada",
     titulo: "Ciclo Pré-pelada",
     foco: "Chegar afiado no jogo do fim de semana",
-    treinoIds: ["pre-partida", "controle-bola", "explosao-core", "rapido-core", "pre-partida", "controle-bola", "pos-jogo"],
+    treinoIds: [
+      "pre-partida",
+      "ciclo-agilidade",
+      "controle-bola",
+      "ciclo-agilidade",
+      "pre-partida",
+      "rapido-core",
+      "pos-jogo",
+    ],
+  },
+  {
+    id: "goleiro",
+    titulo: "Ciclo Goleiro",
+    foco: "Reação, queda e core específicos",
+    treinoIds: [
+      "ciclo-goleiro",
+      "base-mobilidade",
+      "ciclo-goleiro",
+      "rapido-core",
+      "ciclo-goleiro",
+      "resistencia-campo",
+      "pos-jogo",
+    ],
   },
 ];
 

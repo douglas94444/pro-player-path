@@ -34,6 +34,8 @@ export type Database = {
           referred_by: string | null
           reminder_hour: number | null
           telegram_joined: boolean | null
+          paused_until: string | null
+          pause_reason: string | null
         }
         Insert: {
           assinante?: boolean
@@ -56,6 +58,8 @@ export type Database = {
           referred_by?: string | null
           reminder_hour?: number | null
           telegram_joined?: boolean | null
+          paused_until?: string | null
+          pause_reason?: string | null
         }
         Update: {
           assinante?: boolean
@@ -78,6 +82,38 @@ export type Database = {
           referred_by?: string | null
           reminder_hour?: number | null
           telegram_joined?: boolean | null
+          paused_until?: string | null
+          pause_reason?: string | null
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          code: string
+          discount_percent: number
+          affiliate_code: string | null
+          active: boolean
+          max_redemptions: number | null
+          redemptions: number
+          created_at: string
+        }
+        Insert: {
+          code: string
+          discount_percent: number
+          affiliate_code?: string | null
+          active?: boolean
+          max_redemptions?: number | null
+          redemptions?: number
+          created_at?: string
+        }
+        Update: {
+          code?: string
+          discount_percent?: number
+          affiliate_code?: string | null
+          active?: boolean
+          max_redemptions?: number | null
+          redemptions?: number
+          created_at?: string
         }
         Relationships: []
       }
@@ -96,6 +132,8 @@ export type Database = {
           utm_content: string | null
           utm_term: string | null
           affiliate_ref: string | null
+          coupon_code: string | null
+          discount_percent: number | null
         }
         Insert: {
           id?: string
@@ -111,6 +149,8 @@ export type Database = {
           utm_content?: string | null
           utm_term?: string | null
           affiliate_ref?: string | null
+          coupon_code?: string | null
+          discount_percent?: number | null
         }
         Update: {
           id?: string
@@ -126,6 +166,8 @@ export type Database = {
           utm_content?: string | null
           utm_term?: string | null
           affiliate_ref?: string | null
+          coupon_code?: string | null
+          discount_percent?: number | null
         }
         Relationships: []
       }

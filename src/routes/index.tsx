@@ -41,6 +41,7 @@ function Home() {
     proximoPlano,
     hydrated,
     planoCompleto,
+    isPaused,
   } = usePlayer();
   const navigate = useNavigate();
 
@@ -107,6 +108,22 @@ function Home() {
             </span>
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
+        </Link>
+      ) : null}
+
+      {isPaused && state.pausedUntil ? (
+        <Link
+          to="/perfil"
+          className="mb-4 flex items-center justify-between gap-3 rounded-[1.25rem] border border-border/60 bg-secondary/50 px-4 py-3 shadow-soft"
+        >
+          <span>
+            <span className="block text-sm font-extrabold text-foreground">Modo pausa ativo</span>
+            <span className="block text-xs text-muted-foreground">
+              Até {new Date(state.pausedUntil).toLocaleDateString("pt-BR")} · acesso PRO liberado · gerenciar no
+              perfil
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Link>
       ) : null}
 

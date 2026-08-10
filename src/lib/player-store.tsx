@@ -25,6 +25,7 @@ export type PlayerState = {
   disponibilidade: string | null;
   posicao: string | null;
   affiliateCode: string | null;
+  pausedUntil: string | null;
 };
 
 const initialState: PlayerState = {
@@ -39,6 +40,7 @@ const initialState: PlayerState = {
   disponibilidade: null,
   posicao: null,
   affiliateCode: null,
+  pausedUntil: null,
 };
 
 function hoje() {
@@ -126,6 +128,10 @@ type Ctx = {
   planoCompleto: boolean;
   concluirTreino: (treinoId: string, planoKey?: string) => void;
   cancelar: (motivo?: string) => Promise<{ error?: string }>;
+  pausarAssinatura: (dias?: number, motivo?: string) => Promise<{ error?: string; pausedUntil?: string }>;
+  retomarAssinatura: () => Promise<{ error?: string }>;
+  downgradeMensal: (motivo?: string) => Promise<{ error?: string }>;
+  isPaused: boolean;
   activateLocalPlan: (plano: string) => void;
   setNome: (n: string) => void;
   completeOnboarding: (data: {
@@ -181,7 +187,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         supabase
           .from("profiles")
           .select(
-            "nome, assinante, plano, role, objetivo, disponibilidade, posicao, affiliate_code, referred_by",
+            "nome, assinante, plano, role, objetivo, disponibilidade, posicao, affiliate_code, referred_by, paused_until",
           )
           .eq("id", user.id)
           .maybeSingle(),
@@ -266,6 +272,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         disponibilidade: perfil?.disponibilidade ?? local.disponibilidade,
         posicao: perfil?.posicao ?? local.posicao,
         affiliateCode,
+        pausedUntil: perfil?.paused_until ?? null,
       });
       try {
         localStorage.setItem(ONBOARDING_KEY, "1");
@@ -311,7 +318,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const { data: perfil } = await supabase
       .from("profiles")
-      .select("assinante, plano, nome, role")
+      .select("assinante, plano, nome, role, paused_until")
       .eq("id", user.id)
       .maybeSingle();
     if (!perfil) return;
@@ -321,6 +328,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       plano: perfil.plano,
       nome: perfil.nome || s.nome,
       role: perfil.role === "admin" ? "admin" : "user",
+      pausedUntil: perfil.paused_until ?? null,
     }));
   }, [user]);
 
@@ -378,20 +386,63 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const cancelar = useCallback(
     async (motivo?: string) => {
       if (!user) {
-        setState((s) => ({ ...s, assinante: false, plano: null }));
+        setState((s) => ({ ...s, assinante: false, plano: null, pausedUntil: null }));
         return {};
       }
       const res = await supabase.functions.invoke("cancel-subscription", {
-        body: { motivo: motivo ?? null },
+        body: { action: "cancel", motivo: motivo ?? null },
       });
       if (res.error) return { error: res.error.message };
-      if (motivo) {
-        void supabase
-          .from("profiles")
-          .update({ cancel_reason: motivo, cancelled_at: new Date().toISOString() })
-          .eq("id", user.id);
+      setState((s) => ({ ...s, assinante: false, plano: null, pausedUntil: null }));
+      return {};
+    },
+    [user],
+  );
+
+  const pausarAssinatura = useCallback(
+    async (dias = 7, motivo?: string): Promise<{ error?: string; pausedUntil?: string }> => {
+      if (!user) {
+        const until = new Date();
+        until.setDate(until.getDate() + dias);
+        const iso = until.toISOString();
+        setState((s) => ({ ...s, pausedUntil: iso }));
+        return { pausedUntil: iso };
       }
-      setState((s) => ({ ...s, assinante: false, plano: null }));
+      const res = await supabase.functions.invoke("cancel-subscription", {
+        body: { action: "pause", dias, motivo: motivo ?? "save_offer" },
+      });
+      if (res.error) return { error: res.error.message };
+      const pausedUntil = (res.data as { paused_until?: string } | null)?.paused_until;
+      setState((s) => ({ ...s, pausedUntil: pausedUntil ?? null }));
+      return pausedUntil ? { pausedUntil } : {};
+    },
+    [user],
+  );
+
+  const retomarAssinatura = useCallback(async () => {
+    if (!user) {
+      setState((s) => ({ ...s, pausedUntil: null }));
+      return {};
+    }
+    const res = await supabase.functions.invoke("cancel-subscription", {
+      body: { action: "resume" },
+    });
+    if (res.error) return { error: res.error.message };
+    setState((s) => ({ ...s, pausedUntil: null }));
+    return {};
+  }, [user]);
+
+  const downgradeMensal = useCallback(
+    async (motivo?: string) => {
+      if (!user) {
+        setState((s) => ({ ...s, plano: "mensal", pausedUntil: null }));
+        return {};
+      }
+      const res = await supabase.functions.invoke("cancel-subscription", {
+        body: { action: "downgrade_mensal", motivo: motivo ?? "save_offer" },
+      });
+      if (res.error) return { error: res.error.message };
+      setState((s) => ({ ...s, plano: "mensal", pausedUntil: null }));
       return {};
     },
     [user],
@@ -416,7 +467,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           manutencao: true,
         };
       } else {
-        const ciclo = cicloSugerido(state.objetivo);
+        const ciclo = cicloSugerido(state.objetivo, state.posicao);
         const feitosCiclo = unicos.filter((k) => k.startsWith(`c-${ciclo.id}-`)).length;
         if (feitosCiclo < ciclo.treinoIds.length) {
           const treinoId = ciclo.treinoIds[feitosCiclo]!;
@@ -452,6 +503,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const totalSemana = proximo?.manutencao
       ? PLANO_MANUTENCAO.length
       : PLANO_FLAT.filter((p) => p.semana === semanaAtual).length || 1;
+    const isPaused = Boolean(state.pausedUntil && new Date(state.pausedUntil).getTime() > Date.now());
 
     return {
       state,
@@ -472,6 +524,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       concluirTreino,
       activateLocalPlan,
       cancelar,
+      pausarAssinatura,
+      retomarAssinatura,
+      downgradeMensal,
+      isPaused,
       refreshEntitlement,
       setNome: (nome: string) => {
         setState((s) => ({ ...s, nome }));
@@ -532,6 +588,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     concluirTreino,
     activateLocalPlan,
     cancelar,
+    pausarAssinatura,
+    retomarAssinatura,
+    downgradeMensal,
     refreshEntitlement,
     salvarNome,
     authPromptSeen,
