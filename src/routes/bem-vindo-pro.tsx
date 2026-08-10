@@ -1,15 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Crown, Play, Sparkles } from "lucide-react";
+import { Crown, MessageCircle, Play, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageFrame } from "@/components/PageFrame";
 import { PLANO, getTreino } from "@/data/training";
+import { PRODUCT } from "@/lib/product-config";
 import { usePlayer } from "@/lib/player-store";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/bem-vindo-pro")({
   head: () => ({
     meta: [
       { title: "PRO liberado — Jogador PRO System" },
-      { name: "description", content: "Sua assinatura está ativa. Comece a Semana 3 agora." },
+      { name: "description", content: "Sua assinatura está ativa. Comece o Dia 1 agora." },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -17,10 +19,21 @@ export const Route = createFileRoute("/bem-vindo-pro")({
 });
 
 function BemVindoProPage() {
-  const { state } = usePlayer();
-  const semana3 = PLANO.find((s) => s.semana === 3);
-  const primeiro = semana3?.dias[0];
+  const { state, logado } = usePlayer();
+  const semana1 = PLANO.find((s) => s.semana === 1);
+  const primeiro = semana1?.dias[0];
   const treino = primeiro ? getTreino(primeiro.treinoId) : null;
+
+  const entrarTelegram = () => {
+    if (logado) {
+      void supabase.auth.getUser().then(({ data }) => {
+        if (data.user) {
+          void supabase.from("profiles").update({ telegram_joined: true }).eq("id", data.user.id);
+        }
+      });
+    }
+    window.open(PRODUCT.telegramProUrl, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <PageFrame max="sm" className="justify-center">
@@ -33,7 +46,7 @@ function BemVindoProPage() {
           {state.nome !== "Jogador" ? `${state.nome}, você é PRO` : "Você é PRO"}
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Semanas 3 e 4 + biblioteca premium liberadas. O próximo passo é treinar a explosão.
+          Plano completo liberado. Faça o treino do Dia 1 hoje — ativação é o que gera resultado.
         </p>
 
         {treino && primeiro ? (
@@ -41,22 +54,26 @@ function BemVindoProPage() {
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-primary">Semana 3 · Dia 1</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">Semana 1 · Dia 1</p>
                 <p className="mt-1 text-base font-extrabold text-foreground">{treino.nome}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {semana3?.foco} · {treino.duracaoMin} min
+                  {semana1?.foco} · {treino.duracaoMin} min
                 </p>
               </div>
             </div>
             <Button asChild size="lg" className="mt-4 h-12 w-full font-extrabold">
-              <Link to="/treino/$treinoId" params={{ treinoId: treino.id }} search={{ plano: "3-1" }}>
-                <Play className="h-4 w-4" /> Começar Semana 3 agora
+              <Link to="/treino/$treinoId" params={{ treinoId: treino.id }} search={{ plano: "1-1" }}>
+                <Play className="h-4 w-4" /> Começar meu 1º treino agora
               </Link>
             </Button>
           </div>
         ) : null}
 
-        <Button asChild variant="ghost" className="mt-3 w-full">
+        <Button type="button" variant="outline" className="mt-3 h-12 w-full font-extrabold" onClick={entrarTelegram}>
+          <MessageCircle className="h-4 w-4" /> Entrar na comunidade PRO (Telegram)
+        </Button>
+
+        <Button asChild variant="ghost" className="mt-2 w-full">
           <Link to="/">Ir para a home</Link>
         </Button>
       </div>

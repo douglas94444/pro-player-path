@@ -82,7 +82,7 @@ function AdminUsuarios() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {row.assinante ? row.plano ?? "PRO" : "free"}
+                  {row.assinante ? row.plano ?? "PRO" : "sem plano"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {new Date(row.created_at).toLocaleDateString("pt-BR")}

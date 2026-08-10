@@ -108,7 +108,7 @@ function CampanhaPage() {
           <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">{CAMPANHA.subheadline}</p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <Button asChild size="lg" className="h-14 w-full px-8 text-base font-extrabold sm:w-auto sm:min-w-[240px]">
-              <Link to="/onboarding">{CAMPANHA.heroCtaGratis}</Link>
+              <Link {...planosLink(CAMPANHA.heroCtaPlano)}>{CAMPANHA.heroCta}</Link>
             </Button>
             <Button
               asChild
@@ -116,10 +116,30 @@ function CampanhaPage() {
               variant="outline"
               className="h-14 w-full px-8 text-base font-extrabold sm:w-auto sm:min-w-[240px]"
             >
-              <Link {...planosLink(CAMPANHA.heroCtaPlano)}>{CAMPANHA.heroCta}</Link>
+              <Link {...planosLink("semestral")}>{CAMPANHA.heroCtaSecundario}</Link>
             </Button>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">{CAMPANHA.heroCtaGratisHint}</p>
+          <p className="mt-3 text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
+
+          <div className="mt-10 max-w-lg rounded-[1.5rem] border border-border/60 bg-card/90 p-5 shadow-soft">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-primary">{CAMPANHA.teaserTreino.titulo}</p>
+            <p className="mt-2 text-lg font-extrabold text-foreground">{CAMPANHA.teaserTreino.nome}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{CAMPANHA.teaserTreino.descricao}</p>
+            <p className="mt-2 text-xs font-semibold text-foreground">{CAMPANHA.teaserTreino.duracao} · preview</p>
+            {CAMPANHA.teaserTreino.videoSrc ? (
+              <video
+                className="mt-4 aspect-video w-full rounded-2xl object-cover"
+                src={CAMPANHA.teaserTreino.videoSrc}
+                controls
+                playsInline
+                preload="metadata"
+              />
+            ) : (
+              <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-secondary text-xs text-muted-foreground">
+                Vídeo do método — cole a URL em campanha-copy.ts
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -348,10 +368,10 @@ function CampanhaPage() {
       <div className="animate-in slide-in-from-bottom-4 fixed inset-x-0 bottom-0 z-50 p-3 duration-500 md:hidden">
         <div className="flex gap-2 rounded-[1.5rem] border border-border/60 bg-card/95 p-2 shadow-soft-lg backdrop-blur">
           <Button asChild size="lg" className="h-12 flex-1 text-xs font-extrabold">
-            <Link to="/onboarding">{CAMPANHA.heroCtaGratis}</Link>
+            <Link {...planosLink(CAMPANHA.heroCtaPlano)}>{CAMPANHA.heroCta}</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="h-12 flex-1 text-xs font-extrabold">
-            <Link {...planosLink(CAMPANHA.heroCtaPlano)}>R$47</Link>
+            <Link {...planosLink("semestral")}>Semestral</Link>
           </Button>
         </div>
       </div>

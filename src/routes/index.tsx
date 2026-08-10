@@ -55,7 +55,11 @@ function Home() {
   }, [hydrated, state.onboardingDone, navigate]);
 
   const modoRapido = () => {
-    const rapidos = TREINOS.filter((t) => t.duracaoMin <= 12 && !t.premium);
+    if (!state.assinante) {
+      void navigate({ to: "/planos", search: { from: "home", teaser: "Modo rápido disponível no PRO" } });
+      return;
+    }
+    const rapidos = TREINOS.filter((t) => t.duracaoMin <= 12);
     const escolhido = rapidos[Math.floor(Math.random() * rapidos.length)]!;
     navigate({ to: "/treino/$treinoId", params: { treinoId: escolhido.id } });
   };
@@ -64,8 +68,8 @@ function Home() {
     treinoDeHoje && !canAccessTreino(state.assinante, treinoDeHoje.id, proximoPlano?.key);
   const focoLabel = labelObjetivo(state.objetivo);
   const querRapido = prefereModoRapido(state.disponibilidade);
-  const recomendados = treinosRecomendados(state.objetivo, 3);
-  const precisaUpgrade = !state.assinante && semanaAtual >= 3;
+  const recomendados = treinosRecomendados(state.objetivo, state.posicao, 3);
+  const precisaAssinar = !state.assinante;
 
   if (!hydrated || !state.onboardingDone) {
     return (
@@ -90,15 +94,17 @@ function Home() {
         </div>
       }
     >
-      {precisaUpgrade ? (
+      {precisaAssinar ? (
         <Link
           to="/planos"
-          search={{ from: "home", teaser: "Semanas 3–4 liberam explosão e performance" }}
+          search={{ from: "home", teaser: "Assine para liberar o treino do dia e o plano completo" }}
           className="mb-4 flex items-center justify-between gap-3 rounded-[1.25rem] border border-primary/30 bg-primary/10 px-4 py-3 shadow-soft"
         >
           <span>
-            <span className="block text-sm font-extrabold text-foreground">Continuar evolução PRO</span>
-            <span className="block text-xs text-muted-foreground">Seu plano free acabou — destrave a Semana 3</span>
+            <span className="block text-sm font-extrabold text-foreground">Assine para treinar</span>
+            <span className="block text-xs text-muted-foreground">
+              Acesso completo ao plano de 4 semanas + biblioteca
+            </span>
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
         </Link>
@@ -218,6 +224,25 @@ function Home() {
               </Link>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {state.assinante ? (
+        <section className="mt-5 grid gap-2 sm:grid-cols-2">
+          <Link
+            to="/treino/$treinoId"
+            params={{ treinoId: "pre-partida" }}
+            className="rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft"
+          >
+            Pré-partida 10 min
+          </Link>
+          <Link
+            to="/treino/$treinoId"
+            params={{ treinoId: "pos-jogo" }}
+            className="rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft"
+          >
+            Pós-jogo recuperação
+          </Link>
         </section>
       ) : null}
 

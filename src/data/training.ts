@@ -7,6 +7,8 @@ export type Exercicio = {
   dica: string;
   /** Hint visual no player (animação CSS). */
   demo?: "mobilidade" | "forca" | "cardio" | "core" | "bola";
+  /** URL de vídeo curto de execução (MP4 ou embed). */
+  videoUrl?: string;
 };
 
 export type Treino = {
@@ -18,6 +20,10 @@ export type Treino = {
   categorias: Categoria[];
   exercicios: Exercicio[];
   premium: boolean;
+  /** Tags de posição (lateral, meia, atacante, goleiro, qualquer). */
+  posicoes?: string[];
+  /** Momento da temporada: base | explosao | pre_partida | pos_jogo | manutencao. */
+  temporada?: string;
 };
 
 export const CATEGORIAS: { id: Categoria; label: string; emoji: string }[] = [
@@ -33,12 +39,21 @@ const ex = (
   duracaoSeg: number,
   dica: string,
   demo: Exercicio["demo"] = "cardio",
+  videoUrl?: string,
 ): Exercicio => ({
   nome,
   duracaoSeg,
   dica,
   demo,
+  ...(videoUrl ? { videoUrl } : {}),
 });
+
+/**
+ * Cole URLs MP4/YouTube nos exercícios da Semana 1 (prioridade Dia 1).
+ * Ex.: ex("Mobilidade…", 60, "…", "mobilidade", "https://…/mobilidade.mp4")
+ */
+export const VIDEO_DEMO_NOTES =
+  "Priorize filmar: mobilidade de quadril, agachamento, prancha, condução de bola e salto.";
 
 export const TREINOS: Treino[] = [
   {
@@ -48,7 +63,7 @@ export const TREINOS: Treino[] = [
     duracaoMin: 14,
     nivel: "Iniciante",
     categorias: ["casa", "core"],
-    premium: false,
+    premium: true,
     exercicios: [
       ex("Mobilidade de quadril", 60, "Movimento lento, sem dor.", "mobilidade"),
       ex("Agachamento livre", 45, "Joelho alinhado com o pé.", "forca"),
@@ -65,7 +80,7 @@ export const TREINOS: Treino[] = [
     duracaoMin: 16,
     nivel: "Iniciante",
     categorias: ["campo", "casa"],
-    premium: false,
+    premium: true,
     exercicios: [
       ex("Toques com o peito do pé", 60, "Bola baixa e controlada.", "bola"),
       ex("Condução em zigue-zague", 75, "Toques curtos.", "bola"),
@@ -81,7 +96,7 @@ export const TREINOS: Treino[] = [
     duracaoMin: 12,
     nivel: "Intermediário",
     categorias: ["core", "casa"],
-    premium: false,
+    premium: true,
     exercicios: [
       ex("Prancha isométrica", 45, "Não deixe o quadril cair.", "core"),
       ex("Prancha lateral direita", 35, "Corpo em linha reta.", "core"),
@@ -97,7 +112,7 @@ export const TREINOS: Treino[] = [
     duracaoMin: 12,
     nivel: "Intermediário",
     categorias: ["explosao", "core"],
-    premium: false,
+    premium: true,
     exercicios: [
       ex("Salto vertical", 40, "Aterrisse com joelho semiflexionado."),
       ex("Tiro de 10 metros", 50, "Explosão nos 3 primeiros passos."),
@@ -145,7 +160,7 @@ export const TREINOS: Treino[] = [
     duracaoMin: 10,
     nivel: "Iniciante",
     categorias: ["casa", "explosao"],
-    premium: false,
+    premium: true,
     exercicios: [
       ex("Polichinelo", 45, "Aquecimento rápido."),
       ex("Agachamento com salto", 40, "Explosivo."),
@@ -160,7 +175,7 @@ export const TREINOS: Treino[] = [
     duracaoMin: 10,
     nivel: "Iniciante",
     categorias: ["casa", "core"],
-    premium: false,
+    premium: true,
     exercicios: [
       ex("Prancha", 45, "Sem cair o quadril."),
       ex("Abdominal infra", 40, "Controle."),
@@ -176,6 +191,7 @@ export const TREINOS: Treino[] = [
     nivel: "PRO",
     categorias: ["campo", "explosao", "forca"],
     premium: true,
+    temporada: "manutencao",
     exercicios: [
       ex("Aquecimento dinâmico", 90, "Solte as articulações."),
       ex("Tiros progressivos", 120, "Aumente a cada série."),
@@ -183,6 +199,42 @@ export const TREINOS: Treino[] = [
       ex("Condução em velocidade", 90, "Cabeça erguida."),
       ex("Finalizações", 90, "Pé de apoio firme."),
       ex("Volta à calma", 60, "Respire."),
+    ],
+  },
+  {
+    id: "pre-partida",
+    nome: "Pré-partida 10",
+    descricao: "Ativação rápida antes do jogo — 10 minutos.",
+    duracaoMin: 10,
+    nivel: "Intermediário",
+    categorias: ["campo", "explosao"],
+    premium: true,
+    temporada: "pre_partida",
+    posicoes: ["qualquer", "lateral", "meia", "atacante"],
+    exercicios: [
+      ex("Mobilidade de quadril", 45, "Solte sem forçar.", "mobilidade"),
+      ex("Skipping alto", 40, "Joelho alto.", "cardio"),
+      ex("Tiros curtos no lugar", 40, "Máxima frequência.", "cardio"),
+      ex("Toques com o peito do pé", 45, "Ative o primeiro toque.", "bola"),
+      ex("Respiração + foco", 30, "3 respirações profundas.", "mobilidade"),
+    ],
+  },
+  {
+    id: "pos-jogo",
+    nome: "Pós-jogo recuperação",
+    descricao: "Desaceleração e mobilidade depois da pelada.",
+    duracaoMin: 12,
+    nivel: "Iniciante",
+    categorias: ["casa", "core"],
+    premium: true,
+    temporada: "pos_jogo",
+    posicoes: ["qualquer"],
+    exercicios: [
+      ex("Caminhada leve no lugar", 60, "Baixe o ritmo.", "cardio"),
+      ex("Alongamento posterior", 55, "Sem bounce.", "mobilidade"),
+      ex("Mobilidade de quadril", 50, "Amplitude confortável.", "mobilidade"),
+      ex("Prancha leve", 30, "Só ativar o core.", "core"),
+      ex("Respiração diafragmática", 45, "Expire longo.", "mobilidade"),
     ],
   },
 ];
@@ -206,6 +258,7 @@ export const PLANO: SemanaPlano[] = [
     semana: 1,
     titulo: "Semana 1 — Base",
     foco: "Construir base física e ritmo de treino",
+    premium: true,
     dias: [
       { dia: 1, treinoId: "base-mobilidade" },
       { dia: 2, treinoId: "controle-bola" },
@@ -218,6 +271,7 @@ export const PLANO: SemanaPlano[] = [
     semana: 2,
     titulo: "Semana 2 — Controle + Core",
     foco: "Domínio de bola e estabilidade de tronco",
+    premium: true,
     dias: [
       { dia: 1, treinoId: "controle-bola" },
       { dia: 2, treinoId: "core-forte" },
@@ -311,10 +365,35 @@ export const PLANOS_ASSINATURA = [
 ];
 
 export const BENEFICIOS_PRO = [
-  "Semanas 3 e 4 do plano guiado",
-  "Biblioteca premium (força, resistência e performance)",
-  "Ciclo de manutenção avançado pós 4 semanas",
-  "Sincronização e histórico na nuvem com conta",
+  "Plano guiado completo (4 semanas)",
+  "Biblioteca + pré-partida e pós-jogo",
+  "Ciclos temáticos pós-plano (explosão / pré-pelada)",
+  "Comunidade PRO + histórico na nuvem",
+  "Scores semanais de evolução no campo",
+];
+
+export const POSICOES = [
+  { id: "qualquer", label: "Qualquer posição" },
+  { id: "lateral", label: "Lateral" },
+  { id: "meia", label: "Meia" },
+  { id: "atacante", label: "Atacante" },
+  { id: "goleiro", label: "Goleiro" },
+] as const;
+
+/** Ciclos temáticos após as 4 semanas (além da manutenção base). */
+export const CICLOS_TEMATICOS: { id: string; titulo: string; foco: string; treinoIds: string[] }[] = [
+  {
+    id: "explosao",
+    titulo: "Ciclo Explosão",
+    foco: "Arranque e potência por 7 dias",
+    treinoIds: ["explosao-core", "forca-pernas", "rapido-10", "explosao-core", "resistencia-campo", "rapido-10", "performance-final"],
+  },
+  {
+    id: "pre-pelada",
+    titulo: "Ciclo Pré-pelada",
+    foco: "Chegar afiado no jogo do fim de semana",
+    treinoIds: ["pre-partida", "controle-bola", "explosao-core", "rapido-core", "pre-partida", "controle-bola", "pos-jogo"],
+  },
 ];
 
 export const CONQUISTAS = [

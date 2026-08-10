@@ -10,6 +10,7 @@ import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { toast } from "sonner";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
+import { shareProgress } from "@/lib/share-progress";
 
 export const Route = createFileRoute("/treino/$treinoId")({
   validateSearch: (search: Record<string, unknown>): { plano?: string | undefined } => ({
@@ -62,7 +63,8 @@ function TreinoPage() {
   const [fim, setFim] = useState(false);
   const [concluido, setConcluido] = useState(false);
   const [mostrarAuth, setMostrarAuth] = useState(false);
-  const [mostrarPaywallSoft, setMostrarPaywallSoft] = useState(false);
+  const [sentimento, setSentimento] = useState<string | null>(null);
+  const [shareDone, setShareDone] = useState(false);
 
   const total = useMemo(() => treino?.exercicios.reduce((a, e) => a + e.duracaoSeg, 0) ?? 0, [treino]);
   const feito = useMemo(
@@ -126,11 +128,11 @@ function TreinoPage() {
             </li>
             <li className="flex gap-2">
               <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              Biblioteca premium + Semana 4 Performance
+              Plano completo de 4 semanas + biblioteca
             </li>
             <li className="flex gap-2">
               <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              Você já treinou no free — agora sobe o nível
+              Comunidade PRO e progresso na nuvem
             </li>
           </ul>
           <Button
@@ -143,10 +145,12 @@ function TreinoPage() {
               })
             }
           >
-            Desbloquear este treino
+            Assinar e desbloquear
           </Button>
           <Button asChild variant="ghost" className="mt-2 w-full">
-            <Link to="/">Voltar ao treino free</Link>
+            <Link to="/planos" search={{ from: `treino:${treino.id}` }}>
+              Ver planos
+            </Link>
           </Button>
         </div>
       </div>
@@ -188,11 +192,6 @@ function TreinoPage() {
       }
     }
 
-    // Soft paywall: concluiu o último dia free (semana 2 dia 5)
-    if (plano === "2-5" && !state.assinante) {
-      setMostrarPaywallSoft(true);
-    }
-
     if (canPromptAuth && totalTreinos === 0) {
       setMostrarAuth(true);
     }
@@ -227,46 +226,82 @@ function TreinoPage() {
 
   if (fim && concluido) {
     const next = proximoPlano;
+    const isFirst = totalTreinos <= 1;
+    const streakNow = Math.max(streak, 1);
+    const showShare = streakNow >= 7 || plano === "2-5";
+    const shareMilestone = plano === "2-5" ? "semana2" : streakNow >= 7 ? "streak7" : "geral";
+
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center sm:px-6">
         <div className="w-full max-w-md">
           <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-bold">
             <Flame className="h-4 w-4 text-primary" />
-            Streak {streak || 1} · Nível {nivel}
+            Streak {streakNow} · Nível {nivel}
           </div>
           <h1 className="mt-6 text-3xl font-extrabold text-foreground">Mandou bem</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {treino.nome} registrado. Volte amanhã para manter a sequência.
           </p>
 
-          {mostrarPaywallSoft ? (
-            <div className="mt-6 w-full rounded-2xl border border-primary/40 bg-primary/10 p-4 text-left">
-              <p className="text-sm font-bold text-foreground">Semana 3 te espera: Explosão</p>
+          {isFirst || !sentimento ? (
+            <div className="mt-6 w-full rounded-2xl border border-border/60 bg-card p-4 text-left shadow-soft">
+              <p className="text-sm font-bold text-foreground">Como você se sentiu?</p>
+              <p className="mt-1 text-xs text-muted-foreground">Isso ajuda a personalizar seu plano.</p>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {[
+                  { id: "leve", label: "Leve" },
+                  { id: "certo", label: "No ponto" },
+                  { id: "pesado", label: "Pesado" },
+                ].map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => {
+                      setSentimento(o.id);
+                      trackMetaCustom("WorkoutFeel", { feel: o.id, treino_id: treino.id });
+                    }}
+                    className={`rounded-xl border px-2 py-2 text-xs font-semibold ${
+                      sentimento === o.id
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border/60 bg-secondary/50 text-muted-foreground"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {showShare ? (
+            <div className="mt-4 w-full rounded-2xl border border-primary/30 bg-primary/10 p-4 text-left">
+              <p className="text-sm font-bold text-foreground">Compartilhar minha evolução</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Arranque, salto e velocidade — o salto de desempenho que o free não cobre. Você já fez a base;
-                agora vem o nível PRO.
+                Story ou WhatsApp — com seu link de indicação.
               </p>
-              <ul className="mt-3 space-y-1.5 text-xs text-foreground">
-                <li className="flex gap-2">
-                  <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> Força de pernas + resistência de campo
-                </li>
-                <li className="flex gap-2">
-                  <Check className="h-3.5 w-3.5 shrink-0 text-primary" /> Semana 4 Performance + biblioteca premium
-                </li>
-              </ul>
-              <Button asChild className="mt-3 w-full font-extrabold">
-                <Link
-                  to="/planos"
-                  search={{
-                    from: "soft-paywall",
-                    teaser: "Semana 3 — Explosão: arranque, salto e velocidade",
-                  }}
-                >
-                  Continuar minha evolução PRO
-                </Link>
+              <Button
+                className="mt-3 w-full font-extrabold"
+                variant="outline"
+                onClick={() => {
+                  void shareProgress({
+                    nome: state.nome,
+                    streak: streakNow,
+                    treinos: totalTreinos,
+                    affiliateCode: state.affiliateCode,
+                    milestone: shareMilestone,
+                  }).then((r) => {
+                    setShareDone(true);
+                    if (r === "copied") toast.success("Texto copiado");
+                    else if (r === "shared") toast.success("Compartilhado");
+                  });
+                }}
+              >
+                {shareDone ? "Pronto — compartilhado" : "Compartilhar agora"}
               </Button>
             </div>
-          ) : next ? (
+          ) : null}
+
+          {next ? (
             <div className="mt-6 w-full rounded-2xl border border-border/60 bg-card p-4 text-left shadow-soft">
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Amanhã</p>
               <p className="mt-1 text-sm font-extrabold text-foreground">
@@ -280,7 +315,7 @@ function TreinoPage() {
             <div className="mt-4 w-full rounded-2xl border border-border bg-card p-4 text-left">
               <p className="text-sm font-bold text-foreground">Salve seu progresso</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Crie uma conta grátis para não perder streak se trocar de celular.
+                Crie uma conta para não perder streak se trocar de celular.
               </p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <Button asChild className="flex-1 font-extrabold">
@@ -343,7 +378,11 @@ function TreinoPage() {
         </div>
 
         <div className="mt-5 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft sm:p-5">
-          <ExerciseDemo demo={atual.demo ?? "cardio"} nome={atual.nome} />
+          <ExerciseDemo
+            demo={atual.demo ?? "cardio"}
+            nome={atual.nome}
+            {...(atual.videoUrl ? { videoUrl: atual.videoUrl } : {})}
+          />
         </div>
 
         <div className="mt-8 flex flex-col items-center">

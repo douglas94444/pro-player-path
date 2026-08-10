@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageFrame } from "@/components/PageFrame";
-import { getTreino, PLANO } from "@/data/training";
+import { getTreino, PLANO, POSICOES } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
@@ -46,25 +46,37 @@ function OnboardingPage() {
   const [nome, setNome] = useState(state.nome === "Jogador" ? "" : state.nome);
   const [objetivo, setObjetivo] = useState("base");
   const [disponibilidade, setDisponibilidade] = useState("20");
+  const [posicao, setPosicao] = useState("qualquer");
 
   useEffect(() => {
     if (hydrated && state.onboardingDone) {
-      void navigate({ to: "/" });
+      if (state.assinante) void navigate({ to: "/" });
+      else void navigate({ to: "/planos", search: { from: "onboarding" } });
     }
-  }, [hydrated, state.onboardingDone, navigate]);
+  }, [hydrated, state.onboardingDone, state.assinante, navigate]);
 
   const next = () => {
-    if (step < 2) {
+    if (step < 3) {
       setStep((s) => s + 1);
       return;
     }
-    completeOnboarding({ nome, objetivo, disponibilidade });
-    trackMetaCustom("CompleteOnboarding", { objetivo, disponibilidade });
-    void navigate({
-      to: "/treino/$treinoId",
-      params: { treinoId: primeiroTreino.id },
-      search: { plano: "1-1" },
-    });
+    completeOnboarding({ nome, objetivo, disponibilidade, posicao });
+    trackMetaCustom("CompleteOnboarding", { objetivo, disponibilidade, posicao });
+    if (state.assinante) {
+      void navigate({
+        to: "/treino/$treinoId",
+        params: { treinoId: primeiroTreino.id },
+        search: { plano: "1-1" },
+      });
+    } else {
+      void navigate({
+        to: "/planos",
+        search: {
+          from: "onboarding",
+          teaser: `${primeiroTreino.nome} — seu Dia 1 está pronto após a assinatura`,
+        },
+      });
+    }
   };
 
   return (
@@ -75,8 +87,9 @@ function OnboardingPage() {
           {step === 0 && "Como podemos te chamar?"}
           {step === 1 && "Qual seu foco agora?"}
           {step === 2 && "Quanto tempo você tem?"}
+          {step === 3 && "Qual sua posição?"}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">Passo {step + 1} de 3 — menos de 1 minuto.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Passo {step + 1} de 4 — menos de 1 minuto.</p>
 
         <div className="mt-8">
           {step === 0 ? (
@@ -114,32 +127,51 @@ function OnboardingPage() {
           ) : null}
 
           {step === 2 ? (
+            <div className="grid gap-2 sm:grid-cols-3">
+              {DISPONIBILIDADE.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDisponibilidade(d.id)}
+                  className={cn(
+                    "rounded-2xl border px-4 py-3 text-left text-sm font-semibold sm:text-center",
+                    disponibilidade === d.id
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-card text-muted-foreground",
+                  )}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {step === 3 ? (
             <>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {DISPONIBILIDADE.map((d) => (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {POSICOES.map((p) => (
                   <button
-                    key={d.id}
+                    key={p.id}
                     type="button"
-                    onClick={() => setDisponibilidade(d.id)}
+                    onClick={() => setPosicao(p.id)}
                     className={cn(
-                      "rounded-2xl border px-4 py-3 text-left text-sm font-semibold sm:text-center",
-                      disponibilidade === d.id
+                      "rounded-2xl border px-4 py-3 text-left text-sm font-semibold",
+                      posicao === p.id
                         ? "border-primary bg-primary/10 text-foreground"
                         : "border-border bg-card text-muted-foreground",
                     )}
                   >
-                    {d.label}
+                    {p.label}
                   </button>
                 ))}
               </div>
-
               <div className="mt-6 rounded-2xl border border-primary/25 bg-primary/10 p-4">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-primary">Seu 1º treino</p>
                 <p className="mt-1 text-base font-extrabold text-foreground">{primeiroTreino.nome}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{primeiroTreino.descricao}</p>
                 <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
                   <Timer className="h-3.5 w-3.5 text-primary" />
-                  {primeiroTreino.duracaoMin} min · Semana 1 · Dia 1
+                  {primeiroTreino.duracaoMin} min · liberado após assinar
                 </p>
               </div>
             </>
@@ -152,7 +184,7 @@ function OnboardingPage() {
           disabled={step === 0 && nome.trim().length < 2}
           onClick={next}
         >
-          {step === 2 ? "Começar meu 1º treino" : "Continuar"}
+          {step === 3 ? "Ver planos e começar" : "Continuar"}
         </Button>
       </div>
     </PageFrame>

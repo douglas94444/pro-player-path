@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Lock, Timer } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { CATEGORIAS, TREINOS, type Categoria } from "@/data/training";
+import { CATEGORIAS, POSICOES, TREINOS, type Categoria } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 import { categoriaPorObjetivo, labelObjetivo } from "@/lib/recommendations";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
+
+type TemporadaFiltro = "todas" | "pre_partida" | "pos_jogo" | "manutencao";
 
 export const Route = createFileRoute("/biblioteca")({
   head: () => ({
@@ -35,6 +37,8 @@ function Biblioteca() {
   const { state } = usePlayer();
   const sugerida = categoriaPorObjetivo(state.objetivo);
   const [filtro, setFiltro] = useState<Categoria | null>(null);
+  const [posicaoFiltro, setPosicaoFiltro] = useState<string>(state.posicao ?? "qualquer");
+  const [temporada, setTemporada] = useState<TemporadaFiltro>("todas");
   const [usouSugestao, setUsouSugestao] = useState(false);
 
   useEffect(() => {
@@ -44,7 +48,18 @@ function Biblioteca() {
     }
   }, [sugerida, usouSugestao]);
 
-  const lista = filtro ? TREINOS.filter((t) => t.categorias.includes(filtro)) : TREINOS;
+  const lista = TREINOS.filter((t) => {
+    if (filtro && !t.categorias.includes(filtro)) return false;
+    if (posicaoFiltro && posicaoFiltro !== "qualquer") {
+      const ok =
+        !t.posicoes?.length ||
+        t.posicoes.includes(posicaoFiltro) ||
+        t.posicoes.includes("qualquer");
+      if (!ok) return false;
+    }
+    if (temporada !== "todas" && t.temporada !== temporada) return false;
+    return true;
+  });
   const foco = labelObjetivo(state.objetivo);
 
   return (
@@ -53,6 +68,47 @@ function Biblioteca() {
       title="Treinos"
       subtitle={foco ? `Sugestão pelo seu foco: ${foco}` : "Biblioteca para quando quiser mais volume"}
     >
+      <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+        {POSICOES.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setPosicaoFiltro(p.id)}
+            className={cn(
+              "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-soft",
+              posicaoFiltro === p.id
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/60 bg-card text-muted-foreground",
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+        {(
+          [
+            ["todas", "Temporada"],
+            ["pre_partida", "Pré-partida"],
+            ["pos_jogo", "Pós-jogo"],
+            ["manutencao", "Manutenção"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTemporada(id)}
+            className={cn(
+              "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-soft",
+              temporada === id
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/60 bg-card text-muted-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         <button
           onClick={() => setFiltro(null)}
@@ -109,7 +165,7 @@ function Biblioteca() {
       ) : (
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {lista.map((t) => {
-            const bloqueado = t.premium && !state.assinante;
+            const bloqueado = !state.assinante;
             const tint = CAT_TINT[t.categorias[0] ?? "casa"];
             const card = (
               <div

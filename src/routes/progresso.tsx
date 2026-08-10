@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Flame, Clock, Dumbbell, Lock, Trophy, Play } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -5,19 +6,35 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
 import { CONQUISTAS } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/progresso")({
   head: () => ({
     meta: [
       { title: "Sua evolução — Jogador PRO System" },
-      { name: "description", content: "Streak, treinos concluídos, tempo total e conquistas desbloqueadas." },
-      { property: "og:title", content: "Sua evolução" },
-      { property: "og:description", content: "Acompanhe streak, calendário e conquistas." },
+      { name: "description", content: "Streak, treinos, scores semanais e conquistas." },
     ],
   }),
   component: ProgressoPage,
 });
+
+function weekStartIso() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+type Score = {
+  week_start: string;
+  explosao: number;
+  controle: number;
+  resistencia: number;
+  jogou: boolean;
+};
 
 function ProgressoPage() {
   const {
@@ -30,18 +47,32 @@ function ProgressoPage() {
     treinoDeHoje,
     proximoPlano,
     progressoSemana,
-    semanaAtual,
-    planoCompleto,
+    logado,
   } = usePlayer();
+
+  const [scores, setScores] = useState<Score[]>([]);
+  const [explosao, setExplosao] = useState(3);
+  const [controle, setControle] = useState(3);
+  const [resistencia, setResistencia] = useState(3);
+  const [jogou, setJogou] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (!logado) return;
+    void supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: rows } = await supabase
+        .from("weekly_scores")
+        .select("week_start, explosao, controle, resistencia, jogou")
+        .eq("user_id", data.user.id)
+        .order("week_start", { ascending: true })
+        .limit(12);
+      setScores((rows as Score[]) ?? []);
+    });
+  }, [logado]);
 
   const valorDe = (tipo: "treinos" | "streak" | "plano") =>
     tipo === "treinos" ? totalTreinos : tipo === "streak" ? streak : planoConcluidos.length;
-
-  // Dias free restantes no plano (S1–S2 = keys 1-* e 2-*)
-  const freeKeys = ["1-1", "1-2", "1-3", "1-4", "1-5", "2-1", "2-2", "2-3", "2-4", "2-5"];
-  const freeFeitos = freeKeys.filter((k) => planoConcluidos.includes(k)).length;
-  const freeRestantes = Math.max(0, freeKeys.length - freeFeitos);
-  const mostrarCountdownPro = !state.assinante && !planoCompleto && semanaAtual <= 2 && freeRestantes > 0;
 
   const ultimos7 = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
@@ -49,6 +80,63 @@ function ProgressoPage() {
     const iso = d.toISOString().slice(0, 10);
     return { label: ["D", "S", "T", "Q", "Q", "S", "S"][d.getDay()], ativo: state.sessoes.some((s) => s.data === iso) };
   });
+
+  const salvarScore = async () => {
+    if (!logado) {
+      toast.message("Entre na conta para salvar scores na nuvem");
+      return;
+    }
+    setSalvando(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const week_start = weekStartIso();
+      const { error } = await supabase.from("weekly_scores").upsert(
+        {
+          user_id: user.id,
+          week_start,
+          explosao,
+          controle,
+          resistencia,
+          jogou,
+        },
+        { onConflict: "user_id,week_start" },
+      );
+      if (error) throw error;
+      setScores((prev) => {
+        const rest = prev.filter((s) => s.week_start !== week_start);
+        return [...rest, { week_start, explosao, controle, resistencia, jogou }].sort((a, b) =>
+          a.week_start.localeCompare(b.week_start),
+        );
+      });
+      toast.success("Score da semana salvo");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao salvar");
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (!state.assinante) {
+    return (
+      <AppShell title="Sua evolução" subtitle="Disponível no PRO">
+        <div className="rounded-[1.75rem] border border-border/60 bg-card p-8 text-center shadow-soft">
+          <Trophy className="mx-auto h-10 w-10 text-primary" />
+          <h2 className="mt-4 text-xl font-extrabold text-foreground">Evolução com assinatura</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Streak, scores no campo e conquistas liberam após assinar.
+          </p>
+          <Button asChild size="lg" className="mt-6 h-12 w-full font-extrabold">
+            <Link to="/planos" search={{ from: "progresso" }}>
+              Ver planos
+            </Link>
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (totalTreinos === 0) {
     return (
@@ -106,31 +194,53 @@ function ProgressoPage() {
         ) : null}
       </section>
 
-      {mostrarCountdownPro ? (
-        <Link
-          to="/planos"
-          search={{
-            from: "progresso",
-            teaser:
-              freeRestantes <= 2
-                ? "Faltam poucos dias free — Semana 3 Explosão te espera"
-                : "Depois do free vem Explosão e Performance PRO",
-          }}
-          className="mt-4 flex items-center justify-between gap-3 rounded-[1.25rem] border border-primary/30 bg-primary/10 px-4 py-3 shadow-soft"
-        >
-          <span>
-            <span className="block text-sm font-extrabold text-foreground">
-              {freeRestantes === 1
-                ? "Falta 1 dia free para o conteúdo PRO"
-                : `Faltam ${freeRestantes} dias free para o PRO`}
-            </span>
-            <span className="block text-xs text-muted-foreground">
-              Semana 3 = explosão · Semana 4 = performance
-            </span>
-          </span>
-          <span className="shrink-0 text-xs font-bold text-primary">Ver</span>
-        </Link>
-      ) : null}
+      <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+        <h2 className="text-sm font-bold text-foreground">Score semanal no campo</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Autoavaliação 1–5. Isso alimenta sua evolução e personalização.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {[
+            { label: "Explosão", value: explosao, set: setExplosao },
+            { label: "Controle", value: controle, set: setControle },
+            { label: "Resistência", value: resistencia, set: setResistencia },
+          ].map((row) => (
+            <label key={row.label} className="rounded-2xl bg-secondary/60 p-3">
+              <span className="text-xs font-semibold text-muted-foreground">{row.label}</span>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                value={row.value}
+                onChange={(e) => row.set(Number(e.target.value))}
+                className="mt-2 w-full accent-primary"
+              />
+              <span className="text-sm font-bold text-foreground">{row.value}/5</span>
+            </label>
+          ))}
+        </div>
+        <label className="mt-3 flex items-center gap-2 text-sm text-foreground">
+          <input type="checkbox" checked={jogou} onChange={(e) => setJogou(e.target.checked)} />
+          Joguei bola esta semana
+        </label>
+        <Button className="mt-4 w-full font-extrabold" disabled={salvando} onClick={() => void salvarScore()}>
+          {salvando ? "Salvando…" : "Salvar score da semana"}
+        </Button>
+        {scores.length ? (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Histórico</p>
+            {scores.slice(-6).map((s) => (
+              <div key={s.week_start} className="flex justify-between rounded-xl bg-secondary/50 px-3 py-2 text-xs">
+                <span className="text-muted-foreground">{s.week_start}</span>
+                <span className="font-semibold text-foreground">
+                  E{s.explosao} · C{s.controle} · R{s.resistencia}
+                  {s.jogou ? " · jogou" : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </section>
 
       <div className="mt-4 grid grid-cols-3 gap-3 md:gap-4">
         {[
@@ -197,6 +307,10 @@ function ProgressoPage() {
           })}
         </div>
       </section>
+
+      <Button asChild variant="outline" className="mt-4 w-full">
+        <Link to="/ranking">Ver ranking da semana</Link>
+      </Button>
     </AppShell>
   );
 }

@@ -11,19 +11,40 @@ const LABELS = {
 export function ExerciseDemo({
   demo = "cardio",
   nome,
+  videoUrl,
 }: {
   demo?: keyof typeof LABELS;
   nome: string;
+  videoUrl?: string;
 }) {
+  if (videoUrl) {
+    const isYoutube = /youtube\.com|youtu\.be/.test(videoUrl);
+    return (
+      <div className="relative aspect-video overflow-hidden rounded-3xl border border-border bg-card">
+        {isYoutube ? (
+          <iframe
+            title={nome}
+            src={videoUrl.includes("embed") ? videoUrl : videoUrl.replace("watch?v=", "embed/")}
+            className="h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <video className="h-full w-full object-cover" src={videoUrl} controls playsInline preload="metadata" />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
         "relative flex aspect-video items-center justify-center overflow-hidden rounded-3xl border border-border",
-        demo === "bola" && "bg-gradient-to-br from-emerald-500/25 via-card to-card",
-        demo === "forca" && "bg-gradient-to-br from-orange-500/25 via-card to-card",
-        demo === "core" && "bg-gradient-to-br from-sky-500/25 via-card to-card",
-        demo === "mobilidade" && "bg-gradient-to-br from-violet-500/20 via-card to-card",
-        demo === "cardio" && "bg-gradient-to-br from-primary/25 via-card to-card",
+        demo === "bola" && "bg-secondary",
+        demo === "forca" && "bg-secondary",
+        demo === "core" && "bg-secondary",
+        demo === "mobilidade" && "bg-secondary",
+        demo === "cardio" && "bg-secondary",
       )}
     >
       <span
@@ -36,7 +57,8 @@ export function ExerciseDemo({
       <div className="relative z-10 px-6 text-center">
         <p className="text-xs font-bold uppercase tracking-widest text-primary">{LABELS[demo]}</p>
         <p className="mt-2 text-xl font-extrabold text-foreground">{nome}</p>
-        <div className="mx-auto mt-5 h-1.5 w-24 overflow-hidden rounded-full bg-secondary">
+        <p className="mt-2 text-[11px] text-muted-foreground">Cole videoUrl no exercício para demo filmada</p>
+        <div className="mx-auto mt-5 h-1.5 w-24 overflow-hidden rounded-full bg-card">
           <div className="h-full w-1/2 animate-[pulse_1s_ease-in-out_infinite] rounded-full bg-primary" />
         </div>
       </div>

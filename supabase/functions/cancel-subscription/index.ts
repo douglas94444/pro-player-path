@@ -34,19 +34,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    const body = await req.json().catch(() => ({} as { motivo?: string }));
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Checkout transparente = pagamento avulso por período.
-    // Cancelamento revoga o acesso no app (não há assinatura recorrente Stripe).
     await admin
       .from("profiles")
       .update({
         assinante: false,
         plano: null,
         mp_payment_id: null,
+        cancel_reason: body.motivo ?? null,
+        cancelled_at: new Date().toISOString(),
       })
       .eq("id", user.id);
 

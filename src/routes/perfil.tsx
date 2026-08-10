@@ -43,7 +43,7 @@ function PerfilPage() {
     }
     setCancelando(true);
     try {
-      const r = await cancelar();
+      const r = await cancelar(motivo ?? undefined);
       if (r.error) toast.error("Não foi possível cancelar", { description: r.error });
       else {
         toast.message("Assinatura cancelada", {
@@ -98,8 +98,14 @@ function PerfilPage() {
       <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Assinatura</p>
         <p className="mt-2 text-lg font-extrabold text-foreground">
-          {state.assinante ? `Assinatura ${state.plano}` : "Gratuito (semanas 1–2)"}
+          {state.assinante ? `Assinatura ${state.plano}` : "Sem assinatura ativa"}
         </p>
+        {state.affiliateCode ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Seu link de indicação:{" "}
+            <span className="font-semibold text-foreground">/planos?ref={state.affiliateCode}</span>
+          </p>
+        ) : null}
 
         {state.assinante ? (
           !mostrarCancel ? (
@@ -110,8 +116,8 @@ function PerfilPage() {
             <div className="mt-4 rounded-2xl border border-border/60 bg-secondary/40 p-4">
               <p className="text-sm font-bold text-foreground">Antes de sair…</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Com PRO você mantém Semanas 3–4, biblioteca premium e o ritmo de evolução. Pode voltar quando
-                quiser.
+                Você perde o plano diário, a comunidade e o ritmo de evolução. Prefere pausar mentalmente e
+                manter PRO?
               </p>
               <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Por que está cancelando?
@@ -143,6 +149,19 @@ function PerfilPage() {
                   }}
                 >
                   Manter PRO
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setMostrarCancel(false);
+                    setMotivo(null);
+                    toast.message("Pausa mental de 7 dias", {
+                      description: "Assinatura segue ativa. Volte quando quiser treinar.",
+                    });
+                  }}
+                >
+                  Pausar 7 dias (manter acesso)
                 </Button>
                 <Button
                   variant="outline"

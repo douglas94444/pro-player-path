@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Check, Clock, X } from "lucide-react";
+import { ArrowLeft, Check, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -17,15 +17,8 @@ export type PlanosSearch = {
   checkout?: string;
   plano?: string;
   teaser?: string;
+  ref?: string;
 };
-
-const FREE_VS_PRO = [
-  { label: "Semanas 1–2 do plano guiado", free: true, pro: true },
-  { label: "Semanas 3–4 (explosão + performance)", free: false, pro: true },
-  { label: "Biblioteca premium", free: false, pro: true },
-  { label: "Ciclo de manutenção avançado", free: false, pro: true },
-  { label: "Sync na nuvem com conta", free: true, pro: true },
-] as const;
 
 export const Route = createFileRoute("/planos")({
   validateSearch: (search: Record<string, unknown>): PlanosSearch => {
@@ -33,6 +26,7 @@ export const Route = createFileRoute("/planos")({
     if (typeof search["from"] === "string") out.from = search["from"];
     if (typeof search["checkout"] === "string") out.checkout = search["checkout"];
     if (typeof search["teaser"] === "string") out.teaser = search["teaser"];
+    if (typeof search["ref"] === "string") out.ref = search["ref"];
     if (typeof search["plano"] === "string" && PLANOS_IDS.has(search["plano"])) {
       out.plano = search["plano"];
     }
@@ -43,7 +37,7 @@ export const Route = createFileRoute("/planos")({
       { title: "Planos e assinatura — Jogador PRO System" },
       {
         name: "description",
-        content: "Mensal R$47, semestral R$147 ou anual R$197. Destrave semanas 3–4 e a biblioteca premium.",
+        content: "Mensal R$47, semestral R$147 ou anual R$197. Acesso completo ao plano guiado.",
       },
       { property: "og:title", content: "Comece a treinar como atleta hoje" },
       { property: "og:description", content: "Assine e destrave o plano guiado completo do Jogador PRO System." },
@@ -55,7 +49,7 @@ export const Route = createFileRoute("/planos")({
 function PlanosPage() {
   const { refreshEntitlement, activateLocalPlan, logado, state, email } = usePlayer();
   const navigate = useNavigate();
-  const { from, plano, checkout, teaser } = Route.useSearch();
+  const { from, plano, checkout, teaser, ref } = Route.useSearch();
   const [escolhido, setEscolhido] = useState(plano ?? "semestral");
   const [mostrarBrick, setMostrarBrick] = useState(false);
   const [pendingPix, setPendingPix] = useState(false);
@@ -63,6 +57,19 @@ function PlanosPage() {
   useEffect(() => {
     if (plano) setEscolhido(plano);
   }, [plano]);
+
+  useEffect(() => {
+    if (ref) {
+      try {
+        sessionStorage.setItem("jogador-pro-affiliate-ref", ref);
+      } catch {
+        /* ignore */
+      }
+      void import("@/integrations/supabase/client").then(({ supabase }) => {
+        void supabase.from("affiliate_clicks").insert({ code: ref });
+      });
+    }
+  }, [ref]);
 
   useEffect(() => {
     trackMeta("ViewContent", {
@@ -82,7 +89,6 @@ function PlanosPage() {
     setMostrarBrick(true);
   };
 
-  // Retoma checkout após login
   useEffect(() => {
     if (checkout === "1" && logado && !state.assinante) {
       trackMeta("InitiateCheckout", {
@@ -115,10 +121,11 @@ function PlanosPage() {
           aria-label="Voltar"
           onClick={() => {
             if (from?.startsWith("treino:")) void navigate({ to: "/biblioteca" });
-            else if (from === "soft-paywall" || from === "plano") void navigate({ to: "/plano" });
+            else if (from === "plano") void navigate({ to: "/plano" });
             else if (from === "perfil") void navigate({ to: "/perfil" });
             else if (from === "progresso") void navigate({ to: "/progresso" });
             else if (from === "campanha") void navigate({ to: "/campanha", search: {} });
+            else if (from === "onboarding") void navigate({ to: "/onboarding" });
             else void navigate({ to: "/" });
           }}
         >
@@ -128,32 +135,13 @@ function PlanosPage() {
     >
       {teaser ? (
         <div className="mb-5 rounded-[1.5rem] border border-primary/30 bg-primary/10 p-4 shadow-soft">
-          <p className="text-xs font-bold uppercase tracking-wide text-primary">Conteúdo bloqueado</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-primary">Assinatura necessária</p>
           <p className="mt-1 text-sm font-extrabold text-foreground">{teaser}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Com PRO você destrava este treino e toda a Semana 3–4.
+            Com PRO você destrava o plano completo, biblioteca e comunidade.
           </p>
         </div>
       ) : null}
-
-      <section className="mb-5 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft">
-        <div className="grid grid-cols-3 border-b border-border/60 bg-secondary/50 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-          <span>O que você ganha</span>
-          <span className="text-center">Free</span>
-          <span className="text-center text-primary">PRO</span>
-        </div>
-        {FREE_VS_PRO.map((row) => (
-          <div key={row.label} className="grid grid-cols-3 items-center border-b border-border/40 px-3 py-3 last:border-0">
-            <span className="pr-2 text-xs text-foreground sm:text-sm">{row.label}</span>
-            <span className="flex justify-center">
-              {row.free ? <Check className="h-4 w-4 text-primary" /> : <X className="h-4 w-4 text-muted-foreground/50" />}
-            </span>
-            <span className="flex justify-center">
-              {row.pro ? <Check className="h-4 w-4 text-primary" /> : <X className="h-4 w-4 text-muted-foreground/50" />}
-            </span>
-          </div>
-        ))}
-      </section>
 
       <ul className="mb-5 space-y-2 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
         {BENEFICIOS_PRO.map((b) => (

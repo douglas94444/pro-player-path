@@ -15,11 +15,13 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BemVindoProRouteImport } from './routes/bem-vindo-pro'
 import { Route as BibliotecaRouteImport } from './routes/biblioteca'
 import { Route as CampanhaRouteImport } from './routes/campanha'
+import { Route as EscolinhasRouteImport } from './routes/escolinhas'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PlanoRouteImport } from './routes/plano'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as ProgressoRouteImport } from './routes/progresso'
+import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
 import { Route as AdminSessoesRouteImport } from './routes/admin.sessoes'
@@ -56,6 +58,11 @@ const CampanhaRoute = CampanhaRouteImport.update({
   path: '/campanha',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EscolinhasRoute = EscolinhasRouteImport.update({
+  id: '/escolinhas',
+  path: '/escolinhas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -79,6 +86,11 @@ const PlanosRoute = PlanosRouteImport.update({
 const ProgressoRoute = ProgressoRouteImport.update({
   id: '/progresso',
   path: '/progresso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RankingRoute = RankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -114,11 +126,13 @@ export interface FileRoutesByFullPath {
   '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
+  '/escolinhas': typeof EscolinhasRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
+  '/ranking': typeof RankingRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -131,11 +145,13 @@ export interface FileRoutesByTo {
   '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
+  '/escolinhas': typeof EscolinhasRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
+  '/ranking': typeof RankingRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -150,11 +166,13 @@ export interface FileRoutesById {
   '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
+  '/escolinhas': typeof EscolinhasRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
   '/plano': typeof PlanoRoute
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
+  '/ranking': typeof RankingRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -170,11 +188,13 @@ export interface FileRouteTypes {
     | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
+    | '/escolinhas'
     | '/onboarding'
     | '/perfil'
     | '/plano'
     | '/planos'
     | '/progresso'
+    | '/ranking'
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
@@ -187,11 +207,13 @@ export interface FileRouteTypes {
     | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
+    | '/escolinhas'
     | '/onboarding'
     | '/perfil'
     | '/plano'
     | '/planos'
     | '/progresso'
+    | '/ranking'
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
@@ -205,11 +227,13 @@ export interface FileRouteTypes {
     | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
+    | '/escolinhas'
     | '/onboarding'
     | '/perfil'
     | '/plano'
     | '/planos'
     | '/progresso'
+    | '/ranking'
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
@@ -224,11 +248,13 @@ export interface RootRouteChildren {
   BemVindoProRoute: typeof BemVindoProRoute
   BibliotecaRoute: typeof BibliotecaRoute
   CampanhaRoute: typeof CampanhaRoute
+  EscolinhasRoute: typeof EscolinhasRoute
   OnboardingRoute: typeof OnboardingRoute
   PerfilRoute: typeof PerfilRoute
   PlanoRoute: typeof PlanoRoute
   PlanosRoute: typeof PlanosRoute
   ProgressoRoute: typeof ProgressoRoute
+  RankingRoute: typeof RankingRoute
   TreinoTreinoIdRoute: typeof TreinoTreinoIdRoute
 }
 
@@ -276,6 +302,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CampanhaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/escolinhas': {
+      id: '/escolinhas'
+      path: '/escolinhas'
+      fullPath: '/escolinhas'
+      preLoaderRoute: typeof EscolinhasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -309,6 +342,13 @@ declare module '@tanstack/react-router' {
       path: '/progresso'
       fullPath: '/progresso'
       preLoaderRoute: typeof ProgressoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ranking': {
+      id: '/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof RankingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -372,11 +412,13 @@ const rootRouteChildren: RootRouteChildren = {
   BemVindoProRoute: BemVindoProRoute,
   BibliotecaRoute: BibliotecaRoute,
   CampanhaRoute: CampanhaRoute,
+  EscolinhasRoute: EscolinhasRoute,
   OnboardingRoute: OnboardingRoute,
   PerfilRoute: PerfilRoute,
   PlanoRoute: PlanoRoute,
   PlanosRoute: PlanosRoute,
   ProgressoRoute: ProgressoRoute,
+  RankingRoute: RankingRoute,
   TreinoTreinoIdRoute: TreinoTreinoIdRoute,
 }
 export const routeTree = rootRouteImport

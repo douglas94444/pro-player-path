@@ -59,9 +59,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Nunca confiar no amount do frontend
+    const utm = (body.utm ?? {}) as Record<string, string | undefined>;
+    const affiliateRef = typeof body.affiliate_ref === "string" ? body.affiliate_ref : null;
+
     const formData = { ...(body.formData ?? body) };
     delete formData.plano;
+    delete formData.utm;
+    delete formData.affiliate_ref;
 
     const notificationUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/mercadopago-webhook`;
     const paymentBody = {
@@ -72,6 +76,9 @@ Deno.serve(async (req) => {
       metadata: {
         supabase_user_id: user.id,
         plano,
+        utm_source: utm.utm_source ?? null,
+        utm_campaign: utm.utm_campaign ?? null,
+        affiliate_ref: affiliateRef,
       },
       notification_url: notificationUrl,
       payer: {
@@ -112,6 +119,12 @@ Deno.serve(async (req) => {
         event_type: `payment.${payment.status}`,
         plano,
         payload: payment,
+        utm_source: utm.utm_source ?? null,
+        utm_medium: utm.utm_medium ?? null,
+        utm_campaign: utm.utm_campaign ?? null,
+        utm_content: utm.utm_content ?? null,
+        utm_term: utm.utm_term ?? null,
+        affiliate_ref: affiliateRef,
       },
       { onConflict: "stripe_event_id" },
     );
@@ -124,8 +137,46 @@ Deno.serve(async (req) => {
           plano,
           mp_payment_id: String(payment.id),
           mp_payer_id: payment.payer?.id ? String(payment.payer.id) : null,
+          referred_by: affiliateRef,
         })
         .eq("id", user.id);
+
+      // Meta CAPI (não bloqueia resposta)
+      const capiToken = Deno.env.get("META_CAPI_ACCESS_TOKEN");
+      if (capiToken) {
+        const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
+        const email = (user.email ?? "").toLowerCase().trim();
+        let em: string | undefined;
+        if (email) {
+          const enc = new TextEncoder();
+          const hash = await crypto.subtle.digest("SHA-256", enc.encode(email));
+          em = Array.from(new Uint8Array(hash))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+        }
+        void fetch(`https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${capiToken}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: [
+              {
+                event_name: "Purchase",
+                event_time: Math.floor(Date.now() / 1000),
+                event_id: `mp-${payment.id}`,
+                action_source: "website",
+                user_data: em ? { em: [em] } : {},
+                custom_data: {
+                  currency: "BRL",
+                  value: cfg.amount,
+                  content_name: plano,
+                  utm_source: utm.utm_source,
+                  utm_campaign: utm.utm_campaign,
+                },
+              },
+            ],
+          }),
+        }).catch(console.error);
+      }
     }
 
     return new Response(

@@ -4,15 +4,23 @@ export type ProofSlot =
   | { type: "placeholder"; title: string };
 
 export const CAMPANHA = {
-  socialProof: "+2.000 jogadores já estão evoluindo com esse método",
+  socialProof: "Sistema diário para quem treina sozinho e quer evoluir no jogo",
   brand: "Jogador PRO System",
   headline: "Pare de treinar sem resultado.",
   headlineLead: "Siga um plano pronto e evolua como jogador em poucas semanas.",
   subheadline: "Mesmo treinando sozinho e com pouco tempo por dia.",
   heroCta: "Começar agora por R$47",
   heroCtaPlano: "mensal" as const,
-  heroCtaGratis: "Treinar grátis agora",
-  heroCtaGratisHint: "Semanas 1 e 2 liberadas — sinta o método antes de assinar",
+  heroCtaSecundario: "Ver planos e preços",
+  heroCtaHint: "Acesso completo ao plano de 4 semanas — sem freemium",
+  teaserTreino: {
+    titulo: "Preview do método",
+    nome: "Base + Mobilidade · Dia 1",
+    duracao: "14 min",
+    descricao: "O primeiro treino do arco: aquecimento, ativação e ritmo — sem improvisar.",
+    /** URL de vídeo (MP4/YouTube embed) quando disponível */
+    videoSrc: "",
+  },
 
   problemas: [
     "Você treina sem saber se está fazendo certo",
@@ -85,21 +93,27 @@ export const CAMPANHA = {
         autor: "Pedro, atacante",
       },
     ],
-    /** Cole URLs reais aqui quando tiver prints/vídeos */
+    /**
+     * Prova social — troque `placeholder` por `video`/`image` com `src` real.
+     * Ex.: { type: "video", src: "https://...", title: "Case Lucas" }
+     */
     slots: [
-      { type: "placeholder", title: "Cole seu vídeo de treino" },
-      { type: "placeholder", title: "Cole print de visualizações" },
-      { type: "placeholder", title: "Cole print de comentário" },
+      { type: "placeholder", title: "Vídeo: antes e depois no campo" },
+      { type: "placeholder", title: "Print: streak de 14 dias" },
+      { type: "placeholder", title: "Depoimento em vídeo (15s)" },
+      { type: "placeholder", title: "Print: evolução Semana 1→4" },
+      { type: "placeholder", title: "UGC: treino em casa" },
     ] as ProofSlot[],
   },
 
   oferta: {
     title: "Acesso completo ao Jogador PRO System",
     recebe: [
-      "Plano guiado completo",
-      "Treinos organizados por semanas",
-      "Acesso à biblioteca de treinos",
-      "Atualizações futuras",
+      "Plano guiado completo (4 semanas)",
+      "Biblioteca + modos pré-partida e pós-jogo",
+      "Comunidade PRO no Telegram",
+      "Histórico, streak e evolução na nuvem",
+      "Atualizações e ciclos pós-plano",
     ],
     badges: {
       semestral: "Mais escolhido",

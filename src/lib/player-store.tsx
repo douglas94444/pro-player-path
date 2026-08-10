@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
+import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 
 const STORAGE_KEY = "jogador-pro-state-v2";
 const LEGACY_KEY = "jogador-pro-state-v1";
@@ -22,6 +23,8 @@ export type PlayerState = {
   onboardingDone: boolean;
   objetivo: string | null;
   disponibilidade: string | null;
+  posicao: string | null;
+  affiliateCode: string | null;
 };
 
 const initialState: PlayerState = {
@@ -34,6 +37,8 @@ const initialState: PlayerState = {
   onboardingDone: false,
   objetivo: null,
   disponibilidade: null,
+  posicao: null,
+  affiliateCode: null,
 };
 
 function hoje() {
@@ -120,10 +125,15 @@ type Ctx = {
   progressoSemana: number;
   planoCompleto: boolean;
   concluirTreino: (treinoId: string, planoKey?: string) => void;
-  cancelar: () => Promise<{ error?: string }>;
+  cancelar: (motivo?: string) => Promise<{ error?: string }>;
   activateLocalPlan: (plano: string) => void;
   setNome: (n: string) => void;
-  completeOnboarding: (data: { nome: string; objetivo: string; disponibilidade: string }) => void;
+  completeOnboarding: (data: {
+    nome: string;
+    objetivo: string;
+    disponibilidade: string;
+    posicao?: string;
+  }) => void;
   markAuthPromptSeen: () => void;
   shouldPromptAuth: boolean;
   /** True para visitante que ainda não dispensou o prompt de conta. */
@@ -170,7 +180,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const [{ data: perfil }, { data: sessoes }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("nome, assinante, plano, role")
+          .select(
+            "nome, assinante, plano, role, objetivo, disponibilidade, posicao, affiliate_code, referred_by",
+          )
           .eq("id", user.id)
           .maybeSingle(),
         supabase
@@ -215,9 +227,32 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           ? local.nome
           : nomeCloud;
 
-      if (nomeFinal !== perfil?.nome) {
-        void supabase.from("profiles").upsert({ id: user.id, nome: nomeFinal }, { onConflict: "id" });
+      let affiliateCode = perfil?.affiliate_code ?? null;
+      if (!affiliateCode) {
+        affiliateCode = `jp-${user.id.slice(0, 8)}`;
       }
+
+      const referido =
+        (() => {
+          try {
+            return sessionStorage.getItem("jogador-pro-affiliate-ref");
+          } catch {
+            return null;
+          }
+        })() || perfil?.referred_by || null;
+
+      void supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          nome: nomeFinal,
+          objetivo: perfil?.objetivo ?? local.objetivo,
+          disponibilidade: perfil?.disponibilidade ?? local.disponibilidade,
+          posicao: perfil?.posicao ?? local.posicao ?? "qualquer",
+          affiliate_code: affiliateCode,
+          referred_by: referido,
+        },
+        { onConflict: "id" },
+      );
 
       setState({
         nome: nomeFinal,
@@ -227,8 +262,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         sessoes: merged,
         ultimoTreinoId: merged.length ? merged[merged.length - 1]!.treinoId : null,
         onboardingDone: true,
-        objetivo: local.objetivo,
-        disponibilidade: local.disponibilidade,
+        objetivo: perfil?.objetivo ?? local.objetivo,
+        disponibilidade: perfil?.disponibilidade ?? local.disponibilidade,
+        posicao: perfil?.posicao ?? local.posicao,
+        affiliateCode,
       });
       try {
         localStorage.setItem(ONBOARDING_KEY, "1");
@@ -292,11 +329,35 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const t = getTreino(treinoId);
       const minutos = t?.duracaoMin ?? 10;
       const data = hoje();
-      setState((s) => ({
-        ...s,
-        ultimoTreinoId: treinoId,
-        sessoes: [...s.sessoes, { treinoId, data, minutos, planoKey }],
-      }));
+      setState((s) => {
+        const nextSessoes = [...s.sessoes, { treinoId, data, minutos, planoKey }];
+        if (user) {
+          const weekStart = (() => {
+            const d = new Date();
+            const day = d.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            d.setDate(d.getDate() + diff);
+            return d.toISOString().slice(0, 10);
+          })();
+          const weekSessoes = nextSessoes.filter((x) => x.data >= weekStart);
+          void supabase.from("league_entries").upsert(
+            {
+              user_id: user.id,
+              week_start: weekStart,
+              treinos: weekSessoes.length,
+              minutos: weekSessoes.reduce((a, x) => a + x.minutos, 0),
+              streak_peak: calcStreak(nextSessoes),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,week_start" },
+          );
+        }
+        return {
+          ...s,
+          ultimoTreinoId: treinoId,
+          sessoes: nextSessoes,
+        };
+      });
       if (user) {
         void supabase.from("sessoes").insert({
           user_id: user.id,
@@ -314,16 +375,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, assinante: true, plano }));
   }, []);
 
-  const cancelar = useCallback(async () => {
-    if (!user) {
+  const cancelar = useCallback(
+    async (motivo?: string) => {
+      if (!user) {
+        setState((s) => ({ ...s, assinante: false, plano: null }));
+        return {};
+      }
+      const res = await supabase.functions.invoke("cancel-subscription", {
+        body: { motivo: motivo ?? null },
+      });
+      if (res.error) return { error: res.error.message };
+      if (motivo) {
+        void supabase
+          .from("profiles")
+          .update({ cancel_reason: motivo, cancelled_at: new Date().toISOString() })
+          .eq("id", user.id);
+      }
       setState((s) => ({ ...s, assinante: false, plano: null }));
       return {};
-    }
-    const res = await supabase.functions.invoke("cancel-subscription", { body: {} });
-    if (res.error) return { error: res.error.message };
-    setState((s) => ({ ...s, assinante: false, plano: null }));
-    return {};
-  }, [user]);
+    },
+    [user],
+  );
 
   const value = useMemo<Ctx>(() => {
     const planoConcluidos = state.sessoes.map((s) => s.planoKey).filter(Boolean) as string[];
@@ -332,17 +404,44 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     let proximo: ProximoPlano | null = PLANO_FLAT.find((p) => !unicos.includes(p.key)) ?? null;
 
     if (!proximo && planoBaseFeito) {
-      const feitosManut = unicos.filter((k) => k.startsWith("m-")).length;
-      const idx = feitosManut % PLANO_MANUTENCAO.length;
-      const dia = PLANO_MANUTENCAO[idx]!;
-      proximo = {
-        key: `m-${feitosManut + 1}`,
-        semana: 5,
-        dia: dia.dia,
-        treinoId: dia.treinoId,
-        premium: Boolean(getTreino(dia.treinoId)?.premium),
-        manutencao: true,
-      };
+      const faltas = diasSemTreinar(state.sessoes);
+      if (faltas >= 2) {
+        const retorno = treinoRetorno(state.objetivo);
+        proximo = {
+          key: `retorno-${hoje()}`,
+          semana: 5,
+          dia: 0,
+          treinoId: retorno.id,
+          premium: true,
+          manutencao: true,
+        };
+      } else {
+        const ciclo = cicloSugerido(state.objetivo);
+        const feitosCiclo = unicos.filter((k) => k.startsWith(`c-${ciclo.id}-`)).length;
+        if (feitosCiclo < ciclo.treinoIds.length) {
+          const treinoId = ciclo.treinoIds[feitosCiclo]!;
+          proximo = {
+            key: `c-${ciclo.id}-${feitosCiclo + 1}`,
+            semana: 5,
+            dia: feitosCiclo + 1,
+            treinoId,
+            premium: true,
+            manutencao: true,
+          };
+        } else {
+          const feitosManut = unicos.filter((k) => k.startsWith("m-")).length;
+          const idx = feitosManut % PLANO_MANUTENCAO.length;
+          const dia = PLANO_MANUTENCAO[idx]!;
+          proximo = {
+            key: `m-${feitosManut + 1}`,
+            semana: 5,
+            dia: dia.dia,
+            treinoId: dia.treinoId,
+            premium: true,
+            manutencao: true,
+          };
+        }
+      }
     }
 
     const totalTreinos = state.sessoes.length;
@@ -378,12 +477,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, nome }));
         salvarNome(nome);
       },
-      completeOnboarding: ({ nome, objetivo, disponibilidade }) => {
+      completeOnboarding: ({ nome, objetivo, disponibilidade, posicao }) => {
+        const nomeFinal = nome.trim() || "Jogador";
         setState((s) => ({
           ...s,
-          nome: nome.trim() || "Jogador",
+          nome: nomeFinal,
           objetivo,
           disponibilidade,
+          posicao: posicao ?? s.posicao ?? "qualquer",
           onboardingDone: true,
         }));
         try {
@@ -391,7 +492,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         } catch {
           /* ignore */
         }
-        if (user) salvarNome(nome.trim() || "Jogador");
+        if (user) {
+          void supabase.from("profiles").upsert(
+            {
+              id: user.id,
+              nome: nomeFinal,
+              objetivo,
+              disponibilidade,
+              posicao: posicao ?? "qualquer",
+            },
+            { onConflict: "id" },
+          );
+        }
       },
       markAuthPromptSeen: () => {
         setAuthPromptSeen(true);
