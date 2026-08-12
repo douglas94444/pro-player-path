@@ -278,6 +278,42 @@ export type Database = {
         }
         Relationships: []
       }
+      treino_videos: {
+        Row: {
+          created_at: string
+          exercicio_nome: string | null
+          id: string
+          storage_path: string | null
+          tipo: string
+          titulo: string | null
+          treino_id: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          exercicio_nome?: string | null
+          id?: string
+          storage_path?: string | null
+          tipo?: string
+          titulo?: string | null
+          treino_id: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          exercicio_nome?: string | null
+          id?: string
+          storage_path?: string | null
+          tipo?: string
+          titulo?: string | null
+          treino_id?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       weekly_scores: {
         Row: {
           controle: number

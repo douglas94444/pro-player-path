@@ -18,13 +18,20 @@ export function ExerciseDemo({
   videoUrl?: string;
 }) {
   if (videoUrl) {
-    const isYoutube = /youtube\.com|youtu\.be/.test(videoUrl);
+    const isEmbed = /youtube\.com|youtu\.be|vimeo\.com/.test(videoUrl);
+    const embedSrc = /youtu\.be\//.test(videoUrl)
+      ? videoUrl.replace("youtu.be/", "www.youtube.com/embed/")
+      : /vimeo\.com/.test(videoUrl) && !videoUrl.includes("player.vimeo")
+        ? videoUrl.replace("vimeo.com/", "player.vimeo.com/video/")
+        : videoUrl.includes("embed")
+          ? videoUrl
+          : videoUrl.replace("watch?v=", "embed/");
     return (
       <div className="relative aspect-video overflow-hidden rounded-3xl border border-border bg-card">
-        {isYoutube ? (
+        {isEmbed ? (
           <iframe
             title={nome}
-            src={videoUrl.includes("embed") ? videoUrl : videoUrl.replace("watch?v=", "embed/")}
+            src={embedSrc}
             className="h-full w-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen

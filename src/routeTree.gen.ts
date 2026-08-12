@@ -26,6 +26,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
 import { Route as AdminSessoesRouteImport } from './routes/admin.sessoes'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
+import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as TreinoTreinoIdRouteImport } from './routes/treino.$treinoId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -113,6 +114,11 @@ const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   path: '/usuarios',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVideosRoute = AdminVideosRouteImport.update({
+  id: '/videos',
+  path: '/videos',
+  getParentRoute: () => AdminRoute,
+} as any)
 const TreinoTreinoIdRoute = TreinoTreinoIdRouteImport.update({
   id: '/treino/$treinoId',
   path: '/treino/$treinoId',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
+    | '/admin/videos'
     | '/treino/$treinoId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
+    | '/admin/videos'
     | '/treino/$treinoId'
     | '/admin'
   id:
@@ -237,6 +248,7 @@ export interface FileRouteTypes {
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
+    | '/admin/videos'
     | '/treino/$treinoId'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -379,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsuariosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/videos': {
+      id: '/admin/videos'
+      path: '/videos'
+      fullPath: '/admin/videos'
+      preLoaderRoute: typeof AdminVideosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/treino/$treinoId': {
       id: '/treino/$treinoId'
       path: '/treino/$treinoId'
@@ -393,6 +412,7 @@ interface AdminRouteChildren {
   AdminPagamentosRoute: typeof AdminPagamentosRoute
   AdminSessoesRoute: typeof AdminSessoesRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
+  AdminVideosRoute: typeof AdminVideosRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -400,6 +420,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPagamentosRoute: AdminPagamentosRoute,
   AdminSessoesRoute: AdminSessoesRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
+  AdminVideosRoute: AdminVideosRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

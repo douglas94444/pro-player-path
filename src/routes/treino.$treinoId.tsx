@@ -11,6 +11,7 @@ import { trackMetaCustom } from "@/lib/meta-pixel";
 import { toast } from "sonner";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { shareProgress } from "@/lib/share-progress";
+import { useTreinoVideos } from "@/lib/treino-videos";
 
 export const Route = createFileRoute("/treino/$treinoId")({
   validateSearch: (search: Record<string, unknown>): { plano?: string | undefined } => ({
@@ -49,6 +50,7 @@ function TreinoPage() {
     planoConcluidos,
   } = usePlayer();
   const treino = getTreino(treinoId);
+  const videosCadastrados = useTreinoVideos(treinoId);
 
   const bloqueado = treino ? !canAccessTreino(state.assinante, treino.id, plano) : false;
 
@@ -377,13 +379,26 @@ function TreinoPage() {
           </span>
         </div>
 
+        {videosCadastrados[""] ? (
+          <div className="mt-5 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft sm:p-5">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-primary">
+              Sessão completa
+            </p>
+            <ExerciseDemo demo="bola" nome={treino.nome} videoUrl={videosCadastrados[""] as string} />
+          </div>
+        ) : null}
+
         <div className="mt-5 overflow-hidden rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-soft sm:p-5">
           <ExerciseDemo
             demo={atual.demo ?? "cardio"}
             nome={atual.nome}
-            {...(atual.videoUrl ? { videoUrl: atual.videoUrl } : {})}
+            {...(() => {
+              const url = videosCadastrados[atual.nome] ?? atual.videoUrl;
+              return url ? { videoUrl: url } : {};
+            })()}
           />
         </div>
+
 
         <div className="mt-8 flex flex-col items-center">
           <ProgressRing value={exercisePct} size={200} stroke={14}>
