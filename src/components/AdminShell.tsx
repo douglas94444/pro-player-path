@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Dumbbell, CreditCard, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Users, Dumbbell, CreditCard, ArrowLeft, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/admin" as const, label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/usuarios" as const, label: "Usuários", icon: Users, exact: false },
   { to: "/admin/sessoes" as const, label: "Sessões", icon: Dumbbell, exact: false },
+  { to: "/admin/videos" as const, label: "Vídeos", icon: Video, exact: false },
   { to: "/admin/pagamentos" as const, label: "Pagamentos", icon: CreditCard, exact: false },
 ];
 
