@@ -11,6 +11,7 @@ import { trackMetaCustom } from "@/lib/meta-pixel";
 import { toast } from "sonner";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { shareProgress } from "@/lib/share-progress";
+import { useTreinoVideos } from "@/lib/treino-videos";
 
 export const Route = createFileRoute("/treino/$treinoId")({
   validateSearch: (search: Record<string, unknown>): { plano?: string | undefined } => ({
