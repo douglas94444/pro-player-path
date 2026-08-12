@@ -50,6 +50,7 @@ function TreinoPage() {
     planoConcluidos,
   } = usePlayer();
   const treino = getTreino(treinoId);
+  const videosCadastrados = useTreinoVideos(treinoId);
 
   const bloqueado = treino ? !canAccessTreino(state.assinante, treino.id, plano) : false;
 
