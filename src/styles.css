@@ -141,11 +141,24 @@
 
   body {
     background-color: var(--color-background);
+    background-image:
+      radial-gradient(60rem 30rem at 100% -10%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 70%),
+      radial-gradient(45rem 25rem at -10% 10%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 70%);
+    background-attachment: fixed;
     color: var(--color-foreground);
+    font-family: var(--font-sans);
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
   }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
 }
+
 
 @layer utilities {
   .shadow-soft {
