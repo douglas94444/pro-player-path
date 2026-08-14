@@ -10,6 +10,9 @@ import { canAccessTreino } from "@/lib/access";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { labelObjetivo, prefereModoRapido, treinoRapido, treinosRecomendados } from "@/lib/recommendations";
 import { cn } from "@/lib/utils";
+import { DashboardStats } from "@/components/DashboardStats";
+import { TreinoCard } from "@/components/TreinoCard";
+
 
 export const Route = createFileRoute("/app")({
   errorComponent: RouteError,
