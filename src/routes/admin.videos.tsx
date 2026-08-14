@@ -246,7 +246,7 @@ function VideoRow({
               </a>
             </p>
           ) : (
-            <video src={preview} controls preload="metadata" className="max-h-56 w-full bg-black" />
+            <video src={preview} controls preload="none" className="max-h-56 w-full bg-black" />
           )}
         </div>
       ) : null}
