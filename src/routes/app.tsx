@@ -70,10 +70,12 @@ function Home() {
     void navigate({ to: "/treino/$treinoId", params: { treinoId: escolhido.id } });
   };
 
-  const treinoBloqueado = false;
+  const treinoBloqueado =
+    treinoDeHoje && !canAccessTreino(state.assinante, treinoDeHoje.id, proximoPlano?.key);
   const focoLabel = labelObjetivo(state.objetivo);
   const querRapido = prefereModoRapido(state.disponibilidade);
   const precisaAssinar = !state.assinante;
+
 
 
   if (!hydrated || !state.onboardingDone) {
