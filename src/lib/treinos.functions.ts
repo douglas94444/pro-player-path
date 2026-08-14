@@ -58,6 +58,7 @@ export const concluirTreinoServer = createServerFn({ method: "POST" })
     // O cliente não tem permissão de escrita em sessoes/league_entries:
     // toda gravação passa pelo service role, depois das validações acima.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { recalcularLiga } = await import("@/lib/liga.server");
 
     // Idempotência: um registro por treino por dia (também garantida por UNIQUE no banco)
     const { data: existente } = await supabaseAdmin
