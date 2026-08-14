@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Lock, Search, Timer } from "lucide-react";
+import { Search } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import { TreinoCard } from "@/components/TreinoCard";
+
 import { CATEGORIAS, POSICOES, TREINOS, type Categoria } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 import { categoriaPorObjetivo, labelObjetivo } from "@/lib/recommendations";
@@ -38,13 +40,6 @@ export const Route = createFileRoute("/biblioteca")({
   component: Biblioteca,
 });
 
-const CAT_TINT: Record<Categoria, string> = {
-  casa: "from-sky-100 to-sky-50",
-  campo: "from-emerald-100 to-emerald-50",
-  core: "from-violet-100 to-violet-50",
-  explosao: "from-amber-100 to-amber-50",
-  forca: "from-lime-100 to-lime-50",
-};
 
 function Biblioteca() {
   const { state } = usePlayer();
@@ -231,36 +226,6 @@ function Biblioteca() {
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {lista.map((t) => {
             const bloqueado = !state.assinante;
-            const tint = CAT_TINT[t.categorias[0] ?? "casa"];
-            const card = (
-              <div
-                className={cn(
-                  "overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft transition-transform hover:-translate-y-0.5",
-                  bloqueado && "opacity-90",
-                )}
-              >
-                <div className={cn("relative h-28 bg-gradient-to-br px-4 pt-4", tint)}>
-                  <p className="text-sm font-extrabold text-foreground">{t.nome}</p>
-                  {bloqueado ? (
-                    <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-card/90 shadow-soft">
-                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                    </span>
-                  ) : null}
-                </div>
-                <div className="p-4">
-                  <p className="line-clamp-2 text-xs text-muted-foreground">{t.descricao}</p>
-                  {bloqueado ? (
-                    <p className="mt-2 text-[11px] font-semibold text-primary">PRO · destrava com a assinatura</p>
-                  ) : null}
-                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    <Timer className="h-3.5 w-3.5" /> {t.duracaoMin} min
-                    <span>·</span>
-                    {t.nivel}
-                  </div>
-                </div>
-              </div>
-            );
-
             return bloqueado ? (
               <Link
                 key={t.id}
@@ -270,17 +235,17 @@ function Biblioteca() {
                   teaser: `${t.nome} — ${t.descricao}`,
                 }}
                 onClick={() => trackMetaCustom("PaywallHit", { from: "biblioteca", treino_id: t.id })}
+                className="block h-full"
               >
-                {card}
+                <TreinoCard treino={t} bloqueado legenda="Destrave no PRO" />
               </Link>
             ) : (
-              <Link key={t.id} to="/treino/$treinoId" params={{ treinoId: t.id }}>
-                {card}
-              </Link>
+              <TreinoCard key={t.id} treino={t} />
             );
           })}
         </div>
       )}
+
     </AppShell>
   );
 }

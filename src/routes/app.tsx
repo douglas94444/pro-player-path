@@ -10,6 +10,9 @@ import { canAccessTreino } from "@/lib/access";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { labelObjetivo, prefereModoRapido, treinoRapido, treinosRecomendados } from "@/lib/recommendations";
 import { cn } from "@/lib/utils";
+import { DashboardStats } from "@/components/DashboardStats";
+import { TreinoCard } from "@/components/TreinoCard";
+
 
 export const Route = createFileRoute("/app")({
   errorComponent: RouteError,
@@ -219,6 +222,8 @@ function Home() {
         </div>
       </div>
 
+      {state.assinante ? <DashboardStats /> : null}
+
       {recomendados.length ? (
         <section className="mt-5">
           <div className="mb-3 flex items-center justify-between">
@@ -229,21 +234,15 @@ function Home() {
               Ver biblioteca
             </Link>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             {recomendados.map((t) => (
-              <Link
-                key={t.id}
-                to="/treino/$treinoId"
-                params={{ treinoId: t.id }}
-                className="rounded-2xl border border-border/60 bg-card px-4 py-3 shadow-soft transition-colors hover:border-primary/40"
-              >
-                <p className="text-sm font-bold text-foreground">{t.nome}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{t.duracaoMin} min</p>
-              </Link>
+              <TreinoCard key={t.id} treino={t} bloqueado={!canAccessTreino(state.assinante, t.id)} />
             ))}
           </div>
         </section>
       ) : null}
+
+
 
       {state.assinante ? (
         <section className="mt-5 grid gap-2 sm:grid-cols-2">

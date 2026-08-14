@@ -25,16 +25,21 @@ export const Route = createFileRoute("/plano")({
   component: PlanoPage,
 });
 
-const WEEK_ACCENTS = [
-  "bg-sky-100 text-sky-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-amber-100 text-amber-800",
-  "bg-lime-100 text-lime-800",
+const JORNADA = [
+  { nome: "Base", chip: "bg-emerald-500/15 text-emerald-700", barra: "bg-emerald-500" },
+  { nome: "Controle", chip: "bg-sky-500/15 text-sky-700", barra: "bg-sky-500" },
+  { nome: "Explosão", chip: "bg-violet-500/15 text-violet-700", barra: "bg-violet-500" },
+  { nome: "Performance", chip: "bg-amber-500/20 text-amber-800", barra: "bg-amber-500" },
 ];
+
 
 function PlanoPage() {
   const { planoConcluidos, proximoPlano, state, planoCompleto } = usePlayer();
+  const semanasCompletas = PLANO.filter((s) =>
+    s.dias.every((d) => planoConcluidos.includes(`${s.semana}-${d.dia}`)),
+  ).length;
   const navigate = useNavigate();
+
 
   return (
     <AppShell
@@ -61,10 +66,44 @@ function PlanoPage() {
         </div>
       ) : null}
 
+      <section className="mb-5 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-foreground">Campanha de 4 semanas</h2>
+          <span className="text-xs font-bold text-primary">
+            {semanasCompletas}/{PLANO.length} semanas
+          </span>
+        </div>
+        <div className="mt-3 flex gap-1.5">
+          {PLANO.map((s, i) => {
+            const etapa = JORNADA[i % JORNADA.length]!;
+            const feita = i < semanasCompletas;
+            return (
+              <div key={s.semana} className="flex-1">
+                <div
+                  className={cn(
+                    "h-2.5 rounded-full transition-colors",
+                    feita ? etapa.barra : "bg-secondary",
+                  )}
+                />
+                <p
+                  className={cn(
+                    "mt-1.5 text-center text-[11px] font-bold",
+                    feita ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {etapa.nome}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
         {PLANO.map((semana, si) => {
           const semanaPremium = Boolean(semana.premium) || isSemanaPremium(semana.semana);
           const feitos = semana.dias.filter((d) => planoConcluidos.includes(`${semana.semana}-${d.dia}`)).length;
+          const etapa = JORNADA[si % JORNADA.length]!;
           return (
             <section
               key={semana.semana}
@@ -74,7 +113,7 @@ function PlanoPage() {
                 <span
                   className={cn(
                     "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
-                    WEEK_ACCENTS[si % WEEK_ACCENTS.length],
+                    etapa.chip,
                   )}
                 >
                   S{semana.semana}
@@ -82,7 +121,9 @@ function PlanoPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h2 className="text-lg font-extrabold text-foreground">{semana.titulo}</h2>
+                      <h2 className="text-lg font-extrabold text-foreground">
+                        {semana.titulo}
+                      </h2>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         Programa · {semana.dias.length} treinos · {feitos}/{semana.dias.length} feitos
                       </p>
@@ -93,6 +134,7 @@ function PlanoPage() {
                       </span>
                     ) : null}
                   </div>
+
                   <p className="mt-2 text-xs text-muted-foreground">{semana.foco}</p>
                   {semanaPremium && !state.assinante ? (
                     <p className="mt-1 text-[11px] font-semibold text-primary">

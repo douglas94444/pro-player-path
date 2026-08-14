@@ -152,6 +152,10 @@ function PerfilPage() {
         <Input id="nome" value={state.nome} onChange={(e) => setNome(e.target.value)} className="mt-2" />
       </section>
 
+      <SomToggle />
+
+
+
       <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Assinatura</p>
         <p className="mt-2 text-lg font-extrabold text-foreground">
@@ -324,5 +328,34 @@ function PerfilPage() {
         )}
       </section>
     </AppShell>
+  );
+}
+
+function SomToggle() {
+  const [mudo, setMudo] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("jps:mute") === "1";
+  });
+
+  const alternar = () => {
+    const novo = !mudo;
+    setMudo(novo);
+    try {
+      localStorage.setItem("jps:mute", novo ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  };
+
+  return (
+    <section className="mt-4 flex items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+      <div>
+        <p className="text-sm font-bold text-foreground">Som de conclusão</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Efeito sonoro ao finalizar um treino.</p>
+      </div>
+      <Button type="button" variant={mudo ? "outline" : "default"} onClick={alternar}>
+        {mudo ? "Ativar" : "Desativar"}
+      </Button>
+    </section>
   );
 }
