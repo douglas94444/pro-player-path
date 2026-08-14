@@ -64,6 +64,7 @@ function TreinoPage() {
   const [restante, setRestante] = useState(treino?.exercicios[0]?.duracaoSeg ?? 0);
   const [rodando, setRodando] = useState(true);
   const [fim, setFim] = useState(false);
+  const [salvandoConclusao, setSalvandoConclusao] = useState(false);
   const [concluido, setConcluido] = useState(false);
   const [mostrarAuth, setMostrarAuth] = useState(false);
   const [sentimento, setSentimento] = useState<string | null>(null);
@@ -171,6 +172,16 @@ function TreinoPage() {
   };
 
   const concluir = async () => {
+    if (salvandoConclusao) return;
+    setSalvandoConclusao(true);
+    try {
+      await registrarConclusao();
+    } finally {
+      setSalvandoConclusao(false);
+    }
+  };
+
+  const registrarConclusao = async () => {
     const antes = {
       treinos: totalTreinos,
       streak,
@@ -224,8 +235,13 @@ function TreinoPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             {treino.nome} · {treino.duracaoMin} min. Você ficou mais perto do próximo nível.
           </p>
-          <Button onClick={() => void concluir()} size="lg" className="mt-8 h-14 w-full text-base font-extrabold">
-            <Check className="h-5 w-5" /> Marcar como concluído
+          <Button
+            onClick={() => void concluir()}
+            disabled={salvandoConclusao}
+            size="lg"
+            className="mt-8 h-14 w-full text-base font-extrabold"
+          >
+            <Check className="h-5 w-5" /> {salvandoConclusao ? "Salvando…" : "Marcar como concluído"}
           </Button>
           <Button asChild variant="ghost" className="mt-2 w-full">
             <Link to="/">Voltar depois</Link>
