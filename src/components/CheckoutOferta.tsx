@@ -17,8 +17,8 @@ const codigoValido = (v: string) => CODE_RE.test(v);
 /** Evento disparado pelos CTAs da landing para abrir o checkout de um plano. */
 export const CHECKOUT_EVENT = "jps:checkout";
 
-export function dispararCheckout(plano?: string) {
-  window.dispatchEvent(new CustomEvent(CHECKOUT_EVENT, { detail: { plano } }));
+export function dispararCheckout(plano?: string, iniciar = true) {
+  window.dispatchEvent(new CustomEvent(CHECKOUT_EVENT, { detail: { plano, iniciar } }));
 }
 
 export function rolarParaOferta() {
@@ -155,8 +155,16 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
   // CTAs da landing pedem abertura do checkout via evento.
   useEffect(() => {
     const handler = (e: Event) => {
-      const plano = (e as CustomEvent<{ plano?: string }>).detail?.plano;
-      iniciarCheckout(plano);
+      const detail = (e as CustomEvent<{ plano?: string; iniciar?: boolean }>).detail;
+      if (detail?.iniciar === false) {
+        if (detail.plano) {
+          setEscolhido(detail.plano);
+          setMostrarBrick(false);
+          setPendingPix(false);
+        }
+        return;
+      }
+      iniciarCheckout(detail?.plano);
     };
     window.addEventListener(CHECKOUT_EVENT, handler);
     return () => window.removeEventListener(CHECKOUT_EVENT, handler);

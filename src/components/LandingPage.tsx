@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   CalendarDays,
@@ -14,6 +14,8 @@ import { PLANOS_ASSINATURA } from "@/data/training";
 import { captureUtmFromSearch } from "@/lib/utm";
 import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
+import { usePlayer } from "@/lib/player-store";
+import { CheckoutOferta, dispararCheckout, rolarParaOferta } from "@/components/CheckoutOferta";
 
 export type LandingSearch = {
   from?: string;
@@ -83,9 +85,9 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     (plano?: string) => {
       rolarParaOferta();
       if (logado && !state.assinante) {
-        window.setTimeout(() => dispararCheckout(plano), 350);
+        window.setTimeout(() => dispararCheckout(plano, true), 350);
       } else if (plano) {
-        dispararCheckout(plano);
+        dispararCheckout(plano, false);
       }
     },
     [logado, state.assinante],
