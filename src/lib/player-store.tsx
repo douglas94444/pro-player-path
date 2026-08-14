@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
-import { hojeBR, inicioSemanaBR } from "@/lib/date";
+import { hojeBR } from "@/lib/date";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 import { concluirTreinoServer } from "@/lib/treinos.functions";
 
@@ -128,7 +128,6 @@ type Ctx = {
   retomarAssinatura: () => Promise<{ error?: string }>;
   downgradeMensal: (motivo?: string) => Promise<{ error?: string }>;
   isPaused: boolean;
-  activateLocalPlan: (plano: string) => void;
   setNome: (n: string) => void;
   completeOnboarding: (data: {
     nome: string;
@@ -322,21 +321,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           const jaTem = s.sessoes.some((x) => x.treinoId === treinoId && x.data === data);
           const nextSessoes =
             duplicado || jaTem ? s.sessoes : [...s.sessoes, { treinoId, data, minutos, planoKey }];
-          if (user) {
-            const weekStart = inicioSemanaBR();
-            const weekSessoes = nextSessoes.filter((x) => x.data >= weekStart);
-            void supabase.from("league_entries").upsert(
-              {
-                user_id: user.id,
-                week_start: weekStart,
-                treinos: weekSessoes.length,
-                minutos: weekSessoes.reduce((a, x) => a + x.minutos, 0),
-                streak_peak: calcStreak(nextSessoes),
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id,week_start" },
-            );
-          }
           return { ...s, ultimoTreinoId: treinoId, sessoes: nextSessoes };
         });
       };
@@ -353,16 +337,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     },
     [user],
   );
-
-  const activateLocalPlan = useCallback(
-    (plano: string) => {
-      // Otimista apenas para usuários logados; o servidor confirma em refreshEntitlement()
-      if (!user) return;
-      setState((s) => ({ ...s, plano }));
-    },
-    [user],
-  );
-
 
   const cancelar = useCallback(
     async (motivo?: string) => {
@@ -503,7 +477,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       progressoSemana: Math.round((feitosNaSemana / totalSemana) * 100),
       planoCompleto: planoBaseFeito,
       concluirTreino,
-      activateLocalPlan,
       cancelar,
       pausarAssinatura,
       retomarAssinatura,
@@ -567,7 +540,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     logado,
     user,
     concluirTreino,
-    activateLocalPlan,
     cancelar,
     pausarAssinatura,
     retomarAssinatura,

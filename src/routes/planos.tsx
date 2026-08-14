@@ -54,7 +54,7 @@ function codigoValido(value: string) {
 }
 
 function PlanosPage() {
-  const { refreshEntitlement, activateLocalPlan, logado, state, email } = usePlayer();
+  const { refreshEntitlement, logado, state, email } = usePlayer();
   const navigate = useNavigate();
   const { from, plano, checkout, teaser, ref } = Route.useSearch();
   const [escolhido, setEscolhido] = useState(plano ?? "semestral");
@@ -312,8 +312,8 @@ function PlanosPage() {
             email={email}
             couponCode={cupomAplicado?.code ?? null}
             discountPercent={cupomAplicado?.discount ?? 0}
-            onApproved={(planoId) => {
-              activateLocalPlan(planoId);
+            onApproved={() => {
+              // O PRO só é liberado depois que o banco confirmar a assinatura.
               void refreshEntitlement().then(() => {
                 toast.success("Acesso PRO liberado");
                 void navigate({ to: "/bem-vindo-pro", replace: true });
