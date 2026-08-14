@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
+import { concluirTreinoServer } from "@/lib/treinos.functions";
 
 const STORAGE_KEY = "jogador-pro-state-v2";
 const LEGACY_KEY = "jogador-pro-state-v1";
@@ -99,15 +100,6 @@ function lerLocal(): PlayerState {
   }
 }
 
-function mergeSessoes(local: Sessao[], remote: Sessao[]): Sessao[] {
-  const map = new Map<string, Sessao>();
-  for (const s of [...remote, ...local]) {
-    const key = `${s.data}|${s.treinoId}|${s.planoKey ?? ""}|${s.minutos}`;
-    map.set(key, s);
-  }
-  return Array.from(map.values()).sort((a, b) => a.data.localeCompare(b.data));
-}
-
 type ProximoPlano = {
   key: string;
   semana: number;
@@ -129,7 +121,7 @@ type Ctx = {
   semanaAtual: number;
   progressoSemana: number;
   planoCompleto: boolean;
-  concluirTreino: (treinoId: string, planoKey?: string) => void;
+  concluirTreino: (treinoId: string, planoKey?: string) => Promise<void>;
   cancelar: (motivo?: string) => Promise<{ error?: string }>;
   pausarAssinatura: (dias?: number, motivo?: string) => Promise<{ error?: string; pausedUntil?: string }>;
   retomarAssinatura: () => Promise<{ error?: string }>;
