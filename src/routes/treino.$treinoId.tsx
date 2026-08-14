@@ -486,7 +486,13 @@ function TreinoPage() {
 
         <div className="mt-8 flex flex-col items-center">
           <ProgressRing value={exercisePct} size={200} stroke={14}>
-            <p className="text-4xl font-black tabular-nums tracking-tight text-foreground sm:text-5xl">
+            <p
+              role="timer"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={`Tempo restante do exercício: ${fmt(restante)}`}
+              className="text-4xl font-black tabular-nums tracking-tight text-foreground sm:text-5xl"
+            >
               {fmt(restante)}
             </p>
             <p className="mt-1 text-[11px] font-medium text-muted-foreground">restante</p>
@@ -498,6 +504,7 @@ function TreinoPage() {
           <Button
             variant="secondary"
             size="icon"
+            aria-label="Exercício anterior"
             className="h-12 w-12 shadow-soft sm:h-14 sm:w-14"
             onClick={() => irPara(idx - 1)}
           >
@@ -505,6 +512,7 @@ function TreinoPage() {
           </Button>
           <Button
             size="icon"
+            aria-label={rodando ? "Pausar treino" : "Iniciar treino"}
             className="h-16 w-16 shadow-soft-lg sm:h-20 sm:w-20"
             onClick={() => setRodando((r) => !r)}
           >
@@ -513,12 +521,14 @@ function TreinoPage() {
           <Button
             variant="secondary"
             size="icon"
+            aria-label="Próximo exercício"
             className="h-12 w-12 shadow-soft sm:h-14 sm:w-14"
             onClick={() => irPara(idx + 1)}
           >
             <SkipForward className="h-5 w-5" />
           </Button>
         </div>
+
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {proximo ? `Próximo: ${proximo.nome}` : "Último exercício"}

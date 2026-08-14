@@ -162,8 +162,15 @@ export async function removerVideo(v: TreinoVideo) {
   if (error) throw error;
 }
 
+/**
+ * Remove o arquivo antigo do bucket. A falha não interrompe o fluxo (o registro
+ * novo precisa ser salvo), mas é registrada para diagnosticar arquivos órfãos.
+ */
 async function apagarArquivo(path: string) {
-  await supabase.storage.from(TREINO_VIDEOS_BUCKET).remove([path]);
+  const { error } = await supabase.storage.from(TREINO_VIDEOS_BUCKET).remove([path]);
+  if (error) {
+    console.warn("[treino-videos] falha ao apagar arquivo antigo", path, error.message);
+  }
 }
 
 async function buscarRegistro(treinoId: string, exercicioNome: string | null) {

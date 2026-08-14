@@ -21,8 +21,15 @@ export function AppShell({
 }) {
   return (
     <div className="relative min-h-screen bg-background">
+      <a
+        href="#conteudo-principal"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-primary-foreground"
+      >
+        Pular para o conteúdo
+      </a>
       {hideNav ? null : <BottomNav />}
       <div
+        id="conteudo-principal"
         className={cn(
           "relative mx-auto w-full px-4 pb-32 pt-8 sm:px-6 md:pb-12 md:pt-10 lg:pr-10",
           hideNav ? "md:pl-8" : "md:pl-64",

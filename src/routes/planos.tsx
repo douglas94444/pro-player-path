@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export type PlanosSearch = {
   from?: string;
@@ -10,6 +11,8 @@ export type PlanosSearch = {
 };
 
 export const Route = createFileRoute("/planos")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   validateSearch: (search: Record<string, unknown>): PlanosSearch => {
     const out: PlanosSearch = {};
     if (typeof search["from"] === "string") out.from = search["from"];
@@ -28,6 +31,10 @@ export const Route = createFileRoute("/planos")({
       },
       { property: "og:title", content: "Comece a treinar como atleta hoje" },
       { property: "og:description", content: "Assine e destrave o plano guiado completo do Jogador PRO System." },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://ballstar-trainer.lovable.app/og-cover.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://ballstar-trainer.lovable.app/og-cover.jpg" },
     ],
   }),
   component: PlanosRedirect,
