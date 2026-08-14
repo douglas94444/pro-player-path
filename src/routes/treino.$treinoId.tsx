@@ -13,8 +13,11 @@ import { toast } from "sonner";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { shareProgress } from "@/lib/share-progress";
 import { useTreinoVideos } from "@/lib/treino-videos";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/treino/$treinoId")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   validateSearch: (search: Record<string, unknown>): { plano?: string | undefined } => ({
     plano: typeof search["plano"] === "string" ? (search["plano"] as string) : undefined,
   }),
@@ -28,6 +31,32 @@ export const Route = createFileRoute("/treino/$treinoId")({
   }),
   component: TreinoPage,
 });
+
+const PROGRESSO_KEY = "jogador-pro-treino-progresso";
+const PROGRESSO_TTL = 6 * 60 * 60 * 1000;
+
+type ProgressoSalvo = { treinoId: string; idx: number; restante: number; fim: boolean; ts: number };
+
+function lerProgresso(treinoId: string): ProgressoSalvo | null {
+  try {
+    const raw = sessionStorage.getItem(PROGRESSO_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as ProgressoSalvo;
+    if (p.treinoId !== treinoId) return null;
+    if (Date.now() - p.ts > PROGRESSO_TTL) return null;
+    return p;
+  } catch {
+    return null;
+  }
+}
+
+function limparProgresso() {
+  try {
+    sessionStorage.removeItem(PROGRESSO_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
@@ -69,6 +98,35 @@ function TreinoPage() {
   const [mostrarAuth, setMostrarAuth] = useState(false);
   const [sentimento, setSentimento] = useState<string | null>(null);
   const [shareDone, setShareDone] = useState(false);
+  const [restaurado, setRestaurado] = useState(false);
+
+  // Retoma o treino em andamento após refresh/queda de conexão.
+  useEffect(() => {
+    const salvo = lerProgresso(treinoId);
+    if (!salvo) {
+      setRestaurado(true);
+      return;
+    }
+    setIdx(salvo.idx);
+    setRestante(salvo.restante);
+    setFim(salvo.fim);
+    setRodando(false);
+    setRestaurado(true);
+    toast.message("Treino retomado", { description: "Continuamos de onde você parou." });
+  }, [treinoId]);
+
+  // Persiste o andamento a cada segundo (sessionStorage).
+  useEffect(() => {
+    if (!restaurado || concluido) return;
+    try {
+      sessionStorage.setItem(
+        PROGRESSO_KEY,
+        JSON.stringify({ treinoId, idx, restante, fim, ts: Date.now() } satisfies ProgressoSalvo),
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [restaurado, concluido, treinoId, idx, restante, fim]);
 
   const total = useMemo(() => treino?.exercicios.reduce((a, e) => a + e.duracaoSeg, 0) ?? 0, [treino]);
   const feito = useMemo(
@@ -84,7 +142,7 @@ function TreinoPage() {
   }, [treino, bloqueado, plano]);
 
   useEffect(() => {
-    if (!rodando || fim) return;
+    if (!rodando || fim || !restaurado) return;
     const t = setInterval(() => setRestante((r) => Math.max(0, r - 1)), 1000);
     return () => clearInterval(t);
   }, [rodando, fim]);
@@ -218,6 +276,7 @@ function TreinoPage() {
       setMostrarAuth(true);
     }
 
+    limparProgresso();
     setConcluido(true);
     void requestStreakReminderPermission().then((perm) => {
       if (perm === "granted") scheduleStreakReminder(state.nome, Math.max(streak, 1));
