@@ -266,12 +266,28 @@ function TreinoPage() {
       plano: plano ?? "",
     });
 
+    const desbloqueadas: { titulo: string; desc: string }[] = [];
     for (const c of CONQUISTAS) {
       const antesVal = c.tipo === "treinos" ? antes.treinos : c.tipo === "streak" ? antes.streak : antes.plano;
       const depoisVal =
         c.tipo === "treinos" ? depoisTreinos : c.tipo === "streak" ? Math.max(depoisStreak, streak) : antes.plano + (plano ? 1 : 0);
       if (antesVal < c.meta && depoisVal >= c.meta) {
-        toast.success(`Conquista: ${c.titulo}`, { description: c.desc });
+        desbloqueadas.push({ titulo: c.titulo, desc: c.desc });
+      }
+    }
+    setNovasConquistas(desbloqueadas);
+
+    // Semana do plano fechada com este treino?
+    if (plano) {
+      const semanaNum = Number(plano.split("-")[0]);
+      const semana = PLANO.find((s) => s.semana === semanaNum);
+      if (semana) {
+        const chaves = semana.dias.map((d) => `${semana.semana}-${d.dia}`);
+        const feitos = new Set([...planoConcluidos, plano]);
+        const fechou = chaves.every((k) => feitos.has(k));
+        if (fechou && PLANO.some((s) => s.semana === semanaNum + 1)) {
+          setSemanaDesbloqueada(semanaNum + 1);
+        }
       }
     }
 
@@ -281,9 +297,11 @@ function TreinoPage() {
 
     limparProgresso();
     setConcluido(true);
+    playSuccessSound();
     void requestStreakReminderPermission().then((perm) => {
       if (perm === "granted") scheduleStreakReminder(state.nome, Math.max(streak, 1));
     });
+
   };
 
   if (fim && !concluido) {
