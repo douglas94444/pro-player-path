@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Lock, Search, Timer } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 import { CATEGORIAS, POSICOES, TREINOS, type Categoria } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 import { categoriaPorObjetivo, labelObjetivo } from "@/lib/recommendations";
@@ -9,8 +10,20 @@ import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 
 type TemporadaFiltro = "todas" | "pre_partida" | "pos_jogo" | "manutencao";
+type Ordem = "relevancia" | "duracao" | "intensidade" | "feitos";
+
+const ORDENS: [Ordem, string][] = [
+  ["relevancia", "Recomendado"],
+  ["duracao", "Menor duração"],
+  ["intensidade", "Mais intenso"],
+  ["feitos", "Mais feitos"],
+];
+
+const PESO_NIVEL: Record<string, number> = { Iniciante: 1, "Intermediário": 2, "Avançado": 3, PRO: 4 };
 
 export const Route = createFileRoute("/biblioteca")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "Biblioteca de treinos — Jogador PRO System" },
@@ -41,6 +54,7 @@ function Biblioteca() {
   const [temporada, setTemporada] = useState<TemporadaFiltro>("todas");
   const [usouSugestao, setUsouSugestao] = useState(false);
   const [busca, setBusca] = useState("");
+  const [ordem, setOrdem] = useState<Ordem>("relevancia");
 
   useEffect(() => {
     if (!usouSugestao && sugerida) {
@@ -50,6 +64,10 @@ function Biblioteca() {
   }, [sugerida, usouSugestao]);
 
   const termo = busca.trim().toLowerCase();
+  const feitosPorTreino = state.sessoes.reduce<Record<string, number>>((acc, s) => {
+    acc[s.treinoId] = (acc[s.treinoId] ?? 0) + 1;
+    return acc;
+  }, {});
   const lista = TREINOS.filter((t) => {
     if (termo) {
       const alvo = [t.nome, t.descricao, ...t.exercicios.map((e) => e.nome)].join(" ").toLowerCase();
@@ -65,6 +83,11 @@ function Biblioteca() {
     }
     if (temporada !== "todas" && t.temporada !== temporada) return false;
     return true;
+  }).sort((a, b) => {
+    if (ordem === "duracao") return a.duracaoMin - b.duracaoMin;
+    if (ordem === "intensidade") return (PESO_NIVEL[b.nivel] ?? 0) - (PESO_NIVEL[a.nivel] ?? 0);
+    if (ordem === "feitos") return (feitosPorTreino[b.id] ?? 0) - (feitosPorTreino[a.id] ?? 0);
+    return 0;
   });
   const foco = labelObjetivo(state.objetivo);
 
@@ -86,6 +109,23 @@ function Biblioteca() {
             className="h-11 w-full rounded-full border border-border/60 bg-card pl-9 pr-4 text-sm text-foreground shadow-soft outline-none placeholder:text-muted-foreground focus:border-primary"
           />
         </div>
+      </div>
+      <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+        {ORDENS.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setOrdem(id)}
+            className={cn(
+              "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-soft",
+              ordem === id
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/60 bg-card text-muted-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
       </div>
       <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         {POSICOES.map((p) => (
@@ -178,6 +218,7 @@ function Biblioteca() {
             className="mt-4 text-sm font-semibold text-primary underline underline-offset-4"
             onClick={() => {
               setBusca("");
+              setOrdem("relevancia");
               setFiltro(null);
               setPosicaoFiltro("qualquer");
               setTemporada("todas");
