@@ -13,9 +13,10 @@ import { useEffect, useRef, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PlayerProvider } from "@/lib/player-store";
-import { META_PIXEL_ID, trackMeta } from "@/lib/meta-pixel";
+import { META_PIXEL_ID, trackMetaDedup } from "@/lib/meta-pixel";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { Toaster } from "@/components/ui/sonner";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 function NotFoundComponent() {
   return (
@@ -142,7 +143,6 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '${META_PIXEL_ID}');
-fbq('track', 'PageView');
             `.trim(),
           }}
         />
@@ -171,6 +171,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <PlayerProvider>
         <MetaPixelPageView />
+        <OfflineBanner />
         <Toaster />
         <Outlet />
       </PlayerProvider>
