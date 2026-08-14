@@ -42,7 +42,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { from, plano } = Route.useSearch();
-  const [modo, setModo] = useState<"login" | "cadastro">(from === "pos-treino" ? "cadastro" : "login");
+  const [modo, setModo] = useState<"login" | "cadastro" | "recuperar">(from === "pos-treino" ? "cadastro" : "login");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -56,6 +56,14 @@ function AuthPage() {
     setErro(null);
     setMsg(null);
     try {
+      if (modo === "recuperar") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        setMsg("Enviamos um link de redefinição para o seu e-mail. Confira também o spam.");
+        return;
+      }
       if (modo === "cadastro") {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -96,6 +104,7 @@ function AuthPage() {
       setLoading(false);
     }
   }
+
 
   return (
     <PageFrame max="sm" className="justify-center">
