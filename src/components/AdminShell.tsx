@@ -41,7 +41,7 @@ export function AdminShell({
           ))}
         </nav>
         <Link
-          to="/"
+          to="/app"
           className="mt-4 inline-flex items-center gap-2 px-2 text-xs text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao app
@@ -52,10 +52,11 @@ export function AdminShell({
       <nav className="sticky top-0 z-40 border-b border-border bg-card/95 px-3 py-2 backdrop-blur md:hidden">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-primary">Admin</p>
-          <Link to="/" className="text-xs text-muted-foreground">
+          <Link to="/app" className="text-xs text-muted-foreground">
             App
           </Link>
         </div>
+
         <div className="mt-2 flex gap-1 overflow-x-auto pb-1">
           {items.map(({ to, label, exact }) => (
             <Link

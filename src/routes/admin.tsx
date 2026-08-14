@@ -35,12 +35,13 @@ function AdminLayout() {
         const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
         if (cancel) return;
         if (data?.role !== "admin") {
-          void navigate({ to: "/" });
+          void navigate({ to: "/app" });
           return;
         }
         setAllowed(true);
       } catch {
-        if (!cancel) void navigate({ to: "/" });
+        if (!cancel) void navigate({ to: "/app" });
+
       } finally {
         if (!cancel) setChecking(false);
       }

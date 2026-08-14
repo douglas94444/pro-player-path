@@ -4,12 +4,13 @@ import { usePlayer } from "@/lib/player-store";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { to: "/", label: "Home", icon: Home },
+  { to: "/app", label: "Home", icon: Home },
   { to: "/plano", label: "Plano", icon: CalendarDays },
   { to: "/biblioteca", label: "Treinos", icon: Dumbbell },
   { to: "/progresso", label: "Evolução", icon: TrendingUp },
   { to: "/perfil", label: "Perfil", icon: User, badgeKey: "perfil" as const },
 ] as const;
+
 
 function NavLinks({ orientation }: { orientation: "horizontal" | "vertical" }) {
   const { logado, state } = usePlayer();
@@ -24,7 +25,7 @@ function NavLinks({ orientation }: { orientation: "horizontal" | "vertical" }) {
           <Link
             key={to}
             to={to}
-            activeOptions={{ exact: to === "/" }}
+            activeOptions={{ exact: to === "/app" }}
             className={cn(
               "group relative flex items-center font-semibold text-muted-foreground transition-colors",
               "data-[status=active]:text-primary",

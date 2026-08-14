@@ -74,8 +74,9 @@ function BemVindoProPage() {
         </Button>
 
         <Button asChild variant="ghost" className="mt-2 w-full">
-          <Link to="/">Ir para a home</Link>
+          <Link to="/app">Ir para a home</Link>
         </Button>
+
       </div>
     </PageFrame>
   );

@@ -50,10 +50,11 @@ function OnboardingPage() {
 
   useEffect(() => {
     if (hydrated && state.onboardingDone) {
-      if (state.assinante) void navigate({ to: "/" });
+      if (state.assinante) void navigate({ to: "/app" });
       else void navigate({ to: "/planos", search: { from: "onboarding" } });
     }
   }, [hydrated, state.onboardingDone, state.assinante, navigate]);
+
 
   const next = () => {
     if (step < 3) {

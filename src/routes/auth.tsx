@@ -85,8 +85,9 @@ function AuthPage() {
         await navigate({ to: "/admin" });
         return;
       }
-      await navigate({ to: "/" });
+      await navigate({ to: "/app" });
     } catch (e) {
+
       setErro(e instanceof Error ? e.message : "Não foi possível continuar. Tente novamente.");
     } finally {
       setLoading(false);
@@ -102,6 +103,7 @@ function AuthPage() {
         >
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
+
 
         <h1 className="text-2xl font-extrabold leading-tight text-foreground sm:text-3xl">
           {modo === "login" ? "Bora treinar de novo" : "Salve sua evolução"}
