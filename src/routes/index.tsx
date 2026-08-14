@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, Clock, Shield } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,25 +164,23 @@ function HomePage() {
     trackMetaCustom("PaywallHit", { from: from ?? "direct" });
   }, [from]);
 
-  const abrirBrick = () => {
-    trackMeta("InitiateCheckout", {
-      content_name: escolhido,
-      currency: "BRL",
-      value: (PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.precoCentavos ?? 0) / 100,
-      num_items: 1,
-    });
-    setMostrarBrick(true);
-  };
-
-  useEffect(() => {
-    if (checkout === "1" && logado && !state.assinante) {
+  const checkoutTrackedRef = useRef(false);
+  const abrirBrick = useCallback(() => {
+    if (!checkoutTrackedRef.current) {
+      checkoutTrackedRef.current = true;
       trackMeta("InitiateCheckout", {
         content_name: escolhido,
         currency: "BRL",
         value: (PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.precoCentavos ?? 0) / 100,
         num_items: 1,
       });
-      setMostrarBrick(true);
+    }
+    setMostrarBrick(true);
+  }, [escolhido]);
+
+  useEffect(() => {
+    if (checkout === "1" && logado && !state.assinante) {
+      abrirBrick();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao retomar pós-auth
   }, [checkout, logado, state.assinante]);
