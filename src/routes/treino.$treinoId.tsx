@@ -106,7 +106,7 @@ function TreinoPage() {
         <div>
           <p className="text-foreground">Treino não encontrado.</p>
           <Button asChild className="mt-4">
-            <Link to="/">Voltar ao início</Link>
+            <Link to="/app">Voltar ao início</Link>
           </Button>
         </div>
       </div>
@@ -244,7 +244,7 @@ function TreinoPage() {
             <Check className="h-5 w-5" /> {salvandoConclusao ? "Salvando…" : "Marcar como concluído"}
           </Button>
           <Button asChild variant="ghost" className="mt-2 w-full">
-            <Link to="/">Voltar depois</Link>
+            <Link to="/app">Voltar depois</Link>
           </Button>
         </div>
       </div>
@@ -366,7 +366,7 @@ function TreinoPage() {
           <div className="mt-8 flex w-full flex-col gap-2">
             {next ? (
               <Button asChild size="lg" className="h-14 text-base font-extrabold">
-                <Link to="/">Ver treino de amanhã</Link>
+                <Link to="/app">Ver treino de amanhã</Link>
               </Button>
             ) : null}
             <Button asChild variant="outline" className="h-12">
@@ -387,7 +387,7 @@ function TreinoPage() {
       <div className="relative mx-auto w-full max-w-lg px-4 pb-28 pt-6 sm:px-6 md:max-w-xl md:pb-12 md:pt-10">
         <div className="flex items-center justify-between gap-3">
           <button
-            onClick={() => navigate({ to: "/" })}
+            onClick={() => navigate({ to: "/app" })}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-card text-muted-foreground shadow-soft"
             aria-label="Voltar"
           >
