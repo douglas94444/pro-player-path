@@ -39,6 +39,51 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+function forcaSenha(senha: string) {
+  let pontos = 0;
+  if (senha.length >= 8) pontos++;
+  if (senha.length >= 12) pontos++;
+  if (/[a-z]/.test(senha) && /[A-Z]/.test(senha)) pontos++;
+  if (/\d/.test(senha)) pontos++;
+  if (/[^A-Za-z0-9]/.test(senha)) pontos++;
+  const nivel = Math.min(3, Math.max(1, Math.ceil(pontos / 2)));
+  return { nivel, label: nivel === 1 ? "Fraca" : nivel === 2 ? "Média" : "Forte" };
+}
+
+function ForcaSenha({ senha }: { senha: string }) {
+  if (!senha) return null;
+  const { nivel, label } = forcaSenha(senha);
+  return (
+    <div id="forca-senha" className="mt-2">
+      <div className="flex gap-1" aria-hidden="true">
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={`h-1.5 flex-1 rounded-full ${
+              i <= nivel ? (nivel === 1 ? "bg-destructive" : nivel === 2 ? "bg-amber-500" : "bg-primary") : "bg-muted"
+            }`}
+          />
+        ))}
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground" aria-live="polite">
+        Força da senha: {label}
+        {nivel < 3 ? " — use 12+ caracteres, maiúsculas, números e símbolos." : ""}
+      </p>
+    </div>
+  );
+}
+
+function traduzErroAuth(mensagem: string) {
+  const m = mensagem.toLowerCase();
+  if (m.includes("already registered") || m.includes("user already"))
+    return "Este e-mail já tem conta. Faça login ou use “Esqueci minha senha”.";
+  if (m.includes("invalid login credentials")) return "E-mail ou senha incorretos.";
+  if (m.includes("email not confirmed")) return "Confirme seu e-mail antes de entrar.";
+  if (m.includes("password should be")) return "Senha muito curta. Use pelo menos 8 caracteres.";
+  if (m.includes("rate limit") || m.includes("too many")) return "Muitas tentativas. Aguarde alguns minutos.";
+  return mensagem;
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const { from, plano } = Route.useSearch();
