@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
-import { hojeBR, inicioSemanaBR } from "@/lib/date";
+import { hojeBR } from "@/lib/date";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 import { concluirTreinoServer } from "@/lib/treinos.functions";
 
