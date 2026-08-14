@@ -7,6 +7,7 @@ import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
 import { hojeBR } from "@/lib/date";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 import { concluirTreinoServer } from "@/lib/treinos.functions";
+import { safeWrite } from "@/lib/supabase-write";
 
 const STORAGE_KEY = "jogador-pro-state-v2";
 const LEGACY_KEY = "jogador-pro-state-v1";
@@ -226,18 +227,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           }
         })() || perfil?.referred_by || null;
 
-      void supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          nome: nomeFinal,
-          objetivo: perfil?.objetivo ?? local.objetivo,
-          disponibilidade: perfil?.disponibilidade ?? local.disponibilidade,
-          posicao: perfil?.posicao ?? local.posicao ?? "qualquer",
-          affiliate_code: affiliateCode,
-          referred_by: referido,
-        },
-        { onConflict: "id" },
-      );
+      const perfilPayload = {
+        id: user.id,
+        nome: nomeFinal,
+        objetivo: perfil?.objetivo ?? local.objetivo,
+        disponibilidade: perfil?.disponibilidade ?? local.disponibilidade,
+        posicao: perfil?.posicao ?? local.posicao ?? "qualquer",
+        affiliate_code: affiliateCode,
+        referred_by: referido,
+      };
+      void safeWrite("seu perfil", () => supabase.from("profiles").upsert(perfilPayload, { onConflict: "id" }), {
+        table: "profiles",
+        op: "upsert",
+        payload: perfilPayload,
+        onConflict: "id",
+      });
 
       setState({
         nome: nomeFinal,
@@ -288,7 +292,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const salvarNome = useCallback(
     (nome: string) => {
       if (!user) return;
-      void supabase.from("profiles").upsert({ id: user.id, nome }, { onConflict: "id" });
+      void safeWrite("seu nome", () => supabase.from("profiles").upsert({ id: user.id, nome }, { onConflict: "id" }), {
+        table: "profiles",
+        op: "upsert",
+        payload: { id: user.id, nome },
+        onConflict: "id",
+      });
     },
     [user],
   );
@@ -503,15 +512,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           /* ignore */
         }
         if (user) {
-          void supabase.from("profiles").upsert(
-            {
-              id: user.id,
-              nome: nomeFinal,
-              objetivo,
-              disponibilidade,
-              posicao: posicao ?? "qualquer",
-            },
-            { onConflict: "id" },
+          const onboardingPayload = {
+            id: user.id,
+            nome: nomeFinal,
+            objetivo,
+            disponibilidade,
+            posicao: posicao ?? "qualquer",
+          };
+          void safeWrite(
+            "seu perfil",
+            () => supabase.from("profiles").upsert(onboardingPayload, { onConflict: "id" }),
+            { table: "profiles", op: "upsert", payload: onboardingPayload, onConflict: "id" },
           );
         }
       },
