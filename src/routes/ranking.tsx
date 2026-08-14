@@ -15,11 +15,10 @@ export const Route = createFileRoute("/ranking")({
 });
 
 type Row = {
-  user_id: string;
+  nome: string;
   treinos: number;
   minutos: number;
   streak_peak: number;
-  profiles?: { nome: string } | null;
 };
 
 function weekStartIso() {
@@ -32,22 +31,22 @@ function RankingPage() {
 
   useEffect(() => {
     const week = weekStartIso();
+    // View pública de ranking: só nome + métricas, sem expor user_id.
     void supabase
-      .from("league_entries")
-      .select("user_id, treinos, minutos, streak_peak")
+      .from("ranking_semanal")
+      .select("nome, treinos, minutos, streak_peak")
       .eq("week_start", week)
-      .order("treinos", { ascending: false })
+      .order("posicao", { ascending: true })
       .limit(20)
-      .then(async ({ data }) => {
-        const list = (data ?? []) as Row[];
-        const ids = list.map((r) => r.user_id);
-        if (!ids.length) {
-          setRows([]);
-          return;
-        }
-        const { data: profiles } = await supabase.from("profiles").select("id, nome").in("id", ids);
-        const map = new Map((profiles ?? []).map((p) => [p.id, p.nome]));
-        setRows(list.map((r) => ({ ...r, profiles: { nome: map.get(r.user_id) ?? "Jogador" } })));
+      .then(({ data }) => {
+        setRows(
+          (data ?? []).map((r) => ({
+            nome: r.nome ?? "Jogador",
+            treinos: r.treinos ?? 0,
+            minutos: r.minutos ?? 0,
+            streak_peak: r.streak_peak ?? 0,
+          })),
+        );
       });
   }, []);
 
@@ -77,7 +76,7 @@ function RankingPage() {
         ) : (
           rows.map((r, i) => (
             <li
-              key={r.user_id}
+              key={`${r.nome}-${i}`}
               className="flex items-center justify-between rounded-2xl border border-border/60 bg-card px-4 py-3 shadow-soft"
             >
               <div className="flex items-center gap-3">
@@ -85,7 +84,7 @@ function RankingPage() {
                   {i + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-bold text-foreground">{r.profiles?.nome ?? "Jogador"}</p>
+                  <p className="text-sm font-bold text-foreground">{r.nome}</p>
                   <p className="text-xs text-muted-foreground">
                     {r.treinos} treinos · {r.minutos} min · pico streak {r.streak_peak}
                   </p>
