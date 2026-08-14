@@ -5,6 +5,9 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+
 /** Meta Conversions API — envia Purchase/Subscribe server-side. */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -13,9 +16,7 @@ Deno.serve(async (req) => {
     const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
     const accessToken = Deno.env.get("META_CAPI_ACCESS_TOKEN");
     if (!accessToken) {
-      return new Response(JSON.stringify({ ok: false, skipped: "META_CAPI_ACCESS_TOKEN missing" }), {
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+      return json({ ok: false, skipped: "META_CAPI_ACCESS_TOKEN missing" });
     }
 
     const body = await req.json();
@@ -32,10 +33,20 @@ Deno.serve(async (req) => {
       const hash = await crypto.subtle.digest("SHA-256", enc.encode(email));
       userData.em = [Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("")];
     }
-    if (body.client_ip_address) userData.client_ip_address = body.client_ip_address;
-    if (body.client_user_agent) userData.client_user_agent = body.client_user_agent;
+    const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    const ip = body.client_ip_address ?? forwarded;
+    if (ip) userData.client_ip_address = ip;
+    const ua = body.client_user_agent ?? req.headers.get("user-agent");
+    if (ua) userData.client_user_agent = ua;
     if (body.fbp) userData.fbp = body.fbp;
     if (body.fbc) userData.fbc = body.fbc;
+
+    // O Meta rejeita eventos sem identificador de cliente (erro 2804050).
+    // Nesses casos o pixel do navegador já contabilizou o evento.
+    const temIdentificador = Boolean(userData.em || userData.fbp || userData.fbc);
+    if (!temIdentificador) {
+      return json({ ok: false, skipped: "no user_data identifiers" });
+    }
 
     const payload = {
       data: [
@@ -44,6 +55,7 @@ Deno.serve(async (req) => {
           event_time: Math.floor(Date.now() / 1000),
           event_id: eventId,
           action_source: "website",
+          event_source_url: body.event_source_url ?? undefined,
           user_data: userData,
           custom_data: {
             currency,
@@ -60,16 +72,12 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const json = await res.json();
-    return new Response(JSON.stringify({ ok: res.ok, meta: json }), {
-      status: res.ok ? 200 : 400,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    const meta = await res.json();
+    if (!res.ok) console.error("meta-capi rejected", JSON.stringify(meta));
+    // Sempre 200: falha de tracking nunca deve virar erro de runtime no cliente.
+    return json({ ok: res.ok, meta });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "error" }), {
-      status: 500,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return json({ ok: false, error: error instanceof Error ? error.message : "error" });
   }
 });
