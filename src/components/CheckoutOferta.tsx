@@ -26,9 +26,9 @@ export function rolarParaOferta() {
 }
 
 type Props = {
-  planoInicial?: string;
-  refCode?: string;
-  abrirAoMontar?: boolean;
+  planoInicial?: string | undefined;
+  refCode?: string | undefined;
+  abrirAoMontar?: boolean | undefined;
 };
 
 export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) {
