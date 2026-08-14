@@ -38,12 +38,19 @@ function PlanosRedirect() {
   const { from, checkout, plano, teaser, ref } = Route.useSearch();
 
   useEffect(() => {
+    const search: PlanosSearch = {};
+    if (from) search.from = from;
+    if (checkout) search.checkout = checkout;
+    if (plano) search.plano = plano;
+    if (teaser) search.teaser = teaser;
+    if (ref) search.ref = ref;
     void navigate({
       to: "/",
-      search: { from, checkout, plano, teaser, ref },
+      search,
       replace: true,
     });
   }, [navigate, from, checkout, plano, teaser, ref]);
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
