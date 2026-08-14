@@ -4,11 +4,17 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { usePlayer } from "@/lib/player-store";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import {
+  enviarSugestaoAnonima,
+  enviarSugestaoLogado,
+} from "@/lib/sugestoes.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/perfil")({
   errorComponent: RouteError,
