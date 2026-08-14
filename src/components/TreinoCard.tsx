@@ -83,6 +83,8 @@ export function TreinoCard({
     </article>
   );
 
+  if (bloqueado) return conteudo;
+
   if (to) {
     return (
       <Link to={to} className="block h-full">
