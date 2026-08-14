@@ -312,8 +312,8 @@ function PlanosPage() {
             email={email}
             couponCode={cupomAplicado?.code ?? null}
             discountPercent={cupomAplicado?.discount ?? 0}
-            onApproved={(planoId) => {
-              activateLocalPlan(planoId);
+            onApproved={() => {
+              // O PRO só é liberado depois que o banco confirmar a assinatura.
               void refreshEntitlement().then(() => {
                 toast.success("Acesso PRO liberado");
                 void navigate({ to: "/bem-vindo-pro", replace: true });
