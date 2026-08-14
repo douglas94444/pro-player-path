@@ -68,12 +68,11 @@ function Home() {
     void navigate({ to: "/treino/$treinoId", params: { treinoId: escolhido.id } });
   };
 
-  const treinoBloqueado =
-    treinoDeHoje && !canAccessTreino(state.assinante, treinoDeHoje.id, proximoPlano?.key);
+  const treinoBloqueado = false;
   const focoLabel = labelObjetivo(state.objetivo);
   const querRapido = prefereModoRapido(state.disponibilidade);
-  const recomendados = treinosRecomendados(state.objetivo, state.posicao, 3);
   const precisaAssinar = !state.assinante;
+
 
   if (!hydrated || !state.onboardingDone) {
     return (
