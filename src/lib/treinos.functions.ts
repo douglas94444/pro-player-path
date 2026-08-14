@@ -55,8 +55,12 @@ export const concluirTreinoServer = createServerFn({ method: "POST" })
     const dataHoje = hojeBR();
     const minutos = treino.duracaoMin;
 
-    // Idempotência: um registro por treino por dia
-    const { data: existente } = await supabase
+    // O cliente não tem permissão de escrita em sessoes/league_entries:
+    // toda gravação passa pelo service role, depois das validações acima.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Idempotência: um registro por treino por dia (também garantida por UNIQUE no banco)
+    const { data: existente } = await supabaseAdmin
       .from("sessoes")
       .select("id")
       .eq("user_id", userId)
@@ -64,18 +68,22 @@ export const concluirTreinoServer = createServerFn({ method: "POST" })
       .eq("data", dataHoje)
       .maybeSingle();
 
-    if (existente) {
-      return { ok: true as const, duplicado: true as const, data: dataHoje, minutos };
+    let duplicado = Boolean(existente);
+
+    if (!existente) {
+      const { error } = await supabaseAdmin.from("sessoes").insert({
+        user_id: userId,
+        treino_id: treino.id,
+        plano_key: data.planoKey,
+        data: dataHoje,
+        minutos,
+      });
+      // 23505 = violação do UNIQUE (corrida entre dois cliques)
+      if (error && error.code !== "23505") throw new Error(error.message);
+      if (error) duplicado = true;
     }
 
-    const { error } = await supabase.from("sessoes").insert({
-      user_id: userId,
-      treino_id: treino.id,
-      plano_key: data.planoKey,
-      data: dataHoje,
-      minutos,
-    });
-    if (error) throw new Error(error.message);
+    await recalcularLiga(supabaseAdmin, userId);
 
-    return { ok: true as const, duplicado: false as const, data: dataHoje, minutos };
+    return { ok: true as const, duplicado, data: dataHoje, minutos };
   });
