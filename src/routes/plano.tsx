@@ -35,7 +35,11 @@ const JORNADA = [
 
 function PlanoPage() {
   const { planoConcluidos, proximoPlano, state, planoCompleto } = usePlayer();
+  const semanasCompletas = PLANO.filter((s) =>
+    s.dias.every((d) => planoConcluidos.includes(`${s.semana}-${d.dia}`)),
+  ).length;
   const navigate = useNavigate();
+
 
   return (
     <AppShell
