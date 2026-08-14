@@ -64,6 +64,7 @@ function ProofMedia({ slot }: { slot: ProofSlot }) {
 }
 
 export function LandingPage({ search }: { search: LandingSearch }) {
+  const { logado, state } = usePlayer();
 
   useEffect(() => {
     captureUtmFromSearch(search);
@@ -77,8 +78,20 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     });
   }, [search]);
 
-  // Redireciona usuários logados e PRO direto para o app, mantendo a home como landing pública.
-  // Como não temos acesso ao contexto de auth aqui, a verificação é feita em cada rota que usa esse componente.
+  // CTAs rolam até a oferta; quem já está logado (e ainda não é PRO) vai direto para o checkout.
+  const irParaOferta = useCallback(
+    (plano?: string) => {
+      rolarParaOferta();
+      if (logado && !state.assinante) {
+        window.setTimeout(() => dispararCheckout(plano), 350);
+      } else if (plano) {
+        dispararCheckout(plano);
+      }
+    },
+    [logado, state.assinante],
+  );
+
+
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-foreground md:pb-0">
