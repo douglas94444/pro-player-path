@@ -167,13 +167,16 @@ function AuthPage() {
                 type="password"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
-                placeholder="mínimo 6 caracteres"
-                minLength={6}
+                placeholder="mínimo 8 caracteres"
+                minLength={modo === "cadastro" ? 8 : 6}
                 className="mt-2"
                 required
+                aria-describedby={modo === "cadastro" ? "forca-senha" : undefined}
               />
+              {modo === "cadastro" ? <ForcaSenha senha={senha} /> : null}
             </div>
           ) : null}
+
 
           {erro ? <p className="text-sm text-destructive">{erro}</p> : null}
           {msg ? <p className="text-sm text-primary">{msg}</p> : null}
