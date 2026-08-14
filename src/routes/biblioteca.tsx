@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Lock, Search, Timer } from "lucide-react";
+import { Search } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import { TreinoCard } from "@/components/TreinoCard";
+
 import { CATEGORIAS, POSICOES, TREINOS, type Categoria } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 import { categoriaPorObjetivo, labelObjetivo } from "@/lib/recommendations";
