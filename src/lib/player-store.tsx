@@ -209,26 +209,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         planoKey: s.plano_key ?? undefined,
       }));
 
-      const merged = mergeSessoes(local.sessoes, remoteSessoes);
+      // Sessões só existem se o servidor as registrou — nada de subir histórico local
+      const merged = remoteSessoes;
 
-      // Sobe sessões locais que ainda não existem na nuvem
-      const remoteKeys = new Set(
-        remoteSessoes.map((s) => `${s.data}|${s.treinoId}|${s.planoKey ?? ""}|${s.minutos}`),
-      );
-      const paraSubir = merged.filter(
-        (s) => !remoteKeys.has(`${s.data}|${s.treinoId}|${s.planoKey ?? ""}|${s.minutos}`),
-      );
-      if (paraSubir.length) {
-        void supabase.from("sessoes").insert(
-          paraSubir.map((s) => ({
-            user_id: user.id,
-            treino_id: s.treinoId,
-            plano_key: s.planoKey ?? null,
-            data: s.data,
-            minutos: s.minutos,
-          })),
-        );
-      }
+
 
       const nomeCloud = perfil?.nome ?? user.email?.split("@")[0] ?? "Jogador";
       const nomeFinal =
