@@ -222,45 +222,6 @@ function Home() {
         </div>
       </div>
 
-      {recomendados.length ? (
-        <section className="mt-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">
-              {focoLabel ? `Pra você · ${focoLabel}` : "Recomendados"}
-            </h2>
-            <Link to="/biblioteca" className="text-xs font-semibold text-primary">
-              Ver biblioteca
-            </Link>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {recomendados.map((t) => (
-              <TreinoCard key={t.id} treino={t} bloqueado={!canAccessTreino(state.assinante, t.id)} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-
-
-      {state.assinante ? (
-        <section className="mt-5 grid gap-2 sm:grid-cols-2">
-          <Link
-            to="/treino/$treinoId"
-            params={{ treinoId: "pre-partida" }}
-            className="rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft"
-          >
-            Pré-partida 10 min
-          </Link>
-          <Link
-            to="/treino/$treinoId"
-            params={{ treinoId: "pos-jogo" }}
-            className="rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft"
-          >
-            Pós-jogo recuperação
-          </Link>
-        </section>
-      ) : null}
-
       <section className="mt-5 grid gap-3 sm:grid-cols-3">
         {[
           { to: "/plano" as const, label: "Ver plano guiado" },
@@ -280,3 +241,4 @@ function Home() {
     </AppShell>
   );
 }
+
