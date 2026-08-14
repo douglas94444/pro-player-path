@@ -52,7 +52,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --shadow-soft: 0 8px 30px rgb(15 23 42 / 0.06);
   --shadow-soft-lg: 0 16px 40px rgb(15 23 42 / 0.08);
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo", "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
+
 
 :root {
   --radius: 1.25rem;
