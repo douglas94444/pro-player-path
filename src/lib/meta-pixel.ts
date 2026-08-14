@@ -62,6 +62,11 @@ export function trackMetaDedup(
   else trackMeta(event, payload, eventId);
 
   const value = typeof payload?.["value"] === "number" ? (payload["value"] as number) : 0;
+  const fbp = cookie("_fbp");
+  const fbc = cookie("_fbc");
+  // Sem e-mail nem cookies do pixel a CAPI não tem identificador válido:
+  // o evento já foi contabilizado pelo pixel do navegador.
+  if (!options?.email && !fbp && !fbc) return;
   void supabase.functions
     .invoke("meta-capi", {
       body: {
@@ -73,8 +78,8 @@ export function trackMetaDedup(
         custom_data: payload ?? {},
         event_source_url: window.location.href,
         client_user_agent: navigator.userAgent,
-        fbp: cookie("_fbp"),
-        fbc: cookie("_fbc"),
+        fbp,
+        fbc,
       },
     })
     .catch(() => {
