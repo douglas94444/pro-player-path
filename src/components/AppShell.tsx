@@ -8,6 +8,7 @@ export function AppShell({
   action,
   children,
   wide = false,
+  hideNav = false,
 }: {
   title: string;
   subtitle?: string;
@@ -15,13 +16,16 @@ export function AppShell({
   children: ReactNode;
   /** Conteúdo mais largo no desktop (biblioteca, plano). */
   wide?: boolean;
+  /** Oculta a navegação inferior/lateral (útil para landing pages). */
+  hideNav?: boolean;
 }) {
   return (
     <div className="relative min-h-screen bg-background">
-      <BottomNav />
+      {hideNav ? null : <BottomNav />}
       <div
         className={cn(
-          "relative mx-auto w-full px-4 pb-32 pt-8 sm:px-6 md:pb-12 md:pl-64 md:pr-8 md:pt-10 lg:pr-10",
+          "relative mx-auto w-full px-4 pb-32 pt-8 sm:px-6 md:pb-12 md:pt-10 lg:pr-10",
+          hideNav ? "md:pl-8" : "md:pl-64",
           wide ? "max-w-6xl" : "max-w-3xl",
         )}
       >
@@ -39,3 +43,4 @@ export function AppShell({
     </div>
   );
 }
+
