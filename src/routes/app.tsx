@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/lib/player-store";
 import { canAccessTreino } from "@/lib/access";
 import { captureUtmFromLocation } from "@/lib/utm";
-import { labelObjetivo, prefereModoRapido, treinoRapido, treinosRecomendados } from "@/lib/recommendations";
+
+import { labelObjetivo, prefereModoRapido, treinoRapido } from "@/lib/recommendations";
 import { cn } from "@/lib/utils";
 import { DashboardStats } from "@/components/DashboardStats";
-import { TreinoCard } from "@/components/TreinoCard";
+
 
 
 export const Route = createFileRoute("/app")({
@@ -73,8 +74,9 @@ function Home() {
     treinoDeHoje && !canAccessTreino(state.assinante, treinoDeHoje.id, proximoPlano?.key);
   const focoLabel = labelObjetivo(state.objetivo);
   const querRapido = prefereModoRapido(state.disponibilidade);
-  const recomendados = treinosRecomendados(state.objetivo, state.posicao, 3);
   const precisaAssinar = !state.assinante;
+
+
 
   if (!hydrated || !state.onboardingDone) {
     return (
@@ -224,45 +226,6 @@ function Home() {
         </div>
       </div>
 
-      {recomendados.length ? (
-        <section className="mt-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">
-              {focoLabel ? `Pra você · ${focoLabel}` : "Recomendados"}
-            </h2>
-            <Link to="/biblioteca" className="text-xs font-semibold text-primary">
-              Ver biblioteca
-            </Link>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {recomendados.map((t) => (
-              <TreinoCard key={t.id} treino={t} bloqueado={!canAccessTreino(state.assinante, t.id)} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-
-
-      {state.assinante ? (
-        <section className="mt-5 grid gap-2 sm:grid-cols-2">
-          <Link
-            to="/treino/$treinoId"
-            params={{ treinoId: "pre-partida" }}
-            className="rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft"
-          >
-            Pré-partida 10 min
-          </Link>
-          <Link
-            to="/treino/$treinoId"
-            params={{ treinoId: "pos-jogo" }}
-            className="rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft"
-          >
-            Pós-jogo recuperação
-          </Link>
-        </section>
-      ) : null}
-
       <section className="mt-5 grid gap-3 sm:grid-cols-3">
         {[
           { to: "/plano" as const, label: "Ver plano guiado" },
@@ -282,3 +245,4 @@ function Home() {
     </AppShell>
   );
 }
+
