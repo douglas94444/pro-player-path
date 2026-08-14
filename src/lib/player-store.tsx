@@ -320,55 +320,62 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const concluirTreino = useCallback(
-    (treinoId: string, planoKey?: string) => {
+    async (treinoId: string, planoKey?: string) => {
       const t = getTreino(treinoId);
-      const minutos = t?.duracaoMin ?? 10;
-      const data = hoje();
-      setState((s) => {
-        const nextSessoes = [...s.sessoes, { treinoId, data, minutos, planoKey }];
-        if (user) {
-          const weekStart = (() => {
-            const d = new Date();
-            const day = d.getDay();
-            const diff = day === 0 ? -6 : 1 - day;
-            d.setDate(d.getDate() + diff);
-            return d.toISOString().slice(0, 10);
-          })();
-          const weekSessoes = nextSessoes.filter((x) => x.data >= weekStart);
-          void supabase.from("league_entries").upsert(
-            {
-              user_id: user.id,
-              week_start: weekStart,
-              treinos: weekSessoes.length,
-              minutos: weekSessoes.reduce((a, x) => a + x.minutos, 0),
-              streak_peak: calcStreak(nextSessoes),
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id,week_start" },
-          );
-        }
-        return {
-          ...s,
-          ultimoTreinoId: treinoId,
-          sessoes: nextSessoes,
-        };
-      });
-      if (user) {
-        void supabase.from("sessoes").insert({
-          user_id: user.id,
-          treino_id: treinoId,
-          plano_key: planoKey ?? null,
-          data,
-          minutos,
+      if (!t) return;
+
+      const aplicar = (data: string, minutos: number, duplicado: boolean) => {
+        setState((s) => {
+          const jaTem = s.sessoes.some((x) => x.treinoId === treinoId && x.data === data);
+          const nextSessoes =
+            duplicado || jaTem ? s.sessoes : [...s.sessoes, { treinoId, data, minutos, planoKey }];
+          if (user) {
+            const weekStart = (() => {
+              const d = new Date();
+              const day = d.getDay();
+              const diff = day === 0 ? -6 : 1 - day;
+              d.setDate(d.getDate() + diff);
+              return d.toISOString().slice(0, 10);
+            })();
+            const weekSessoes = nextSessoes.filter((x) => x.data >= weekStart);
+            void supabase.from("league_entries").upsert(
+              {
+                user_id: user.id,
+                week_start: weekStart,
+                treinos: weekSessoes.length,
+                minutos: weekSessoes.reduce((a, x) => a + x.minutos, 0),
+                streak_peak: calcStreak(nextSessoes),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id,week_start" },
+            );
+          }
+          return { ...s, ultimoTreinoId: treinoId, sessoes: nextSessoes };
         });
+      };
+
+      if (!user) {
+        aplicar(hoje(), t.duracaoMin, false);
+        return;
       }
+
+      const res = await concluirTreinoServer({
+        data: { treinoId, planoKey: planoKey ?? null },
+      });
+      aplicar(res.data, res.minutos, res.duplicado);
     },
     [user],
   );
 
-  const activateLocalPlan = useCallback((plano: string) => {
-    setState((s) => ({ ...s, assinante: true, plano }));
-  }, []);
+  const activateLocalPlan = useCallback(
+    (plano: string) => {
+      // Otimista apenas para usuários logados; o servidor confirma em refreshEntitlement()
+      if (!user) return;
+      setState((s) => ({ ...s, plano }));
+    },
+    [user],
+  );
+
 
   const cancelar = useCallback(
     async (motivo?: string) => {
