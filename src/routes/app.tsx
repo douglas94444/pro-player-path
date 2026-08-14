@@ -135,7 +135,7 @@ function Home() {
 
       <DashboardStats />
 
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr] lg:gap-5">
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.35fr_1fr] lg:gap-5">
         <section className="rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-soft sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
             {planoCompleto

@@ -56,7 +56,7 @@ export function DashboardStats() {
   ];
 
   return (
-    <div className="mt-5 space-y-4">
+    <div className="mt-5 space-y-6">
       {treinoRetomar ? (
         <Link
           to="/treino/$treinoId"
@@ -88,7 +88,7 @@ export function DashboardStats() {
         ))}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-[1.5rem] border border-border/60 bg-card p-6 shadow-soft">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-foreground">Meta da semana</h2>
