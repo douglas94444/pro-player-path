@@ -352,7 +352,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ranking_semanal: {
+        Row: {
+          minutos: number | null
+          nome: string | null
+          posicao: number | null
+          streak_peak: number | null
+          treinos: number | null
+          week_start: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
