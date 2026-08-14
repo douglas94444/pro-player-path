@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { fetchAdminUsers, updateAdminUser, type AdminUserRow } from "@/lib/admin";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/admin/usuarios")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   component: AdminUsuarios,
 });
 

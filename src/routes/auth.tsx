@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageFrame } from "@/components/PageFrame";
 import { trackMeta } from "@/lib/meta-pixel";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export type AuthSearch = {
   from?: string;
@@ -14,6 +15,8 @@ export type AuthSearch = {
 };
 
 export const Route = createFileRoute("/auth")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   validateSearch: (search: Record<string, unknown>): AuthSearch => {
     const out: AuthSearch = {};
     if (typeof search["from"] === "string") out.from = search["from"];

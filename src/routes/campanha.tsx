@@ -14,6 +14,7 @@ import { PLANOS_ASSINATURA } from "@/data/training";
 import { captureUtmFromSearch } from "@/lib/utm";
 import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 export type CampanhaSearch = {
   utm_source?: string;
   utm_medium?: string;
@@ -23,6 +24,8 @@ export type CampanhaSearch = {
 };
 
 export const Route = createFileRoute("/campanha")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   validateSearch: (search: Record<string, unknown>): CampanhaSearch => {
     const out: CampanhaSearch = {};
     if (typeof search["utm_source"] === "string") out.utm_source = search["utm_source"];

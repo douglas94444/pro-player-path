@@ -6,8 +6,11 @@ import { PLANO, getTreino } from "@/data/training";
 import { PRODUCT } from "@/lib/product-config";
 import { usePlayer } from "@/lib/player-store";
 import { supabase } from "@/integrations/supabase/client";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/bem-vindo-pro")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "PRO liberado — Jogador PRO System" },

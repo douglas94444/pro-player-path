@@ -6,8 +6,11 @@ import { isSemanaPremium } from "@/lib/access";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/plano")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "Plano guiado de 4 semanas — Jogador PRO System" },

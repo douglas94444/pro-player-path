@@ -6,6 +6,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { TREINOS } from "@/data/training";
 import {
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
   enviarVideoArquivo,
   listTreinoVideos,
   MAX_VIDEO_MB,
@@ -17,6 +18,8 @@ import {
 } from "@/lib/treino-videos";
 
 export const Route = createFileRoute("/admin/videos")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "Vídeos dos treinos — Admin Jogador PRO" },
