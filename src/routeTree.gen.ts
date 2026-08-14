@@ -23,6 +23,7 @@ import { Route as PlanoRouteImport } from './routes/plano'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as ProgressoRouteImport } from './routes/progresso'
 import { Route as RankingRouteImport } from './routes/ranking'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
 import { Route as AdminSessoesRouteImport } from './routes/admin.sessoes'
@@ -100,6 +101,11 @@ const RankingRoute = RankingRouteImport.update({
   path: '/ranking',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/planos': typeof PlanosRoute
   '/progresso': typeof ProgressoRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/planos'
     | '/progresso'
     | '/ranking'
+    | '/reset-password'
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/planos'
     | '/progresso'
     | '/ranking'
+    | '/reset-password'
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/planos'
     | '/progresso'
     | '/ranking'
+    | '/reset-password'
     | '/admin/pagamentos'
     | '/admin/sessoes'
     | '/admin/usuarios'
@@ -280,6 +292,7 @@ export interface RootRouteChildren {
   PlanosRoute: typeof PlanosRoute
   ProgressoRoute: typeof ProgressoRoute
   RankingRoute: typeof RankingRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TreinoTreinoIdRoute: typeof TreinoTreinoIdRoute
 }
 
@@ -383,6 +396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RankingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -461,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlanosRoute: PlanosRoute,
   ProgressoRoute: ProgressoRoute,
   RankingRoute: RankingRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   TreinoTreinoIdRoute: TreinoTreinoIdRoute,
 }
 export const routeTree = rootRouteImport
