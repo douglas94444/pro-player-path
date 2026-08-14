@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export type PlanosSearch = {
   from?: string;
@@ -10,6 +11,8 @@ export type PlanosSearch = {
 };
 
 export const Route = createFileRoute("/planos")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   validateSearch: (search: Record<string, unknown>): PlanosSearch => {
     const out: PlanosSearch = {};
     if (typeof search["from"] === "string") out.from = search["from"];

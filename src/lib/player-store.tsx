@@ -88,7 +88,7 @@ function lerLocal(): PlayerState {
     return {
       ...initialState,
       ...parsed,
-      nome: parsed.nome && parsed.nome !== "Douglas" ? parsed.nome : initialState.nome,
+      nome: parsed.nome && parsed.nome !== "Jogador" ? parsed.nome : initialState.nome,
       // role e assinatura só vêm do servidor — nunca confiar no localStorage
       role: "user",
       assinante: false,
@@ -209,7 +209,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
       const nomeCloud = perfil?.nome ?? user.email?.split("@")[0] ?? "Jogador";
       const nomeFinal =
-        local.nome && local.nome !== "Jogador" && local.nome !== "Douglas" && (!perfil?.nome || perfil.nome === "Jogador")
+        local.nome && local.nome !== "Jogador" && (!perfil?.nome || perfil.nome === "Jogador")
           ? local.nome
           : nomeCloud;
 
