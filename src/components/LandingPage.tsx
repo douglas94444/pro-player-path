@@ -1,5 +1,4 @@
 import { useEffect, type ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
 import {
   CalendarDays,
   Check,
