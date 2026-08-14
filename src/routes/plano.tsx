@@ -122,7 +122,7 @@ function PlanoPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h2 className="text-lg font-extrabold text-foreground">
-                        {etapa.nome} · {semana.titulo}
+                        {semana.titulo}
                       </h2>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         Programa · {semana.dias.length} treinos · {feitos}/{semana.dias.length} feitos
