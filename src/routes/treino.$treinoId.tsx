@@ -99,6 +99,9 @@ function TreinoPage() {
   const [sentimento, setSentimento] = useState<string | null>(null);
   const [shareDone, setShareDone] = useState(false);
   const [restaurado, setRestaurado] = useState(false);
+  const [novasConquistas, setNovasConquistas] = useState<{ titulo: string; desc: string }[]>([]);
+  const [semanaDesbloqueada, setSemanaDesbloqueada] = useState<number | null>(null);
+
 
   // Retoma o treino em andamento após refresh/queda de conexão.
   useEffect(() => {
