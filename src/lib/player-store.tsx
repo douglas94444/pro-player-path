@@ -86,11 +86,14 @@ function lerLocal(): PlayerState {
       ...initialState,
       ...parsed,
       nome: parsed.nome && parsed.nome !== "Douglas" ? parsed.nome : initialState.nome,
-      // role só vem do servidor — nunca confiar no localStorage
+      // role e assinatura só vêm do servidor — nunca confiar no localStorage
       role: "user",
+      assinante: false,
+      plano: null,
       onboardingDone,
       sessoes: Array.isArray(parsed.sessoes) ? parsed.sessoes : [],
     };
+
   } catch {
     return initialState;
   }
