@@ -109,18 +109,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function MetaPixelPageView() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isFirstPath = useRef(true);
+  const ultimoPath = useRef<string | null>(null);
 
   useEffect(() => {
     captureUtmFromLocation();
   }, []);
 
   useEffect(() => {
-    if (isFirstPath.current) {
-      isFirstPath.current = false;
-      return;
-    }
-    trackMeta("PageView");
+    // O script inline não dispara PageView — este é o único disparo (sem duplicar).
+    if (ultimoPath.current === pathname) return;
+    ultimoPath.current = pathname;
+    trackMetaDedup("PageView", { content_name: pathname });
   }, [pathname]);
 
   return null;
