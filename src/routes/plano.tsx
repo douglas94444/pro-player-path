@@ -62,10 +62,44 @@ function PlanoPage() {
         </div>
       ) : null}
 
+      <section className="mb-5 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-foreground">Campanha de 4 semanas</h2>
+          <span className="text-xs font-bold text-primary">
+            {semanasCompletas}/{PLANO.length} semanas
+          </span>
+        </div>
+        <div className="mt-3 flex gap-1.5">
+          {PLANO.map((s, i) => {
+            const etapa = JORNADA[i % JORNADA.length]!;
+            const feita = i < semanasCompletas;
+            return (
+              <div key={s.semana} className="flex-1">
+                <div
+                  className={cn(
+                    "h-2.5 rounded-full transition-colors",
+                    feita ? etapa.barra : "bg-secondary",
+                  )}
+                />
+                <p
+                  className={cn(
+                    "mt-1.5 text-center text-[11px] font-bold",
+                    feita ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {etapa.nome}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
         {PLANO.map((semana, si) => {
           const semanaPremium = Boolean(semana.premium) || isSemanaPremium(semana.semana);
           const feitos = semana.dias.filter((d) => planoConcluidos.includes(`${semana.semana}-${d.dia}`)).length;
+          const etapa = JORNADA[si % JORNADA.length]!;
           return (
             <section
               key={semana.semana}
@@ -75,7 +109,7 @@ function PlanoPage() {
                 <span
                   className={cn(
                     "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black",
-                    WEEK_ACCENTS[si % WEEK_ACCENTS.length],
+                    etapa.chip,
                   )}
                 >
                   S{semana.semana}
@@ -83,7 +117,9 @@ function PlanoPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h2 className="text-lg font-extrabold text-foreground">{semana.titulo}</h2>
+                      <h2 className="text-lg font-extrabold text-foreground">
+                        {etapa.nome} · {semana.titulo}
+                      </h2>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         Programa · {semana.dias.length} treinos · {feitos}/{semana.dias.length} feitos
                       </p>
@@ -94,6 +130,7 @@ function PlanoPage() {
                       </span>
                     ) : null}
                   </div>
+
                   <p className="mt-2 text-xs text-muted-foreground">{semana.foco}</p>
                   {semanaPremium && !state.assinante ? (
                     <p className="mt-1 text-[11px] font-semibold text-primary">
