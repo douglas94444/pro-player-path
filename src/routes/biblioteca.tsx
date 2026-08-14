@@ -40,13 +40,6 @@ export const Route = createFileRoute("/biblioteca")({
   component: Biblioteca,
 });
 
-const CAT_TINT: Record<Categoria, string> = {
-  casa: "from-sky-100 to-sky-50",
-  campo: "from-emerald-100 to-emerald-50",
-  core: "from-violet-100 to-violet-50",
-  explosao: "from-amber-100 to-amber-50",
-  forca: "from-lime-100 to-lime-50",
-};
 
 function Biblioteca() {
   const { state } = usePlayer();
