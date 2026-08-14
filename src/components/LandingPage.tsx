@@ -1,5 +1,4 @@
 import { useCallback, useEffect, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
 import {
   CalendarDays,
   Check,
@@ -46,13 +45,6 @@ export function validateLandingSearch(search: Record<string, unknown>): LandingS
     if (ids.has(search["plano"])) out.plano = search["plano"];
   }
   return out;
-}
-
-export function planosLink(plano?: string) {
-  return {
-    to: "/planos" as const,
-    search: plano ? { from: "campanha" as const, plano } : { from: "campanha" as const },
-  };
 }
 
 function ProofMedia({ slot }: { slot: ProofSlot }) {
