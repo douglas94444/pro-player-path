@@ -116,6 +116,10 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin, data: { nome } },
         });
         if (error) throw error;
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          setErro("Este e-mail já tem conta. Faça login ou use “Esqueci minha senha”.");
+          return;
+        }
         trackMeta("CompleteRegistration", { content_name: "email_signup", status: true });
         if (!data.session) {
           setMsg("Conta criada! Confirme o e-mail que enviamos para começar a treinar.");
