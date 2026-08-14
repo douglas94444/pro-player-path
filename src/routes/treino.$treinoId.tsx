@@ -340,18 +340,89 @@ function TreinoPage() {
     const streakNow = Math.max(streak, 1);
     const showShare = streakNow >= 7 || plano === "2-5";
     const shareMilestone = plano === "2-5" ? "semana2" : streakNow >= 7 ? "streak7" : "geral";
+    const xpGanho = xpDoTreino(treino.duracaoMin);
+    const xpAcumulado = xpTotal(state.sessoes);
+    const patente = patenteDe(xpAcumulado);
 
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center sm:px-6">
+        <Confetti />
         <div className="w-full max-w-md">
           <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-bold">
             <Flame className="h-4 w-4 text-primary" />
             Streak {streakNow} · Nível {nivel}
           </div>
           <h1 className="mt-6 text-3xl font-extrabold text-foreground">Mandou bem</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+
+          <div className="mt-5 rounded-[1.75rem] border border-primary/30 bg-primary/10 p-6 shadow-soft">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">XP conquistado</p>
+            <CountUp
+              to={xpGanho}
+              prefix="+"
+              className="mt-1 block text-5xl font-black tracking-tight text-foreground"
+            />
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="rounded-2xl bg-background/70 px-3 py-2.5">
+                <p className="text-lg font-black text-foreground">+1</p>
+                <p className="text-[11px] font-semibold text-muted-foreground">dia de streak</p>
+              </div>
+              <div className="rounded-2xl bg-background/70 px-3 py-2.5">
+                <p className="text-lg font-black text-foreground">{treino.duracaoMin} min</p>
+                <p className="text-[11px] font-semibold text-muted-foreground">treinados</p>
+              </div>
+            </div>
+            <div className="mt-4 text-left">
+              <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground">
+                <span>
+                  {patente.atual.emoji} {patente.atual.nome}
+                </span>
+                <span>
+                  {patente.proxima
+                    ? `faltam ${patente.faltam.toLocaleString("pt-BR")} XP para ${patente.proxima.nome}`
+                    : "patente máxima"}
+                </span>
+              </div>
+              <LevelBar value={patente.progresso} className="mt-2" />
+            </div>
+          </div>
+
+          {novasConquistas.length ? (
+            <div className="mt-3 space-y-2">
+              {novasConquistas.map((c) => (
+                <div
+                  key={c.titulo}
+                  className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-card p-4 text-left shadow-soft animate-scale-in"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/20 text-primary">
+                    <Trophy className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
+                      Nova conquista
+                    </p>
+                    <p className="text-sm font-extrabold text-foreground">{c.titulo}</p>
+                    <p className="text-xs text-muted-foreground">{c.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {semanaDesbloqueada ? (
+            <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-left animate-fade-in">
+              <p className="text-sm font-extrabold text-foreground">
+                🔓 Semana {semanaDesbloqueada} desbloqueada
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Você fechou a semana inteira. O próximo bloco já está liberado no plano.
+              </p>
+            </div>
+          ) : null}
+
+          <p className="mt-4 text-sm text-muted-foreground">
             {treino.nome} registrado. Volte amanhã para manter a sequência.
           </p>
+
 
           {isFirst || !sentimento ? (
             <div className="mt-6 w-full rounded-2xl border border-border/60 bg-card p-4 text-left shadow-soft">
