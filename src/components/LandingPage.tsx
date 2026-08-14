@@ -318,60 +318,34 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           ))}
         </ul>
 
-        <div className="mt-8 grid gap-3 md:grid-cols-3">
-          {PLANOS_ASSINATURA.map((p) => {
-            const badge =
-              p.id === "semestral"
-                ? CAMPANHA.oferta.badges.semestral
-                : p.id === "anual"
-                  ? CAMPANHA.oferta.badges.anual
-                  : null;
-            return (
-              <Link
-                key={p.id}
-                {...planosLink(p.id)}
-                className={cn(
-                  "block rounded-[1.5rem] border p-5 shadow-soft transition-colors hover:border-primary/50",
-                  p.destaque ? "border-primary bg-primary/10" : "border-border/60 bg-card",
-                )}
-              >
-                {badge ? (
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-primary">{badge}</p>
-                ) : (
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-transparent">.</p>
-                )}
-                <p className="mt-2 text-lg font-extrabold text-foreground">{p.nome}</p>
-                <p className="mt-1 text-3xl font-black text-foreground">
-                  {p.preco}
-                  <span className="text-sm font-medium text-muted-foreground">{p.periodo}</span>
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">{p.nota}</p>
-              </Link>
-            );
-          })}
-        </div>
-
-        <Button asChild size="lg" className="mt-8 h-14 w-full text-base font-extrabold md:w-auto md:min-w-[280px]">
-          <Link {...planosLink("semestral")}>{CAMPANHA.oferta.cta}</Link>
-        </Button>
+        <CheckoutOferta
+          planoInicial={search.plano ?? CAMPANHA.heroCtaPlano}
+          refCode={search.ref}
+          abrirAoMontar={search.checkout === "1"}
+        />
       </Section>
 
       {/* Urgência */}
       <Section>
         <h2 className="max-w-2xl text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.urgencia.title}</h2>
         <p className="mt-3 text-lg font-semibold text-primary sm:text-xl">{CAMPANHA.urgencia.body}</p>
-        <Button asChild size="lg" className="mt-8 h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[240px]">
-          <Link {...planosLink(CAMPANHA.heroCtaPlano)}>{CAMPANHA.urgencia.cta}</Link>
+        <Button
+          size="lg"
+          className="mt-8 h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[240px]"
+          onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+        >
+          {CAMPANHA.urgencia.cta}
         </Button>
         <div className="mt-6 flex flex-wrap gap-2">
           {CAMPANHA.ctaVariacoes.map((label) => (
-            <Link
+            <button
               key={label}
-              {...planosLink("semestral")}
+              type="button"
+              onClick={() => irParaOferta("semestral")}
               className="rounded-full border border-border/60 bg-card px-3 py-2 text-xs font-semibold text-muted-foreground shadow-soft transition-colors hover:border-primary/40 hover:text-foreground"
             >
               {label}
-            </Link>
+            </button>
           ))}
         </div>
       </Section>
@@ -383,14 +357,20 @@ export function LandingPage({ search }: { search: LandingSearch }) {
       {/* Sticky mobile CTA */}
       <div className="animate-in slide-in-from-bottom-4 fixed inset-x-0 bottom-0 z-50 p-3 duration-500 md:hidden">
         <div className="flex gap-2 rounded-[1.5rem] border border-border/60 bg-card/95 p-2 shadow-soft-lg backdrop-blur">
-          <Button asChild size="lg" className="h-12 flex-1 text-xs font-extrabold">
-            <Link {...planosLink(CAMPANHA.heroCtaPlano)}>{CAMPANHA.heroCta}</Link>
+          <Button size="lg" className="h-12 flex-1 text-xs font-extrabold" onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}>
+            {CAMPANHA.heroCta}
           </Button>
-          <Button asChild size="lg" variant="outline" className="h-12 flex-1 text-xs font-extrabold">
-            <Link {...planosLink("semestral")}>Semestral</Link>
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-12 flex-1 text-xs font-extrabold"
+            onClick={() => irParaOferta("semestral")}
+          >
+            Semestral
           </Button>
         </div>
       </div>
+
     </main>
   );
 }
