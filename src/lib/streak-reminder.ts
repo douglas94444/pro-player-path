@@ -1,3 +1,4 @@
+import { hojeBR, horaBR } from "@/lib/date";
 const REMINDER_KEY = "jogador-pro-streak-reminder";
 
 export async function requestStreakReminderPermission(): Promise<NotificationPermission | "unsupported"> {
@@ -45,10 +46,10 @@ export function scheduleStreakReminder(nome: string, streak: number) {
 export function maybeNotifyStreakOnOpen(nome: string, streak: number, treinouHoje: boolean) {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission !== "granted" || treinouHoje) return;
-  const hour = new Date().getHours();
+  const hour = horaBR();
   if (hour < 18) return;
 
-  const dayKey = `streak-nudge-${new Date().toISOString().slice(0, 10)}`;
+  const dayKey = `streak-nudge-${hojeBR()}`;
   try {
     if (sessionStorage.getItem(dayKey)) return;
     sessionStorage.setItem(dayKey, "1");

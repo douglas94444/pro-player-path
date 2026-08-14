@@ -8,6 +8,7 @@ import { getTreino, CONQUISTAS, PLANO } from "@/data/training";
 import { canAccessTreino } from "@/lib/access";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
+import { hojeBR } from "@/lib/date";
 import { toast } from "sonner";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { shareProgress } from "@/lib/share-progress";
@@ -185,7 +186,7 @@ function TreinoPage() {
     }
 
     const depoisTreinos = antes.treinos + 1;
-    const depoisStreak = streak + (state.sessoes.some((s) => s.data === new Date().toISOString().slice(0, 10)) ? 0 : 1);
+    const depoisStreak = streak + (state.sessoes.some((s) => s.data === hojeBR()) ? 0 : 1);
 
     trackMetaCustom("CompleteWorkout", {
       treino_id: treino.id,

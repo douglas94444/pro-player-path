@@ -6,6 +6,7 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
 import { CONQUISTAS } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
+import { diaBROffset, inicioSemanaBR } from "@/lib/date";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -21,11 +22,7 @@ export const Route = createFileRoute("/progresso")({
 });
 
 function weekStartIso() {
-  const d = new Date();
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
+  return inicioSemanaBR();
 }
 
 type Score = {
@@ -75,10 +72,9 @@ function ProgressoPage() {
     tipo === "treinos" ? totalTreinos : tipo === "streak" ? streak : planoConcluidos.length;
 
   const ultimos7 = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const iso = d.toISOString().slice(0, 10);
-    return { label: ["D", "S", "T", "Q", "Q", "S", "S"][d.getDay()], ativo: state.sessoes.some((s) => s.data === iso) };
+    const iso = diaBROffset(-(6 - i));
+    const dow = new Date(`${iso}T12:00:00Z`).getUTCDay();
+    return { label: ["D", "S", "T", "Q", "Q", "S", "S"][dow], ativo: state.sessoes.some((s) => s.data === iso) };
   });
 
   const salvarScore = async () => {
