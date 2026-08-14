@@ -118,10 +118,12 @@ function AuthPage() {
 
 
         <h1 className="text-2xl font-extrabold leading-tight text-foreground sm:text-3xl">
-          {modo === "login" ? "Bora treinar de novo" : "Salve sua evolução"}
+          {modo === "login" ? "Bora treinar de novo" : modo === "cadastro" ? "Salve sua evolução" : "Recuperar acesso"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {from === "planos"
+          {modo === "recuperar"
+            ? "Informe o e-mail da sua conta e enviaremos um link para criar uma nova senha."
+            : from === "planos"
             ? "Entre para continuar o checkout da assinatura PRO."
             : from === "admin"
               ? "Entre com uma conta admin para acessar o painel."
@@ -157,39 +159,63 @@ function AuthPage() {
               required
             />
           </div>
-          <div>
-            <Label htmlFor="senha">Senha</Label>
-            <Input
-              id="senha"
-              type="password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="mínimo 6 caracteres"
-              minLength={6}
-              className="mt-2"
-              required
-            />
-          </div>
+          {modo !== "recuperar" ? (
+            <div>
+              <Label htmlFor="senha">Senha</Label>
+              <Input
+                id="senha"
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="mínimo 6 caracteres"
+                minLength={6}
+                className="mt-2"
+                required
+              />
+            </div>
+          ) : null}
 
           {erro ? <p className="text-sm text-destructive">{erro}</p> : null}
           {msg ? <p className="text-sm text-primary">{msg}</p> : null}
 
           <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl font-extrabold">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : modo === "login" ? "Entrar" : "Criar conta"}
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : modo === "login" ? (
+              "Entrar"
+            ) : modo === "cadastro" ? (
+              "Criar conta"
+            ) : (
+              "Enviar link de redefinição"
+            )}
           </Button>
         </form>
 
-        <button
-          type="button"
-          onClick={() => {
-            setModo(modo === "login" ? "cadastro" : "login");
-            setErro(null);
-            setMsg(null);
-          }}
-          className="mt-6 text-sm text-muted-foreground underline underline-offset-4"
-        >
-          {modo === "login" ? "Ainda não tenho conta" : "Já tenho conta"}
-        </button>
+        <div className="mt-6 flex flex-col items-start gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setModo(modo === "cadastro" ? "login" : "cadastro");
+              setErro(null);
+              setMsg(null);
+            }}
+            className="text-sm text-muted-foreground underline underline-offset-4"
+          >
+            {modo === "cadastro" ? "Já tenho conta" : "Ainda não tenho conta"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setModo(modo === "recuperar" ? "login" : "recuperar");
+              setErro(null);
+              setMsg(null);
+            }}
+            className="text-sm text-muted-foreground underline underline-offset-4"
+          >
+            {modo === "recuperar" ? "Voltar para o login" : "Esqueci minha senha"}
+          </button>
+        </div>
+
       </div>
     </PageFrame>
   );
