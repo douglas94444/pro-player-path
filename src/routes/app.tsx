@@ -6,7 +6,9 @@ import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 import { ProgressRing } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/lib/player-store";
+import { canAccessTreino } from "@/lib/access";
 import { captureUtmFromLocation } from "@/lib/utm";
+
 import { labelObjetivo, prefereModoRapido, treinoRapido } from "@/lib/recommendations";
 import { cn } from "@/lib/utils";
 import { DashboardStats } from "@/components/DashboardStats";
