@@ -25,12 +25,13 @@ export const Route = createFileRoute("/plano")({
   component: PlanoPage,
 });
 
-const WEEK_ACCENTS = [
-  "bg-sky-100 text-sky-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-amber-100 text-amber-800",
-  "bg-lime-100 text-lime-800",
+const JORNADA = [
+  { nome: "Base", chip: "bg-emerald-500/15 text-emerald-700", barra: "bg-emerald-500" },
+  { nome: "Controle", chip: "bg-sky-500/15 text-sky-700", barra: "bg-sky-500" },
+  { nome: "Explosão", chip: "bg-violet-500/15 text-violet-700", barra: "bg-violet-500" },
+  { nome: "Performance", chip: "bg-amber-500/20 text-amber-800", barra: "bg-amber-500" },
 ];
+
 
 function PlanoPage() {
   const { planoConcluidos, proximoPlano, state, planoCompleto } = usePlayer();
