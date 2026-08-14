@@ -143,8 +143,7 @@ function AuthPage() {
       }
       await navigate({ to: "/app" });
     } catch (e) {
-
-      setErro(e instanceof Error ? e.message : "Não foi possível continuar. Tente novamente.");
+      setErro(traduzErroAuth(e instanceof Error ? e.message : "Não foi possível continuar. Tente novamente."));
     } finally {
       setLoading(false);
     }
