@@ -6,7 +6,6 @@ import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { TREINOS } from "@/data/training";
 import {
-import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
   enviarVideoArquivo,
   listTreinoVideos,
   MAX_VIDEO_MB,
@@ -16,6 +15,7 @@ import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
   videoKey,
   type TreinoVideo,
 } from "@/lib/treino-videos";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/admin/videos")({
   errorComponent: RouteError,
