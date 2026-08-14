@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Lock, Timer } from "lucide-react";
+import { Lock, Search, Timer } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { CATEGORIAS, POSICOES, TREINOS, type Categoria } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
@@ -40,6 +40,7 @@ function Biblioteca() {
   const [posicaoFiltro, setPosicaoFiltro] = useState<string>(state.posicao ?? "qualquer");
   const [temporada, setTemporada] = useState<TemporadaFiltro>("todas");
   const [usouSugestao, setUsouSugestao] = useState(false);
+  const [busca, setBusca] = useState("");
 
   useEffect(() => {
     if (!usouSugestao && sugerida) {
@@ -48,7 +49,12 @@ function Biblioteca() {
     }
   }, [sugerida, usouSugestao]);
 
+  const termo = busca.trim().toLowerCase();
   const lista = TREINOS.filter((t) => {
+    if (termo) {
+      const alvo = [t.nome, t.descricao, ...t.exercicios.map((e) => e.nome)].join(" ").toLowerCase();
+      if (!alvo.includes(termo)) return false;
+    }
     if (filtro && !t.categorias.includes(filtro)) return false;
     if (posicaoFiltro && posicaoFiltro !== "qualquer") {
       const ok =
@@ -68,6 +74,19 @@ function Biblioteca() {
       title="Treinos"
       subtitle={foco ? `Sugestão pelo seu foco: ${foco}` : "Biblioteca para quando quiser mais volume"}
     >
+      <div className="mb-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar treino ou exercício"
+            aria-label="Buscar treino ou exercício"
+            className="h-11 w-full rounded-full border border-border/60 bg-card pl-9 pr-4 text-sm text-foreground shadow-soft outline-none placeholder:text-muted-foreground focus:border-primary"
+          />
+        </div>
+      </div>
       <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         {POSICOES.map((p) => (
           <button
@@ -152,14 +171,19 @@ function Biblioteca() {
 
       {lista.length === 0 ? (
         <div className="mt-10 rounded-[1.5rem] border border-dashed border-border bg-card p-8 text-center shadow-soft">
-          <p className="text-sm font-bold text-foreground">Nenhum treino nesta categoria</p>
-          <p className="mt-1 text-xs text-muted-foreground">Troque o filtro ou veja todos os treinos.</p>
+          <p className="text-sm font-bold text-foreground">Nenhum treino encontrado</p>
+          <p className="mt-1 text-xs text-muted-foreground">Troque a busca ou os filtros para ver mais treinos.</p>
           <button
             type="button"
             className="mt-4 text-sm font-semibold text-primary underline underline-offset-4"
-            onClick={() => setFiltro(null)}
+            onClick={() => {
+              setBusca("");
+              setFiltro(null);
+              setPosicaoFiltro("qualquer");
+              setTemporada("todas");
+            }}
           >
-            Limpar filtro
+            Limpar filtros
           </button>
         </div>
       ) : (
