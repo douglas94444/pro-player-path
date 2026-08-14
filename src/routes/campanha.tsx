@@ -64,10 +64,10 @@ function planosLink(plano?: string) {
 
 function ProofMedia({ slot }: { slot: ProofSlot }) {
   if (slot.type === "video") {
-    return <video src={slot.src} controls className="h-full w-full object-cover" title={slot.title} />;
+    return <video src={slot.src} controls playsInline preload="none" className="h-full w-full object-cover" title={slot.title} />;
   }
   if (slot.type === "image") {
-    return <img src={slot.src} alt={slot.title} className="h-full w-full object-cover" />;
+    return <img src={slot.src} alt={slot.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />;
   }
   return <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{slot.title}</p>;
 }
@@ -135,7 +135,7 @@ function CampanhaPage() {
                 src={CAMPANHA.teaserTreino.videoSrc}
                 controls
                 playsInline
-                preload="metadata"
+                preload="none"
               />
             ) : (
               <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-secondary text-xs text-muted-foreground">

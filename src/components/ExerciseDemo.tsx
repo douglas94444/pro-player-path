@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { VideoOff } from "lucide-react";
+import { Play, VideoOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LABELS = {
@@ -52,10 +52,13 @@ export function ExerciseDemo({
 }) {
   const [carregando, setCarregando] = useState(true);
   const [falhou, setFalhou] = useState(false);
+  // Embeds só montam o iframe depois do play (evita carregar o player de terceiros à toa).
+  const [ativo, setAtivo] = useState(false);
 
   useEffect(() => {
     setCarregando(true);
     setFalhou(false);
+    setAtivo(false);
   }, [videoUrl]);
 
   if (!videoUrl) {
@@ -95,11 +98,26 @@ export function ExerciseDemo({
 
   return (
     <div className="relative aspect-video overflow-hidden rounded-3xl border border-border bg-card">
-      {carregando ? <VideoSkeleton /> : null}
-      {isEmbed ? (
+      {carregando && (!isEmbed || ativo) ? <VideoSkeleton /> : null}
+      {isEmbed && !ativo ? (
+        <button
+          type="button"
+          onClick={() => setAtivo(true)}
+          className="group flex h-full w-full flex-col items-center justify-center gap-2 bg-secondary"
+          aria-label={`Reproduzir demonstração de ${nome}`}
+        >
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
+            <Play className="h-6 w-6 fill-current" />
+          </span>
+          <span className="px-6 text-center text-xs font-semibold text-muted-foreground">
+            Tocar demonstração — {nome}
+          </span>
+        </button>
+      ) : isEmbed ? (
         <iframe
+          loading="lazy"
           title={nome}
-          src={embedSrc}
+          src={embedSrc.includes("?") ? `${embedSrc}&autoplay=1` : `${embedSrc}?autoplay=1`}
           className="h-full w-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -115,7 +133,7 @@ export function ExerciseDemo({
           src={videoUrl}
           controls
           playsInline
-          preload="metadata"
+          preload="none"
           onLoadedData={() => setCarregando(false)}
           onCanPlay={() => setCarregando(false)}
           onError={() => {
