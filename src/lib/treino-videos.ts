@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const TREINO_VIDEOS_BUCKET = "treinos-videos";
@@ -60,27 +60,25 @@ export async function resolveVideoMap(rows: TreinoVideo[]): Promise<VideoMap> {
   return map;
 }
 
-/** Hook para o app do jogador: mapa de vídeos cadastrados para um treino. */
+const VIDEO_MAP_VAZIO: VideoMap = {};
+
+/**
+ * Hook para o app do jogador: mapa de vídeos cadastrados para um treino.
+ * Cacheado no TanStack Query — a URL assinada vale 6h, então mantemos os
+ * dados frescos por 1h e evitamos refazer a query a cada montagem.
+ */
 export function useTreinoVideos(treinoId: string | undefined) {
-  const [map, setMap] = useState<VideoMap>({});
+  const { data } = useQuery({
+    queryKey: ["treino-videos", treinoId],
+    queryFn: async () => resolveVideoMap(await listTreinoVideos(treinoId)),
+    enabled: Boolean(treinoId),
+    staleTime: 60 * 60 * 1000,
+    gcTime: 6 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
 
-  useEffect(() => {
-    let ativo = true;
-    if (!treinoId) return;
-    void listTreinoVideos(treinoId)
-      .then(resolveVideoMap)
-      .then((m) => {
-        if (ativo) setMap(m);
-      })
-      .catch(() => {
-        /* sem sessão ou sem vídeos: usa as demos padrão */
-      });
-    return () => {
-      ativo = false;
-    };
-  }, [treinoId]);
-
-  return map;
+  return data ?? VIDEO_MAP_VAZIO;
 }
 
 export async function salvarLinkVideo(input: {
