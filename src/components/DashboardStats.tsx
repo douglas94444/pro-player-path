@@ -75,7 +75,7 @@ export function DashboardStats() {
         </Link>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {cards.map((c) => (
           <div
             key={c.label}
@@ -88,8 +88,8 @@ export function DashboardStats() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="rounded-[1.5rem] border border-border/60 bg-card p-6 shadow-soft">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-foreground">Meta da semana</h2>
             <span className="text-xs font-bold text-primary">
@@ -97,12 +97,12 @@ export function DashboardStats() {
             </span>
           </div>
           <LevelBar value={(Math.min(feitosSemana, META_SEMANAL) / META_SEMANAL) * 100} className="mt-3" />
-          <div className="mt-4 flex justify-between">
+          <div className="mt-5 flex justify-between">
             {dias.map((d) => (
               <div key={d.iso} className="flex flex-col items-center gap-1.5">
                 <span
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold",
+                    "flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold",
                     d.ativo
                       ? "bg-primary text-primary-foreground"
                       : d.hoje
@@ -117,7 +117,7 @@ export function DashboardStats() {
           </div>
         </section>
 
-        <section className="rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+        <section className="rounded-[1.5rem] border border-border/60 bg-card p-6 shadow-soft">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-foreground">
               Patente {patente.atual.emoji} {patente.atual.nome}
@@ -127,20 +127,20 @@ export function DashboardStats() {
             </span>
           </div>
           <LevelBar value={patente.progresso} className="mt-3" />
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-3 text-xs text-muted-foreground">
             {patente.proxima
               ? `Faltam ${patente.faltam.toLocaleString("pt-BR")} XP para ${patente.proxima.nome}.`
               : "Você chegou ao topo — mantenha o ritmo."}
           </p>
 
           {proxima ? (
-            <div className="mt-4 rounded-2xl bg-secondary/70 p-3">
+            <div className="mt-5 rounded-2xl bg-secondary/70 p-4">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-primary" />
                 <p className="text-xs font-bold text-foreground">Próxima conquista: {proxima.titulo}</p>
               </div>
               <LevelBar value={(proxima.atual / proxima.meta) * 100} className="mt-2 h-2" />
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
+              <p className="mt-2 text-[11px] text-muted-foreground">
                 {proxima.atual}/{proxima.meta} · {proxima.desc}
               </p>
             </div>
@@ -148,7 +148,7 @@ export function DashboardStats() {
 
           <Link
             to="/progresso"
-            className="mt-4 inline-block text-xs font-bold text-primary underline underline-offset-4"
+            className="mt-5 inline-block text-xs font-bold text-primary underline underline-offset-4"
           >
             Ver todas as conquistas
           </Link>
