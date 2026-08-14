@@ -4,11 +4,17 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { usePlayer } from "@/lib/player-store";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import {
+  enviarSugestaoAnonima,
+  enviarSugestaoLogado,
+} from "@/lib/sugestoes.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/perfil")({
   errorComponent: RouteError,
@@ -293,6 +299,7 @@ function PerfilPage() {
           Ativar lembrete
         </Button>
       </section>
+      <SugestoesSection nome={state.nome} email={email} logado={logado} />
 
       <section className="mt-4 rounded-[1.5rem] border border-destructive/25 bg-card p-5 shadow-soft">
         <p className="text-xs font-bold uppercase tracking-widest text-destructive">Zona de perigo</p>
@@ -356,6 +363,137 @@ function SomToggle() {
       <Button type="button" variant={mudo ? "outline" : "default"} onClick={alternar}>
         {mudo ? "Ativar" : "Desativar"}
       </Button>
+    </section>
+  );
+}
+
+function SugestoesSection({
+  nome,
+  email,
+  logado,
+}: {
+  nome: string;
+  email: string | null;
+  logado: boolean;
+}) {
+  const [tipo, setTipo] = useState<"sugestao" | "bug" | "elogio">("sugestao");
+  const [mensagem, setMensagem] = useState("");
+  const [nomeInput, setNomeInput] = useState(nome);
+  const [emailInput, setEmailInput] = useState(email ?? "");
+  const [enviando, setEnviando] = useState(false);
+
+  const enviarAnonima = useServerFn(enviarSugestaoAnonima);
+  const enviarLogada = useServerFn(enviarSugestaoLogado);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEnviando(true);
+    try {
+      if (logado) {
+        await enviarLogada({ data: { tipo, mensagem } });
+      } else {
+        await enviarAnonima({
+          data: { nome: nomeInput, email: emailInput, tipo, mensagem },
+        });
+      }
+      toast.success("Sugestão enviada", {
+        description: "Obrigado! Sua mensagem vai ajudar a melhorar o app.",
+      });
+      setMensagem("");
+    } catch (err) {
+      toast.error("Não foi possível enviar", {
+        description: err instanceof Error ? err.message : "Tente novamente.",
+      });
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const tipos = [
+    { id: "sugestao", label: "Sugestão" },
+    { id: "bug", label: "Bug" },
+    { id: "elogio", label: "Elogio" },
+  ] as const;
+
+  return (
+    <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">Sua opinião</p>
+      <p className="mt-2 text-sm font-bold text-foreground">Ajude a melhorar o Jogador PRO</p>
+      <p className="text-xs text-muted-foreground">
+        Envie sugestões, reporte bugs ou conte o que está achando da plataforma.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <div className="grid grid-cols-3 gap-2">
+          {tipos.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTipo(t.id)}
+              className={cn(
+                "rounded-xl border px-2 py-2 text-xs font-semibold",
+                tipo === t.id
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border/60 bg-secondary text-muted-foreground",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {!logado ? (
+          <>
+            <div>
+              <Label htmlFor="sugestao-nome" className="text-xs font-medium text-foreground">
+                Nome
+              </Label>
+              <Input
+                id="sugestao-nome"
+                value={nomeInput}
+                onChange={(e) => setNomeInput(e.target.value)}
+                placeholder="Como podemos te chamar?"
+                className="mt-1.5"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="sugestao-email" className="text-xs font-medium text-foreground">
+                E-mail
+              </Label>
+              <Input
+                id="sugestao-email"
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="seu@email.com"
+                className="mt-1.5"
+                required
+              />
+            </div>
+          </>
+        ) : null}
+
+        <div>
+          <Label htmlFor="sugestao-mensagem" className="text-xs font-medium text-foreground">
+            Mensagem
+          </Label>
+          <Textarea
+            id="sugestao-mensagem"
+            value={mensagem}
+            onChange={(e) => setMensagem(e.target.value)}
+            placeholder="Conte o que você quer ver no app, o que está quebrado ou o que mais gostou…"
+            className="mt-1.5 min-h-[100px]"
+            required
+            minLength={10}
+            maxLength={2000}
+          />
+        </div>
+
+        <Button type="submit" className="w-full font-extrabold" disabled={enviando}>
+          {enviando ? "Enviando…" : "Enviar sugestão"}
+        </Button>
+      </form>
     </section>
   );
 }

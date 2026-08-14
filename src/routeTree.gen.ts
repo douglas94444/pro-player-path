@@ -27,6 +27,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
 import { Route as AdminSessoesRouteImport } from './routes/admin.sessoes'
+import { Route as AdminSugestoesRouteImport } from './routes/admin.sugestoes'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as TreinoTreinoIdRouteImport } from './routes/treino.$treinoId'
@@ -121,6 +122,11 @@ const AdminSessoesRoute = AdminSessoesRouteImport.update({
   path: '/sessoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSugestoesRoute = AdminSugestoesRouteImport.update({
+  id: '/sugestoes',
+  path: '/sugestoes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
+  '/admin/sugestoes': typeof AdminSugestoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/videos': typeof AdminVideosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
+  '/admin/sugestoes': typeof AdminSugestoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/videos': typeof AdminVideosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/sessoes': typeof AdminSessoesRoute
+  '/admin/sugestoes': typeof AdminSugestoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/admin/videos': typeof AdminVideosRoute
   '/treino/$treinoId': typeof TreinoTreinoIdRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/pagamentos'
     | '/admin/sessoes'
+    | '/admin/sugestoes'
     | '/admin/usuarios'
     | '/admin/videos'
     | '/treino/$treinoId'
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/pagamentos'
     | '/admin/sessoes'
+    | '/admin/sugestoes'
     | '/admin/usuarios'
     | '/admin/videos'
     | '/treino/$treinoId'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/pagamentos'
     | '/admin/sessoes'
+    | '/admin/sugestoes'
     | '/admin/usuarios'
     | '/admin/videos'
     | '/treino/$treinoId'
@@ -424,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSessoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/sugestoes': {
+      id: '/admin/sugestoes'
+      path: '/sugestoes'
+      fullPath: '/admin/sugestoes'
+      preLoaderRoute: typeof AdminSugestoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/usuarios': {
       id: '/admin/usuarios'
       path: '/usuarios'
@@ -451,6 +470,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminPagamentosRoute: typeof AdminPagamentosRoute
   AdminSessoesRoute: typeof AdminSessoesRoute
+  AdminSugestoesRoute: typeof AdminSugestoesRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminVideosRoute: typeof AdminVideosRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -459,6 +479,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminPagamentosRoute: AdminPagamentosRoute,
   AdminSessoesRoute: AdminSessoesRoute,
+  AdminSugestoesRoute: AdminSugestoesRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminVideosRoute: AdminVideosRoute,
   AdminIndexRoute: AdminIndexRoute,

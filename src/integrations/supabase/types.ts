@@ -278,6 +278,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sugestoes: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          mensagem: string
+          nome: string
+          tipo: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          mensagem: string
+          nome: string
+          tipo?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          mensagem?: string
+          nome?: string
+          tipo?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       treino_videos: {
         Row: {
           created_at: string
