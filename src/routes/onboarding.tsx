@@ -9,8 +9,11 @@ import { getTreino, PLANO, POSICOES } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/onboarding")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "Comece em 1 minuto — Jogador PRO System" },

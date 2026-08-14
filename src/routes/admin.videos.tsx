@@ -15,8 +15,11 @@ import {
   videoKey,
   type TreinoVideo,
 } from "@/lib/treino-videos";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/admin/videos")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "Vídeos dos treinos — Admin Jogador PRO" },

@@ -97,6 +97,7 @@ export function MercadoPagoCheckout({
           }
 
           const payload = data as {
+            id?: string | number;
             status?: string;
             status_detail?: string;
             amount?: number;
@@ -104,8 +105,10 @@ export function MercadoPagoCheckout({
           const status = payload?.status;
           const paid = payload?.amount ?? amount;
           if (status === "approved") {
-            trackMeta("Purchase", { value: paid, currency: "BRL" });
-            trackMeta("Subscribe", { value: paid, currency: "BRL" });
+            // event_id igual ao enviado pela CAPI no backend (mp-<payment_id>) → dedup no Meta
+            const eventId = payload?.id ? `mp-${payload.id}` : undefined;
+            trackMeta("Purchase", { value: paid, currency: "BRL", content_name: planoId }, eventId);
+            trackMeta("Subscribe", { value: paid, currency: "BRL", content_name: planoId }, eventId ? `${eventId}-sub` : undefined);
             toast.success("Pagamento aprovado");
             onApproved(planoId);
             return;

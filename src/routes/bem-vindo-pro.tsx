@@ -6,8 +6,12 @@ import { PLANO, getTreino } from "@/data/training";
 import { PRODUCT } from "@/lib/product-config";
 import { usePlayer } from "@/lib/player-store";
 import { supabase } from "@/integrations/supabase/client";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import { safeWrite } from "@/lib/supabase-write";
 
 export const Route = createFileRoute("/bem-vindo-pro")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "PRO liberado — Jogador PRO System" },
@@ -28,7 +32,11 @@ function BemVindoProPage() {
     if (logado) {
       void supabase.auth.getUser().then(({ data }) => {
         if (data.user) {
-          void supabase.from("profiles").update({ telegram_joined: true }).eq("id", data.user.id);
+          void safeWrite(
+            "entrada no Telegram",
+            () => supabase.from("profiles").update({ telegram_joined: true }).eq("id", data.user!.id),
+            { table: "profiles", op: "update", payload: { telegram_joined: true }, match: { id: data.user.id } },
+          );
         }
       });
     }

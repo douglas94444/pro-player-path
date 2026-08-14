@@ -4,8 +4,11 @@ import { AdminShell } from "@/components/AdminShell";
 import { fetchAdminSessoes, type AdminSessaoRow } from "@/lib/admin";
 import { getTreino } from "@/data/training";
 import { toast } from "sonner";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/admin/sessoes")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   component: AdminSessoes,
 });
 

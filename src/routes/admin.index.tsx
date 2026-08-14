@@ -4,8 +4,11 @@ import { CreditCard, Dumbbell, Users, Crown, TrendingUp } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
 import { fetchAdminStats } from "@/lib/admin";
 import { PRODUCT } from "@/lib/product-config";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/admin/")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   component: AdminDashboard,
 });
 

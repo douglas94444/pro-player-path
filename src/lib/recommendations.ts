@@ -74,3 +74,46 @@ export function diasSemTreinar(sessoes: { data: string }[]): number {
   const last = [...sessoes].map((s) => s.data).sort().reverse()[0]!;
   return Math.round((Date.now() - new Date(last).getTime()) / 86400000);
 }
+
+const ULTIMO_RAPIDO_KEY = "jogador-pro-ultimo-rapido";
+
+/**
+ * Modo Rápido determinístico: escolhe o treino curto mais alinhado ao
+ * objetivo/posição do atleta e evita repetir o último sugerido.
+ */
+export function treinoRapido(
+  objetivo: string | null | undefined,
+  posicao?: string | null,
+  ultimoId?: string | null,
+): Treino {
+  const curtos = TREINOS.filter((t) => t.duracaoMin <= 12);
+  const pool = curtos.length ? curtos : [...TREINOS].sort((a, b) => a.duracaoMin - b.duracaoMin).slice(0, 3);
+
+  const cat = categoriaPorObjetivo(objetivo);
+  const score = (t: Treino) => {
+    let s = 0;
+    if (cat && t.categorias.includes(cat)) s += 4;
+    if (posicao && posicao !== "qualquer" && t.posicoes?.includes(posicao)) s += 2;
+    if (!t.posicoes?.length || t.posicoes.includes("qualquer")) s += 1;
+    return s;
+  };
+
+  let anterior: string | null = ultimoId ?? null;
+  if (!anterior) {
+    try {
+      anterior = localStorage.getItem(ULTIMO_RAPIDO_KEY);
+    } catch {
+      anterior = null;
+    }
+  }
+
+  const ordenado = [...pool].sort((a, b) => score(b) - score(a) || a.duracaoMin - b.duracaoMin || a.id.localeCompare(b.id));
+  const escolhido = ordenado.find((t) => t.id !== anterior) ?? ordenado[0]!;
+
+  try {
+    localStorage.setItem(ULTIMO_RAPIDO_KEY, escolhido.id);
+  } catch {
+    /* ignore */
+  }
+  return escolhido;
+}

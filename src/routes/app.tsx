@@ -2,16 +2,18 @@ import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Flame, Play, Timer, Zap, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 import { ProgressRing } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/lib/player-store";
-import { TREINOS } from "@/data/training";
 import { canAccessTreino } from "@/lib/access";
 import { captureUtmFromLocation } from "@/lib/utm";
-import { labelObjetivo, prefereModoRapido, treinosRecomendados } from "@/lib/recommendations";
+import { labelObjetivo, prefereModoRapido, treinoRapido, treinosRecomendados } from "@/lib/recommendations";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "Jogador PRO System — seu treino de hoje" },
@@ -60,9 +62,8 @@ function Home() {
       void navigate({ to: "/planos", search: { from: "home", teaser: "Modo rápido disponível no PRO" } });
       return;
     }
-    const rapidos = TREINOS.filter((t) => t.duracaoMin <= 12);
-    const escolhido = rapidos[Math.floor(Math.random() * rapidos.length)]!;
-    navigate({ to: "/treino/$treinoId", params: { treinoId: escolhido.id } });
+    const escolhido = treinoRapido(state.objetivo, state.posicao, state.ultimoTreinoId);
+    void navigate({ to: "/treino/$treinoId", params: { treinoId: escolhido.id } });
   };
 
   const treinoBloqueado =

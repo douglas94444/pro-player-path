@@ -4,8 +4,11 @@ import { AdminShell } from "@/components/AdminShell";
 import { fetchAdminPayments, type AdminPaymentRow } from "@/lib/admin";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/admin/pagamentos")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   component: AdminPagamentos,
 });
 

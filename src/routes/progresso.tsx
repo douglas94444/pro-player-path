@@ -10,8 +10,12 @@ import { diaBROffset, inicioSemanaBR } from "@/lib/date";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import { safeWrite } from "@/lib/supabase-write";
 
 export const Route = createFileRoute("/progresso")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "Sua evolução — Jogador PRO System" },
@@ -89,18 +93,13 @@ function ProgressoPage() {
       } = await supabase.auth.getUser();
       if (!user) return;
       const week_start = weekStartIso();
-      const { error } = await supabase.from("weekly_scores").upsert(
-        {
-          user_id: user.id,
-          week_start,
-          explosao,
-          controle,
-          resistencia,
-          jogou,
-        },
-        { onConflict: "user_id,week_start" },
+      const payload = { user_id: user.id, week_start, explosao, controle, resistencia, jogou };
+      const ok = await safeWrite(
+        "score da semana",
+        () => supabase.from("weekly_scores").upsert(payload, { onConflict: "user_id,week_start" }),
+        { table: "weekly_scores", op: "upsert", payload, onConflict: "user_id,week_start" },
       );
-      if (error) throw error;
+      if (!ok) return;
       setScores((prev) => {
         const rest = prev.filter((s) => s.week_start !== week_start);
         return [...rest, { week_start, explosao, controle, resistencia, jogou }].sort((a, b) =>

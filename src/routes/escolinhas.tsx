@@ -6,8 +6,12 @@ import { Label } from "@/components/ui/label";
 import { PageFrame } from "@/components/PageFrame";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import { safeWrite } from "@/lib/supabase-write";
 
 export const Route = createFileRoute("/escolinhas")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [
       { title: "Jogador PRO para escolinhas" },
@@ -34,13 +38,18 @@ function EscolinhasPage() {
     }
     setEnviando(true);
     try {
-      const { error } = await supabase.from("escolinha_leads").insert({
+      const payload = {
         nome: nome.trim(),
         email: email.trim(),
         telefone: telefone.trim() || null,
         escolinha: escolinha.trim() || null,
+      };
+      const ok = await safeWrite("seu interesse", () => supabase.from("escolinha_leads").insert(payload), {
+        table: "escolinha_leads",
+        op: "insert",
+        payload,
       });
-      if (error) throw error;
+      if (!ok) return;
       toast.success("Recebemos seu interesse", { description: "Entraremos em contato em breve." });
       setNome("");
       setEmail("");

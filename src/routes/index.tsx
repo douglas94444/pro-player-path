@@ -11,6 +11,7 @@ import { usePlayer } from "@/lib/player-store";
 import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 const PLANOS_IDS = new Set(PLANOS_ASSINATURA.map((p) => p.id));
 
@@ -23,6 +24,8 @@ export type HomeSearch = {
 };
 
 export const Route = createFileRoute("/")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   validateSearch: (search: Record<string, unknown>): HomeSearch => {
     const out: HomeSearch = {};
     if (typeof search["from"] === "string") out.from = search["from"];

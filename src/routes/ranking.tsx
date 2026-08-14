@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { inicioSemanaBR } from "@/lib/date";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/lib/player-store";
+import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/ranking")({
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
   head: () => ({
     meta: [{ title: "Ranking semanal — Jogador PRO System" }],
   }),
