@@ -54,7 +54,7 @@ function codigoValido(value: string) {
 }
 
 function PlanosPage() {
-  const { refreshEntitlement, activateLocalPlan, logado, state, email } = usePlayer();
+  const { refreshEntitlement, logado, state, email } = usePlayer();
   const navigate = useNavigate();
   const { from, plano, checkout, teaser, ref } = Route.useSearch();
   const [escolhido, setEscolhido] = useState(plano ?? "semestral");
