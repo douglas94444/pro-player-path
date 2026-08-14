@@ -299,6 +299,7 @@ function PerfilPage() {
           Ativar lembrete
         </Button>
       </section>
+      <SugestoesSection nome={state.nome} email={email} logado={logado} />
 
       <section className="mt-4 rounded-[1.5rem] border border-destructive/25 bg-card p-5 shadow-soft">
         <p className="text-xs font-bold uppercase tracking-widest text-destructive">Zona de perigo</p>
