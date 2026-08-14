@@ -64,7 +64,6 @@ function ProofMedia({ slot }: { slot: ProofSlot }) {
 }
 
 export function LandingPage({ search }: { search: LandingSearch }) {
-  const navigate = useNavigate();
 
   useEffect(() => {
     captureUtmFromSearch(search);
