@@ -1,284 +1,360 @@
-import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Flame, Play, Timer, Zap, ChevronRight } from "lucide-react";
+import { Check, Clock, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
-import { ProgressRing } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
+import { BENEFICIOS_PRO, PLANOS_ASSINATURA } from "@/data/training";
+import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/lib/player-store";
-import { TREINOS } from "@/data/training";
-import { canAccessTreino } from "@/lib/access";
-import { captureUtmFromLocation } from "@/lib/utm";
-import { labelObjetivo, prefereModoRapido, treinosRecomendados } from "@/lib/recommendations";
+import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const PLANOS_IDS = new Set(PLANOS_ASSINATURA.map((p) => p.id));
+
+export type HomeSearch = {
+  from?: string;
+  checkout?: string;
+  plano?: string;
+  teaser?: string;
+  ref?: string;
+};
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): HomeSearch => {
+    const out: HomeSearch = {};
+    if (typeof search["from"] === "string") out.from = search["from"];
+    if (typeof search["checkout"] === "string") out.checkout = search["checkout"];
+    if (typeof search["teaser"] === "string") out.teaser = search["teaser"];
+    if (typeof search["ref"] === "string") out.ref = search["ref"];
+    if (typeof search["plano"] === "string" && PLANOS_IDS.has(search["plano"])) {
+      out.plano = search["plano"];
+    }
+    return out;
+  },
   head: () => ({
     meta: [
-      { title: "Jogador PRO System — seu treino de hoje" },
+      { title: "Jogador PRO System — Treine como atleta PRO" },
       {
         name: "description",
         content:
-          "Plano guiado de treinos de futebol: explosão, controle e resistência. Abra o app e saiba exatamente o que treinar hoje.",
+          "Plano guiado de 4 semanas para evoluir no futebol. Técnica, controle, explosão e performance. Assine por R$47/mês e comece hoje.",
       },
-      { property: "og:title", content: "Jogador PRO System — seu treino de hoje" },
+      { property: "og:title", content: "Jogador PRO System — Treine como atleta PRO" },
       {
         property: "og:description",
-        content: "Treinos guiados de futebol em 4 semanas. Streak, níveis e evolução real.",
+        content: "Assine e destrave o plano guiado completo de treinos de futebol.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Home,
+  component: HomePage,
 });
 
-function Home() {
-  const {
-    state,
-    streak,
-    nivel,
-    treinoDeHoje,
-    semanaAtual,
-    progressoSemana,
-    proximoPlano,
-    hydrated,
-    planoCompleto,
-    isPaused,
-  } = usePlayer();
+const CODE_RE = /^[A-Za-z0-9_-]{1,40}$/;
+function codigoValido(value: string) {
+  return CODE_RE.test(value);
+}
+
+function HomePage() {
+  const { refreshEntitlement, logado, state, email } = usePlayer();
   const navigate = useNavigate();
+  const { from, plano, checkout, teaser, ref } = Route.useSearch();
+  const [escolhido, setEscolhido] = useState(plano ?? "semestral");
+  const [mostrarBrick, setMostrarBrick] = useState(false);
+  const [pendingPix, setPendingPix] = useState(false);
+  const [cupomInput, setCupomInput] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState<{ code: string; discount: number } | null>(null);
+  const [validandoCupom, setValidandoCupom] = useState(false);
 
   useEffect(() => {
-    captureUtmFromLocation();
-  }, []);
+    if (plano) setEscolhido(plano);
+  }, [plano]);
 
   useEffect(() => {
-    if (hydrated && !state.onboardingDone) {
-      void navigate({ to: "/onboarding" });
+    if (ref && codigoValido(ref)) {
+      try {
+        sessionStorage.setItem("jogador-pro-affiliate-ref", ref);
+      } catch {
+        /* ignore */
+      }
+      void supabase.from("affiliate_clicks").insert({ code: ref });
+      void (async () => {
+        const porCodigo = await supabase
+          .from("coupons")
+          .select("code, discount_percent")
+          .eq("active", true)
+          .eq("code", ref.toUpperCase())
+          .maybeSingle();
+        let achado = porCodigo.data;
+        if (!achado) {
+          const porAfiliado = await supabase
+            .from("coupons")
+            .select("code, discount_percent")
+            .eq("active", true)
+            .eq("affiliate_code", ref)
+            .limit(1)
+            .maybeSingle();
+          achado = porAfiliado.data;
+        }
+        if (achado) {
+          setCupomInput(achado.code);
+          setCupomAplicado({ code: achado.code, discount: achado.discount_percent });
+        }
+      })();
     }
-  }, [hydrated, state.onboardingDone, navigate]);
+  }, [ref]);
 
-  const modoRapido = () => {
-    if (!state.assinante) {
-      void navigate({ to: "/planos", search: { from: "home", teaser: "Modo rápido disponível no PRO" } });
+  const aplicarCupom = async () => {
+    const code = cupomInput.trim().toUpperCase();
+    if (!code) {
+      toast.message("Digite um cupom");
       return;
     }
-    const rapidos = TREINOS.filter((t) => t.duracaoMin <= 12);
-    const escolhido = rapidos[Math.floor(Math.random() * rapidos.length)]!;
-    navigate({ to: "/treino/$treinoId", params: { treinoId: escolhido.id } });
+    if (!codigoValido(code)) {
+      toast.error("Cupom inválido");
+      setCupomAplicado(null);
+      return;
+    }
+    setValidandoCupom(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("code, discount_percent, active, max_redemptions, redemptions, affiliate_code")
+        .eq("code", code)
+        .maybeSingle();
+      if (error || !data || !data.active) {
+        toast.error("Cupom inválido");
+        setCupomAplicado(null);
+        return;
+      }
+      if (data.max_redemptions != null && data.redemptions >= data.max_redemptions) {
+        toast.error("Cupom esgotado");
+        setCupomAplicado(null);
+        return;
+      }
+      if (data.affiliate_code) {
+        try {
+          sessionStorage.setItem("jogador-pro-affiliate-ref", data.affiliate_code);
+        } catch {
+          /* ignore */
+        }
+      }
+      setCupomAplicado({ code: data.code, discount: data.discount_percent });
+      setMostrarBrick(false);
+      toast.success(`Cupom ${data.code} · −${data.discount_percent}%`);
+    } finally {
+      setValidandoCupom(false);
+    }
   };
 
-  const treinoBloqueado =
-    treinoDeHoje && !canAccessTreino(state.assinante, treinoDeHoje.id, proximoPlano?.key);
-  const focoLabel = labelObjetivo(state.objetivo);
-  const querRapido = prefereModoRapido(state.disponibilidade);
-  const recomendados = treinosRecomendados(state.objetivo, state.posicao, 3);
-  const precisaAssinar = !state.assinante;
+  useEffect(() => {
+    trackMeta("ViewContent", {
+      content_name: "home",
+      content_category: "landing",
+    });
+    trackMetaCustom("PaywallHit", { from: from ?? "direct" });
+  }, [from]);
 
-  if (!hydrated || !state.onboardingDone) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
-      </div>
-    );
-  }
+  const abrirBrick = () => {
+    trackMeta("InitiateCheckout", {
+      content_name: escolhido,
+      currency: "BRL",
+      value: (PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.precoCentavos ?? 0) / 100,
+      num_items: 1,
+    });
+    setMostrarBrick(true);
+  };
+
+  useEffect(() => {
+    if (checkout === "1" && logado && !state.assinante) {
+      trackMeta("InitiateCheckout", {
+        content_name: escolhido,
+        currency: "BRL",
+        value: (PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.precoCentavos ?? 0) / 100,
+        num_items: 1,
+      });
+      setMostrarBrick(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao retomar pós-auth
+  }, [checkout, logado, state.assinante]);
+
+  const abrirCheckout = () => {
+    if (!logado) {
+      void navigate({ to: "/auth", search: { from: "planos", plano: escolhido } });
+      return;
+    }
+    abrirBrick();
+  };
 
   return (
     <AppShell
-      title={`Fala, ${state.nome}`}
-      subtitle={
-        focoLabel
-          ? `Jogador ${nivel} · foco em ${focoLabel}`
-          : `Jogador ${nivel} · seu treino de hoje`
-      }
+      title="Jogador PRO System"
+      subtitle="Treine como atleta. Todo dia."
+      hideNav
       action={
-        <div className="flex items-center gap-1.5 rounded-full bg-card px-3.5 py-2 text-sm font-bold text-foreground shadow-soft">
-          <Flame className="h-4 w-4 text-primary" />
-          {streak}
-        </div>
+        logado ? (
+          <Link
+            to="/app"
+            className="text-xs font-semibold text-primary underline underline-offset-4"
+          >
+            Ir para o app
+          </Link>
+        ) : (
+          <Link
+            to="/auth"
+            search={{ from: "home" }}
+            className="text-xs font-semibold text-primary underline underline-offset-4"
+          >
+            Entrar
+          </Link>
+        )
       }
     >
-      {precisaAssinar ? (
-        <Link
-          to="/planos"
-          search={{ from: "home", teaser: "Assine para liberar o treino do dia e o plano completo" }}
-          className="mb-4 flex items-center justify-between gap-3 rounded-[1.25rem] border border-primary/30 bg-primary/10 px-4 py-3 shadow-soft"
-        >
-          <span>
-            <span className="block text-sm font-extrabold text-foreground">Assine para treinar</span>
-            <span className="block text-xs text-muted-foreground">
-              Acesso completo ao plano de 4 semanas + biblioteca
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
-        </Link>
-      ) : null}
-
-      {isPaused && state.pausedUntil ? (
-        <Link
-          to="/perfil"
-          className="mb-4 flex items-center justify-between gap-3 rounded-[1.25rem] border border-border/60 bg-secondary/50 px-4 py-3 shadow-soft"
-        >
-          <span>
-            <span className="block text-sm font-extrabold text-foreground">Modo pausa ativo</span>
-            <span className="block text-xs text-muted-foreground">
-              Até {new Date(state.pausedUntil).toLocaleDateString("pt-BR")} · acesso PRO liberado · gerenciar no
-              perfil
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </Link>
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr] lg:gap-5">
-        <section className="rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-soft sm:p-8">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-            {planoCompleto
-              ? "Manutenção"
-              : proximoPlano
-                ? `Treino de hoje · Dia ${proximoPlano.dia} da semana ${proximoPlano.semana}`
-                : "Treino de hoje"}
+      {teaser ? (
+        <div className="mb-5 rounded-[1.5rem] border border-primary/30 bg-primary/10 p-4 shadow-soft">
+          <p className="text-xs font-bold uppercase tracking-wide text-primary">Assinatura necessária</p>
+          <p className="mt-1 text-sm font-extrabold text-foreground">{teaser}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Com PRO você destrava o plano completo, biblioteca e comunidade.
           </p>
-          <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-            {treinoDeHoje?.nome}
-          </h2>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">{treinoDeHoje?.descricao}</p>
-          {focoLabel ? (
-            <p className="mt-2 text-xs font-medium text-primary">Alinhado ao seu foco: {focoLabel}</p>
-          ) : null}
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 font-medium">
-              <Timer className="h-3.5 w-3.5" /> {treinoDeHoje?.duracaoMin} min
-            </span>
-            <span className="inline-flex items-center rounded-full bg-secondary px-3 py-1 font-medium">
-              {planoCompleto
-                ? "Ciclo contínuo"
-                : `Semana ${semanaAtual} · Dia ${proximoPlano?.dia ?? 5}`}
-            </span>
-          </div>
-          {treinoDeHoje ? (
-            treinoBloqueado ? (
-              <Button asChild size="lg" className="mt-7 h-14 w-full text-base font-extrabold sm:max-w-xs">
-                <Link
-                  to="/planos"
-                  search={{
-                    from: "home",
-                    teaser: `${treinoDeHoje.nome} — ${treinoDeHoje.descricao}`,
-                  }}
-                >
-                  Destravar treino PRO
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild size="lg" className="mt-7 h-14 w-full text-base font-extrabold sm:max-w-xs">
-                <Link
-                  to="/treino/$treinoId"
-                  params={{ treinoId: treinoDeHoje.id }}
-                  search={{ plano: proximoPlano?.key ?? "" }}
-                >
-                  <Play className="h-5 w-5" /> Começar agora
-                </Link>
-              </Button>
-            )
-          ) : null}
-        </section>
-
-        <div className="flex flex-col gap-4">
-          <section className="flex items-center justify-between gap-4 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft sm:p-6">
-            <div>
-              <p className="text-sm font-bold text-foreground">
-                {planoCompleto ? "Manutenção" : `Semana ${Math.min(semanaAtual, 4)}`}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">Progresso da semana</p>
-            </div>
-            <ProgressRing value={progressoSemana} size={104} stroke={9} label="semana" />
-          </section>
-
-          <button
-            onClick={modoRapido}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-[1.5rem] border p-4 text-left shadow-soft transition-colors sm:p-5",
-              querRapido
-                ? "border-primary/40 bg-primary/10 hover:border-primary/60"
-                : "border-border/60 bg-card hover:border-primary/40",
-            )}
-          >
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-              <Zap className="h-5 w-5" />
-            </span>
-            <span className="flex-1">
-              <span className="block text-sm font-bold text-foreground">
-                {querRapido ? "Seu modo: 10 minutos" : "Tenho 10 minutos hoje"}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {querRapido
-                  ? "Baseado no tempo que você escolheu no onboarding"
-                  : "Geramos um treino rápido pra você"}
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </button>
         </div>
+      ) : null}
+
+      <div className="mb-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-soft sm:p-8">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Metodologia 4 pilares</p>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+          4 semanas para você jogar em outro nível
+        </h2>
+        <p className="mt-2 max-w-xl text-sm text-muted-foreground sm:text-base">
+          Semana 1: Base · Semana 2: Controle · Semana 3: Explosão · Semana 4: Performance. Treinos guiados com
+          timer, vídeos e progressão de XP.
+        </p>
+        <ul className="mt-5 space-y-2">
+          {BENEFICIOS_PRO.map((b) => (
+            <li key={b} className="flex items-center gap-2 text-sm text-foreground">
+              <Check className="h-4 w-4 text-primary" /> {b}
+            </li>
+          ))}
+        </ul>
       </div>
 
-      {recomendados.length ? (
-        <section className="mt-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">
-              {focoLabel ? `Pra você · ${focoLabel}` : "Recomendados"}
-            </h2>
-            <Link to="/biblioteca" className="text-xs font-semibold text-primary">
-              Ver biblioteca
-            </Link>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {recomendados.map((t) => (
-              <Link
-                key={t.id}
-                to="/treino/$treinoId"
-                params={{ treinoId: t.id }}
-                className="rounded-2xl border border-border/60 bg-card px-4 py-3 shadow-soft transition-colors hover:border-primary/40"
-              >
-                <p className="text-sm font-bold text-foreground">{t.nome}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{t.duracaoMin} min</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {state.assinante ? (
-        <section className="mt-5 grid gap-2 sm:grid-cols-2">
-          <Link
-            to="/treino/$treinoId"
-            params={{ treinoId: "pre-partida" }}
-            className="rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft"
+      <div className="grid gap-3 md:grid-cols-3">
+        {PLANOS_ASSINATURA.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => {
+              setEscolhido(p.id);
+              setMostrarBrick(false);
+              setPendingPix(false);
+            }}
+            className={cn(
+              "rounded-[1.5rem] border p-5 text-left shadow-soft transition-colors md:min-h-[140px]",
+              escolhido === p.id ? "border-primary bg-primary/10" : "border-border/60 bg-card",
+            )}
           >
-            Pré-partida 10 min
-          </Link>
-          <Link
-            to="/treino/$treinoId"
-            params={{ treinoId: "pos-jogo" }}
-            className="rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft"
-          >
-            Pós-jogo recuperação
-          </Link>
-        </section>
-      ) : null}
-
-      <section className="mt-5 grid gap-3 sm:grid-cols-3">
-        {[
-          { to: "/plano" as const, label: "Ver plano guiado" },
-          { to: "/biblioteca" as const, label: "Ver todos os treinos" },
-          { to: "/progresso" as const, label: "Ver minha evolução" },
-        ].map((a) => (
-          <Link
-            key={a.to}
-            to={a.to}
-            className="flex items-center justify-between rounded-2xl border border-border/60 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-soft transition-colors hover:border-primary/40"
-          >
-            {a.label}
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </Link>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-base font-extrabold text-foreground">{p.nome}</span>
+              <span className="text-xl font-black text-foreground">
+                {p.preco}
+                <span className="text-xs font-medium text-muted-foreground">{p.periodo}</span>
+              </span>
+            </div>
+            <p className={cn("mt-1 text-xs", p.destaque ? "font-bold text-primary" : "text-muted-foreground")}>
+              {p.nota}
+            </p>
+          </button>
         ))}
-      </section>
+      </div>
+
+      <div className="mx-auto mt-6 w-full max-w-xl">
+        {!state.assinante ? (
+          <div className="mb-4 flex gap-2">
+            <Input
+              value={cupomInput}
+              onChange={(e) => setCupomInput(e.target.value.toUpperCase())}
+              placeholder="Cupom (ex. PRO10)"
+              className="h-11"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 shrink-0"
+              disabled={validandoCupom}
+              onClick={() => void aplicarCupom()}
+            >
+              Aplicar
+            </Button>
+          </div>
+        ) : null}
+        {cupomAplicado ? (
+          <p className="mb-3 text-center text-xs font-semibold text-primary">
+            {cupomAplicado.code} ativo · {cupomAplicado.discount}% off
+          </p>
+        ) : null}
+
+        {state.assinante ? (
+          <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
+            <Link to="/app">Você já é PRO — ir para o app</Link>
+          </Button>
+        ) : pendingPix ? (
+          <div className="rounded-[1.5rem] border border-primary/30 bg-card p-5 text-center shadow-soft">
+            <Clock className="mx-auto h-8 w-8 text-primary" />
+            <p className="mt-3 text-base font-extrabold text-foreground">Aguardando confirmação do Pix</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Assim que o Mercado Pago confirmar, seu acesso PRO libera automaticamente. Pode fechar e voltar em
+              alguns minutos.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4 w-full"
+              onClick={() => {
+                void refreshEntitlement().then(() => toast.message("Status atualizado"));
+              }}
+            >
+              Já paguei — atualizar status
+            </Button>
+          </div>
+        ) : !mostrarBrick ? (
+          <Button size="lg" className="h-14 w-full text-base font-extrabold" onClick={abrirCheckout}>
+            Pagar com Mercado Pago
+          </Button>
+        ) : (
+          <MercadoPagoCheckout
+            planoId={escolhido}
+            email={email}
+            couponCode={cupomAplicado?.code ?? null}
+            discountPercent={cupomAplicado?.discount ?? 0}
+            onApproved={() => {
+              void refreshEntitlement().then(() => {
+                toast.success("Acesso PRO liberado");
+                void navigate({ to: "/bem-vindo-pro", replace: true });
+              });
+            }}
+            onPending={() => {
+              setPendingPix(true);
+              setMostrarBrick(false);
+              void refreshEntitlement();
+            }}
+          />
+        )}
+      </div>
+
+      <div className="mt-6 flex flex-col items-center gap-2 text-center text-xs text-muted-foreground">
+        <p className="inline-flex items-center gap-1.5">
+          <Shield className="h-3.5 w-3.5" />
+          Pagamento seguro via Mercado Pago
+        </p>
+        <p>
+          {logado
+            ? "Checkout transparente (cartão, boleto e Pix). Acesso liberado após aprovação."
+            : "Você precisará entrar na conta antes do checkout — e voltamos direto ao pagamento."}
+        </p>
+        <p className="text-[11px]">Dúvidas? Fale com a gente no Instagram @jogadorprosystem</p>
+      </div>
     </AppShell>
   );
 }
