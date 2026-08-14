@@ -25,7 +25,7 @@ function NavLinks({ orientation }: { orientation: "horizontal" | "vertical" }) {
           <Link
             key={to}
             to={to}
-            activeOptions={{ exact: to === "/" }}
+            activeOptions={{ exact: to === "/app" }}
             className={cn(
               "group relative flex items-center font-semibold text-muted-foreground transition-colors",
               "data-[status=active]:text-primary",
