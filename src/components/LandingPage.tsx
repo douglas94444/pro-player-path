@@ -103,18 +103,23 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           </h1>
           <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">{CAMPANHA.subheadline}</p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <Button asChild size="lg" className="h-14 w-full px-8 text-base font-extrabold sm:w-auto sm:min-w-[240px]">
-              <Link {...planosLink(CAMPANHA.heroCtaPlano)}>{CAMPANHA.heroCta}</Link>
+            <Button
+              size="lg"
+              className="h-14 w-full px-8 text-base font-extrabold sm:w-auto sm:min-w-[240px]"
+              onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+            >
+              {CAMPANHA.heroCta}
             </Button>
             <Button
-              asChild
               size="lg"
               variant="outline"
               className="h-14 w-full px-8 text-base font-extrabold sm:w-auto sm:min-w-[240px]"
+              onClick={() => irParaOferta("semestral")}
             >
-              <Link {...planosLink("semestral")}>{CAMPANHA.heroCtaSecundario}</Link>
+              {CAMPANHA.heroCtaSecundario}
             </Button>
           </div>
+
           <p className="mt-3 text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
 
           <div className="mt-10 max-w-lg rounded-[1.5rem] border border-border/60 bg-card/90 p-5 shadow-soft">
