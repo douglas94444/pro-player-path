@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 const tipoSchema = z.enum(["sugestao", "bug", "elogio"]);
 
@@ -15,7 +16,6 @@ export const enviarSugestaoAnonima = createServerFn({ method: "POST" })
   .inputValidator((data) => baseSchema.parse(data))
   .handler(async ({ data }) => {
     const { createClient } = await import("@supabase/supabase-js");
-    const { Database } = await import("@/integrations/supabase/types");
     const supabase = createClient<Database>(
       process.env["SUPABASE_URL"]!,
       process.env["SUPABASE_PUBLISHABLE_KEY"]!,
