@@ -14,12 +14,14 @@ export const Route = createFileRoute("/admin/sugestoes")({
 
 const tipoBadge: Record<
   string,
-  { label: string; icon: React.ElementType; className: string }
+  { label: string; icon: React.ElementType; className: string } | undefined
 > = {
   sugestao: { label: "Sugestão", icon: Lightbulb, className: "bg-primary/10 text-primary" },
   bug: { label: "Bug", icon: Bug, className: "bg-destructive/10 text-destructive" },
   elogio: { label: "Elogio", icon: ThumbsUp, className: "bg-accent/40 text-accent-foreground" },
 };
+
+const defaultBadge = tipoBadge["sugestao"]!;
 
 type Sugestao = Awaited<ReturnType<typeof listarSugestoes>>[number];
 
