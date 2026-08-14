@@ -54,7 +54,7 @@ function SugestoesPage() {
       ) : (
         <div className="space-y-3">
           {sugestoes.map((s) => {
-            const badge = tipoBadge[s.tipo] ?? tipoBadge.sugestao;
+            const badge = tipoBadge[s.tipo] ?? defaultBadge;
             const Icon = badge.icon;
             return (
               <div
