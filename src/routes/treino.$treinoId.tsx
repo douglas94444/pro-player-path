@@ -14,6 +14,9 @@ import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/s
 import { shareProgress } from "@/lib/share-progress";
 import { useTreinoVideos } from "@/lib/treino-videos";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import { Confetti, CountUp, LevelBar, playSuccessSound } from "@/components/RewardBurst";
+import { patenteDe, xpDoTreino, xpTotal } from "@/lib/gamificacao";
+
 
 export const Route = createFileRoute("/treino/$treinoId")({
   errorComponent: RouteError,
