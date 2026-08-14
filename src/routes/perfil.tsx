@@ -152,6 +152,10 @@ function PerfilPage() {
         <Input id="nome" value={state.nome} onChange={(e) => setNome(e.target.value)} className="mt-2" />
       </section>
 
+      <SomToggle />
+
+
+
       <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Assinatura</p>
         <p className="mt-2 text-lg font-extrabold text-foreground">
