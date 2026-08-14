@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
+import { hojeBR, inicioSemanaBR } from "@/lib/date";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 import { concluirTreinoServer } from "@/lib/treinos.functions";
 
@@ -45,7 +46,7 @@ const initialState: PlayerState = {
 };
 
 function hoje() {
-  return new Date().toISOString().slice(0, 10);
+  return hojeBR();
 }
 
 function diffDias(a: string, b: string) {
@@ -322,13 +323,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           const nextSessoes =
             duplicado || jaTem ? s.sessoes : [...s.sessoes, { treinoId, data, minutos, planoKey }];
           if (user) {
-            const weekStart = (() => {
-              const d = new Date();
-              const day = d.getDay();
-              const diff = day === 0 ? -6 : 1 - day;
-              d.setDate(d.getDate() + diff);
-              return d.toISOString().slice(0, 10);
-            })();
+            const weekStart = inicioSemanaBR();
             const weekSessoes = nextSessoes.filter((x) => x.data >= weekStart);
             void supabase.from("league_entries").upsert(
               {

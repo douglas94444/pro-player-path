@@ -48,6 +48,11 @@ export const Route = createFileRoute("/planos")({
   component: PlanosPage,
 });
 
+const CODE_RE = /^[A-Za-z0-9_-]{1,40}$/;
+function codigoValido(value: string) {
+  return CODE_RE.test(value);
+}
+
 function PlanosPage() {
   const { refreshEntitlement, activateLocalPlan, logado, state, email } = usePlayer();
   const navigate = useNavigate();
@@ -64,27 +69,37 @@ function PlanosPage() {
   }, [plano]);
 
   useEffect(() => {
-    if (ref) {
+    if (ref && codigoValido(ref)) {
       try {
         sessionStorage.setItem("jogador-pro-affiliate-ref", ref);
       } catch {
         /* ignore */
       }
       void supabase.from("affiliate_clicks").insert({ code: ref });
-      // Cupom afiliado: code = ref OU affiliate_code = ref
-      void supabase
-        .from("coupons")
-        .select("code, discount_percent")
-        .eq("active", true)
-        .or(`code.eq.${ref.toUpperCase()},affiliate_code.eq.${ref}`)
-        .limit(1)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data) {
-            setCupomInput(data.code);
-            setCupomAplicado({ code: data.code, discount: data.discount_percent });
-          }
-        });
+      // Cupom afiliado: busca por código do cupom e, se não achar, por código de afiliado
+      void (async () => {
+        const porCodigo = await supabase
+          .from("coupons")
+          .select("code, discount_percent")
+          .eq("active", true)
+          .eq("code", ref.toUpperCase())
+          .maybeSingle();
+        let achado = porCodigo.data;
+        if (!achado) {
+          const porAfiliado = await supabase
+            .from("coupons")
+            .select("code, discount_percent")
+            .eq("active", true)
+            .eq("affiliate_code", ref)
+            .limit(1)
+            .maybeSingle();
+          achado = porAfiliado.data;
+        }
+        if (achado) {
+          setCupomInput(achado.code);
+          setCupomAplicado({ code: achado.code, discount: achado.discount_percent });
+        }
+      })();
     }
   }, [ref]);
 
@@ -92,6 +107,11 @@ function PlanosPage() {
     const code = cupomInput.trim().toUpperCase();
     if (!code) {
       toast.message("Digite um cupom");
+      return;
+    }
+    if (!codigoValido(code)) {
+      toast.error("Cupom inválido");
+      setCupomAplicado(null);
       return;
     }
     setValidandoCupom(true);

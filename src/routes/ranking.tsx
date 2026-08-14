@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { inicioSemanaBR } from "@/lib/date";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/lib/player-store";
 
@@ -22,11 +23,7 @@ type Row = {
 };
 
 function weekStartIso() {
-  const d = new Date();
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
+  return inicioSemanaBR();
 }
 
 function RankingPage() {
