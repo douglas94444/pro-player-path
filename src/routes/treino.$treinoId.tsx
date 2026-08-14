@@ -175,7 +175,15 @@ function TreinoPage() {
       streak,
       plano: planoConcluidos.length,
     };
-    concluirTreino(treino.id, plano || undefined);
+    try {
+      await concluirTreino(treino.id, plano || undefined);
+    } catch (e) {
+      toast.error("Não foi possível registrar o treino", {
+        description: e instanceof Error ? e.message : "Tente novamente.",
+      });
+      return;
+    }
+
     const depoisTreinos = antes.treinos + 1;
     const depoisStreak = streak + (state.sessoes.some((s) => s.data === new Date().toISOString().slice(0, 10)) ? 0 : 1);
 
