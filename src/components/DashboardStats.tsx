@@ -97,12 +97,12 @@ export function DashboardStats() {
             </span>
           </div>
           <LevelBar value={(Math.min(feitosSemana, META_SEMANAL) / META_SEMANAL) * 100} className="mt-3" />
-          <div className="mt-5 flex justify-between">
+          <div className="mt-5 grid grid-cols-7 gap-2">
             {dias.map((d) => (
               <div key={d.iso} className="flex flex-col items-center gap-1.5">
                 <span
                   className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold",
+                    "flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold sm:h-10 sm:w-10 sm:text-xs",
                     d.ativo
                       ? "bg-primary text-primary-foreground"
                       : d.hoje
