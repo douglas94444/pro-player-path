@@ -91,15 +91,17 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     <main className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-foreground md:pb-0">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_70%_at_50%_-10%,_oklch(0.78_0.2_141_/_0.18),_transparent_55%)]" />
 
+      <TopBar logado={logado} onAssinar={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+
       {/* Social proof strip */}
-      <div className="relative border-b border-border/60 bg-card/80 shadow-soft backdrop-blur">
+      <div className="relative mt-14 border-b border-border/60 bg-card/80 shadow-soft backdrop-blur">
         <p className="animate-in fade-in slide-in-from-top-2 mx-auto max-w-6xl px-5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-primary duration-700 sm:text-xs">
           {CAMPANHA.socialProof}
         </p>
       </div>
 
       {/* Hero */}
-      <section className="relative mx-auto flex min-h-[calc(100svh-2.75rem)] w-full max-w-6xl flex-col justify-center px-5 py-14 sm:px-8 md:py-20">
+      <section className="relative mx-auto flex min-h-[calc(100svh-6.25rem)] w-full max-w-6xl flex-col justify-center px-5 py-14 sm:px-8 md:py-20">
         <div className="animate-in fade-in slide-in-from-bottom-4 max-w-3xl duration-700">
           <p className="text-sm font-black uppercase tracking-[0.22em] text-primary sm:text-base">
             {CAMPANHA.brand}
@@ -127,7 +129,12 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             </Button>
           </div>
 
-          <p className="mt-3 text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
+          <p className="mt-4 text-sm font-bold text-foreground">{CAMPANHA.precoAncora}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{CAMPANHA.precoComparativo}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <GarantiaBadge compact />
+            <p className="text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
+          </div>
 
           <div className="mt-10 max-w-lg rounded-[1.5rem] border border-border/60 bg-card/90 p-5 shadow-soft">
             <p className="text-[11px] font-bold uppercase tracking-wide text-primary">{CAMPANHA.teaserTreino.titulo}</p>
@@ -138,9 +145,12 @@ export function LandingPage({ search }: { search: LandingSearch }) {
               <video
                 className="mt-4 aspect-video w-full rounded-2xl object-cover"
                 src={CAMPANHA.teaserTreino.videoSrc}
-                controls
+                autoPlay
+                muted
+                loop
                 playsInline
-                preload="none"
+                preload="metadata"
+                aria-label={CAMPANHA.teaserTreino.nome}
               />
             ) : (
               <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-secondary text-xs text-muted-foreground">
@@ -150,6 +160,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           </div>
         </div>
       </section>
+
 
       {/* Problema */}
       <Section>
