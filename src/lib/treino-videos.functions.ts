@@ -28,9 +28,7 @@ const uploadSchema = alvoSchema.extend({
   titulo: z.string().trim().max(200).nullable().optional(),
 });
 
-async function garantirAdmin(supabase: {
-  rpc: (fn: "is_admin") => Promise<{ data: boolean | null }>;
-}) {
+async function garantirAdmin(supabase: any) {
   const { data } = await supabase.rpc("is_admin");
   if (!data) throw new Error("Apenas administradores podem gerenciar vídeos");
 }

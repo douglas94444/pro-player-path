@@ -22,7 +22,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 
 // CSP, nosniff, referrer-policy e afins em toda resposta do servidor.
 const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => {
-  setResponseHeaders(SECURITY_HEADERS);
+  setResponseHeaders(SECURITY_HEADERS as never);
   const result = await next();
   const response =
     result instanceof Response
