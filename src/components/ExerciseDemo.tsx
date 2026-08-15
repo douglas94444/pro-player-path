@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Play, VideoOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { urlVideoSegura, urlEmbedSegura } from "@/lib/video-url";
 
 const LABELS = {
   mobilidade: "Mobilidade",
@@ -87,14 +88,12 @@ export function ExerciseDemo({
     );
   }
 
-  const isEmbed = /youtube\.com|youtu\.be|vimeo\.com/.test(videoUrl);
-  const embedSrc = /youtu\.be\//.test(videoUrl)
-    ? videoUrl.replace("youtu.be/", "www.youtube.com/embed/")
-    : /vimeo\.com/.test(videoUrl) && !videoUrl.includes("player.vimeo")
-      ? videoUrl.replace("vimeo.com/", "player.vimeo.com/video/")
-      : videoUrl.includes("embed")
-        ? videoUrl
-        : videoUrl.replace("watch?v=", "embed/");
+  const seguro = urlVideoSegura(videoUrl);
+  if (!seguro) {
+    return <Ilustracao demo={demo} nome={nome} aviso="Endereço de vídeo não permitido" />;
+  }
+  const embedSrc = urlEmbedSegura(seguro);
+  const isEmbed = Boolean(embedSrc);
 
   return (
     <div className="relative aspect-video overflow-hidden rounded-3xl border border-border bg-card">
@@ -117,7 +116,7 @@ export function ExerciseDemo({
         <iframe
           loading="lazy"
           title={nome}
-          src={embedSrc.includes("?") ? `${embedSrc}&autoplay=1` : `${embedSrc}?autoplay=1`}
+          src={`${embedSrc}?autoplay=1`}
           className="h-full w-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -130,7 +129,7 @@ export function ExerciseDemo({
       ) : (
         <video
           className="h-full w-full object-cover"
-          src={videoUrl}
+          src={seguro}
           controls
           playsInline
           preload="none"
