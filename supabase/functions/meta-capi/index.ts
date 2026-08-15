@@ -4,6 +4,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 const ORIGENS_PERMITIDAS = [
   /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
   /^https:\/\/[a-z0-9-]+\.lovable\.dev$/,
+  /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/,
   /^http:\/\/localhost(:\d+)?$/,
 ];
 
