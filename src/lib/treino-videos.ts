@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const TREINO_VIDEOS_BUCKET = "treinos-videos";
 export const MAX_VIDEO_MB = 200;
+/** Tipos aceitos no upload de vídeo (validado antes de enviar ao bucket). */
+export const VIDEO_MIME_PERMITIDOS = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-m4v",
+] as const;
 
 export type TreinoVideo = {
   id: string;
