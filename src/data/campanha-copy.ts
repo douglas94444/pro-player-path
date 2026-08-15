@@ -11,10 +11,13 @@ export const CAMPANHA = {
   headline: "Pare de treinar sem resultado.",
   headlineLead: "Siga um plano pronto e evolua como jogador em poucas semanas.",
   subheadline: "Mesmo treinando sozinho e com pouco tempo por dia.",
-  heroCta: "Começar agora por R$47",
+  heroCta: "Quero ser Jogador PRO",
   heroCtaPlano: "mensal" as const,
-  heroCtaSecundario: "Ver planos e preços",
+  heroCtaSecundario: "Ver planos",
   heroCtaHint: "Acesso completo ao plano de 4 semanas — sem freemium",
+  precoAncora: "A partir de R$16,41/mês no plano anual · Mensal R$47, sem fidelidade",
+  precoComparativo: "Menos que uma mensalidade de escolinha — e você treina todo dia.",
+
   teaserTreino: {
     titulo: "Preview do método",
     nome: "Base + Mobilidade · Dia 1",
