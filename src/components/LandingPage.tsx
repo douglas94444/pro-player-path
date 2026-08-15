@@ -15,6 +15,10 @@ import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/lib/player-store";
 import { CheckoutOferta, dispararCheckout, rolarParaOferta } from "@/components/CheckoutOferta";
+import { TopBar } from "@/components/landing/TopBar";
+import { GarantiaBadge } from "@/components/landing/GarantiaBadge";
+import { FaqSection } from "@/components/landing/FaqSection";
+import { AppShowcase, ModoRapidoCard } from "@/components/landing/AppShowcase";
 
 export type LandingSearch = {
   from?: string;
