@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
 import { PLANOS_ASSINATURA } from "@/data/training";
+import { CAMPANHA } from "@/data/campanha-copy";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/lib/player-store";
 import { trackMeta } from "@/lib/meta-pixel";
@@ -261,13 +262,20 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
             </Button>
           </div>
         ) : !mostrarBrick ? (
-          <Button
-            size="lg"
-            className="h-14 w-full text-base font-extrabold"
-            onClick={() => iniciarCheckout()}
-          >
-            Assinar agora — {PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.preco}
-          </Button>
+          <>
+            <p className="mb-2 text-center text-xs font-semibold text-muted-foreground">
+              {CAMPANHA.pagamento}
+            </p>
+            <Button
+              size="lg"
+              className="h-14 w-full text-base font-extrabold"
+              onClick={() => iniciarCheckout()}
+            >
+              {CAMPANHA.oferta.cta} — {PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.preco}
+            </Button>
+            <p className="mt-2 text-center text-xs text-muted-foreground">{CAMPANHA.garantia.curta}</p>
+          </>
+
         ) : (
           <MercadoPagoCheckout
             planoId={escolhido}

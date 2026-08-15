@@ -15,6 +15,10 @@ import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/lib/player-store";
 import { CheckoutOferta, dispararCheckout, rolarParaOferta } from "@/components/CheckoutOferta";
+import { TopBar } from "@/components/landing/TopBar";
+import { GarantiaBadge } from "@/components/landing/GarantiaBadge";
+import { FaqSection } from "@/components/landing/FaqSection";
+import { AppShowcase, ModoRapidoCard } from "@/components/landing/AppShowcase";
 
 export type LandingSearch = {
   from?: string;
@@ -72,6 +76,26 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     });
   }, [search]);
 
+  // Scroll depth: mede onde a página perde o visitante.
+  useEffect(() => {
+    const marcos = new Set<number>();
+    const onScroll = () => {
+      const alturaTotal = document.documentElement.scrollHeight - window.innerHeight;
+      if (alturaTotal <= 0) return;
+      const pct = (window.scrollY / alturaTotal) * 100;
+      for (const marco of [50, 90]) {
+        if (pct >= marco && !marcos.has(marco)) {
+          marcos.add(marco);
+          trackMetaCustom("ScrollDepth", { depth: String(marco) });
+        }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+
+
   // CTAs rolam até a oferta; quem já está logado (e ainda não é PRO) vai direto para o checkout.
   const irParaOferta = useCallback(
     (plano?: string) => {
@@ -91,15 +115,17 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     <main className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-foreground md:pb-0">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_70%_at_50%_-10%,_oklch(0.78_0.2_141_/_0.18),_transparent_55%)]" />
 
+      <TopBar logado={logado} onAssinar={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+
       {/* Social proof strip */}
-      <div className="relative border-b border-border/60 bg-card/80 shadow-soft backdrop-blur">
+      <div className="relative mt-14 border-b border-border/60 bg-card/80 shadow-soft backdrop-blur">
         <p className="animate-in fade-in slide-in-from-top-2 mx-auto max-w-6xl px-5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-primary duration-700 sm:text-xs">
           {CAMPANHA.socialProof}
         </p>
       </div>
 
       {/* Hero */}
-      <section className="relative mx-auto flex min-h-[calc(100svh-2.75rem)] w-full max-w-6xl flex-col justify-center px-5 py-14 sm:px-8 md:py-20">
+      <section className="relative mx-auto flex min-h-[calc(100svh-6.25rem)] w-full max-w-6xl flex-col justify-center px-5 py-14 sm:px-8 md:py-20">
         <div className="animate-in fade-in slide-in-from-bottom-4 max-w-3xl duration-700">
           <p className="text-sm font-black uppercase tracking-[0.22em] text-primary sm:text-base">
             {CAMPANHA.brand}
@@ -127,7 +153,12 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             </Button>
           </div>
 
-          <p className="mt-3 text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
+          <p className="mt-4 text-sm font-bold text-foreground">{CAMPANHA.precoAncora}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{CAMPANHA.precoComparativo}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <GarantiaBadge compact />
+            <p className="text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
+          </div>
 
           <div className="mt-10 max-w-lg rounded-[1.5rem] border border-border/60 bg-card/90 p-5 shadow-soft">
             <p className="text-[11px] font-bold uppercase tracking-wide text-primary">{CAMPANHA.teaserTreino.titulo}</p>
@@ -138,9 +169,12 @@ export function LandingPage({ search }: { search: LandingSearch }) {
               <video
                 className="mt-4 aspect-video w-full rounded-2xl object-cover"
                 src={CAMPANHA.teaserTreino.videoSrc}
-                controls
+                autoPlay
+                muted
+                loop
                 playsInline
-                preload="none"
+                preload="metadata"
+                aria-label={CAMPANHA.teaserTreino.nome}
               />
             ) : (
               <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-secondary text-xs text-muted-foreground">
@@ -150,6 +184,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           </div>
         </div>
       </section>
+
 
       {/* Problema */}
       <Section>
@@ -238,6 +273,21 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         </div>
       </Section>
 
+      {/* Veja por dentro */}
+      <Section tone="card">
+        <Eyebrow>{CAMPANHA.showcase.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.showcase.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.showcase.body}</p>
+        <AppShowcase />
+      </Section>
+
+      {/* Modo Rápido */}
+      <Section>
+        <ModoRapidoCard onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+      </Section>
+
+
+
       {/* Benefícios */}
       <Section tone="card">
         <Eyebrow>Transformação</Eyebrow>
@@ -275,21 +325,10 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.prova.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.prova.body}</p>
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          {CAMPANHA.prova.depoimentos.map((d) => (
-            <blockquote
-              key={d.autor}
-              className="rounded-[1.25rem] border border-border/60 bg-background/60 p-5 shadow-soft"
-            >
-              <p className="text-sm font-medium leading-relaxed text-foreground">&ldquo;{d.quote}&rdquo;</p>
-              <footer className="mt-3 text-xs font-bold text-primary">{d.autor}</footer>
-            </blockquote>
-          ))}
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {CAMPANHA.prova.slots.map((slot) => (
             <div
               key={slot.title}
-              className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-border bg-background/40 px-4 text-center"
+              className="flex aspect-video items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-background/40 px-4 text-center"
             >
               <ProofMedia slot={slot} />
             </div>
@@ -297,8 +336,15 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         </div>
       </Section>
 
+      {/* FAQ */}
+      <Section>
+        <Eyebrow>Dúvidas</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Antes de assinar</h2>
+        <FaqSection />
+      </Section>
+
       {/* Oferta */}
-      <Section id="oferta">
+      <Section id="oferta" tone="card">
         <Eyebrow>Oferta</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.oferta.title}</h2>
         <p className="mt-2 text-sm text-muted-foreground">Você recebe:</p>
@@ -309,6 +355,10 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             </li>
           ))}
         </ul>
+
+        <div className="mt-8 max-w-2xl">
+          <GarantiaBadge />
+        </div>
 
         <CheckoutOferta
           planoInicial={search.plano ?? CAMPANHA.heroCtaPlano}
@@ -321,26 +371,28 @@ export function LandingPage({ search }: { search: LandingSearch }) {
       <Section>
         <h2 className="max-w-2xl text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.urgencia.title}</h2>
         <p className="mt-3 text-lg font-semibold text-primary sm:text-xl">{CAMPANHA.urgencia.body}</p>
-        <Button
-          size="lg"
-          className="mt-8 h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[240px]"
-          onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
-        >
-          {CAMPANHA.urgencia.cta}
-        </Button>
-        <div className="mt-6 flex flex-wrap gap-2">
-          {CAMPANHA.ctaVariacoes.map((label) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => irParaOferta("semestral")}
-              className="rounded-full border border-border/60 bg-card px-3 py-2 text-xs font-semibold text-muted-foreground shadow-soft transition-colors hover:border-primary/40 hover:text-foreground"
-            >
-              {label}
-            </button>
-          ))}
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button
+            size="lg"
+            className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[240px]"
+            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+          >
+            {CAMPANHA.urgencia.cta}
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[200px]"
+            onClick={() => irParaOferta("semestral")}
+          >
+            {CAMPANHA.heroCtaSecundario}
+          </Button>
+        </div>
+        <div className="mt-4">
+          <GarantiaBadge compact />
         </div>
       </Section>
+
 
       <footer className="relative border-t border-border px-5 py-8 text-center text-xs text-muted-foreground">
         {CAMPANHA.brand} — treinos guiados para evoluir no jogo
@@ -348,20 +400,18 @@ export function LandingPage({ search }: { search: LandingSearch }) {
 
       {/* Sticky mobile CTA */}
       <div className="animate-in slide-in-from-bottom-4 fixed inset-x-0 bottom-0 z-50 p-3 duration-500 md:hidden">
-        <div className="flex gap-2 rounded-[1.5rem] border border-border/60 bg-card/95 p-2 shadow-soft-lg backdrop-blur">
-          <Button size="lg" className="h-12 flex-1 text-xs font-extrabold" onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}>
-            {CAMPANHA.heroCta}
-          </Button>
+        <div className="rounded-[1.5rem] border border-border/60 bg-card/95 p-3 shadow-soft-lg backdrop-blur">
           <Button
             size="lg"
-            variant="outline"
-            className="h-12 flex-1 text-xs font-extrabold"
-            onClick={() => irParaOferta("semestral")}
+            className="h-12 w-full text-sm font-extrabold"
+            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
           >
-            Semestral
+            {CAMPANHA.heroCta} · R$47
           </Button>
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">{CAMPANHA.garantia.curta}</p>
         </div>
       </div>
+
 
     </main>
   );
