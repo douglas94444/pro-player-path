@@ -76,6 +76,26 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     });
   }, [search]);
 
+  // Scroll depth: mede onde a página perde o visitante.
+  useEffect(() => {
+    const marcos = new Set<number>();
+    const onScroll = () => {
+      const alturaTotal = document.documentElement.scrollHeight - window.innerHeight;
+      if (alturaTotal <= 0) return;
+      const pct = (window.scrollY / alturaTotal) * 100;
+      for (const marco of [50, 90]) {
+        if (pct >= marco && !marcos.has(marco)) {
+          marcos.add(marco);
+          trackMetaCustom("ScrollDepth", { depth: String(marco) });
+        }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+
+
   // CTAs rolam até a oferta; quem já está logado (e ainda não é PRO) vai direto para o checkout.
   const irParaOferta = useCallback(
     (plano?: string) => {
