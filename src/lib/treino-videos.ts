@@ -60,7 +60,8 @@ export async function resolveVideoUrl(v: TreinoVideo): Promise<string | null> {
     if (error) return null;
     return data?.signedUrl ?? null;
   }
-  return v.url ?? null;
+  // Registros antigos podem ter sido salvos antes da allowlist: sanitiza na leitura.
+  return urlVideoSegura(v.url);
 }
 
 export async function resolveVideoMap(rows: TreinoVideo[]): Promise<VideoMap> {
