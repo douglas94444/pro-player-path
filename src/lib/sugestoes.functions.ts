@@ -12,17 +12,54 @@ const baseSchema = z.object({
   mensagem: z.string().trim().min(10).max(2000),
 });
 
+const LIMITE_POR_HORA = 5;
+
+/** Chave anônima do remetente: hash do IP + e-mail (não guardamos o IP cru). */
+async function chaveRemetente(email: string) {
+  const { getRequestIP } = await import("@tanstack/react-start/server");
+  let ip = "";
+  try {
+    ip = getRequestIP({ xForwardedFor: true }) ?? "";
+  } catch {
+    ip = "";
+  }
+  const bytes = new TextEncoder().encode(`${ip}|${email.toLowerCase()}`);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export const enviarSugestaoAnonima = createServerFn({ method: "POST" })
   .inputValidator((data) => baseSchema.parse(data))
   .handler(async ({ data }) => {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient<Database>(
-      process.env["SUPABASE_URL"]!,
-      process.env["SUPABASE_PUBLISHABLE_KEY"]!,
-      { auth: { persistSession: false } },
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { error } = await supabase.from("sugestoes").insert({
+    // Limite de envios: 5 por hora por remetente (IP + e-mail).
+    const chave = await chaveRemetente(data.email);
+    const janela = new Date(Math.floor(Date.now() / 3_600_000) * 3_600_000).toISOString();
+
+    const { data: atual } = await supabaseAdmin
+      .from("sugestoes_rate_limit")
+      .select("id, envios")
+      .eq("chave", chave)
+      .eq("janela", janela)
+      .maybeSingle();
+
+    if (atual && atual.envios >= LIMITE_POR_HORA) {
+      throw new Error("Muitos envios seguidos. Tente novamente daqui a pouco.");
+    }
+
+    if (atual) {
+      await supabaseAdmin
+        .from("sugestoes_rate_limit")
+        .update({ envios: atual.envios + 1 })
+        .eq("id", atual.id);
+    } else {
+      await supabaseAdmin.from("sugestoes_rate_limit").insert({ chave, janela, envios: 1 });
+    }
+
+    const { error } = await supabaseAdmin.from("sugestoes").insert({
       nome: data.nome,
       email: data.email,
       tipo: data.tipo,
