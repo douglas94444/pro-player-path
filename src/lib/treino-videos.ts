@@ -144,13 +144,13 @@ export async function enviarVideoArquivo(input: {
 
   const anterior = await buscarRegistro(treinoId, exercicioNome);
   if (anterior) {
-    if (anterior.storage_path) await apagarArquivo(anterior.storage_path);
+    const aviso = anterior.storage_path ? await apagarArquivo(anterior.storage_path) : null;
     const { error } = await supabase
       .from("treino_videos")
       .update({ tipo: "upload", storage_path: path, url: null, titulo: file.name })
       .eq("id", anterior.id);
     if (error) throw error;
-    return;
+    return { aviso };
   }
 
   const { error } = await supabase.from("treino_videos").insert({
@@ -162,22 +162,30 @@ export async function enviarVideoArquivo(input: {
     titulo: file.name,
   });
   if (error) throw error;
+  return { aviso: null as string | null };
 }
 
 export async function removerVideo(v: TreinoVideo) {
-  if (v.storage_path) await apagarArquivo(v.storage_path);
+  const aviso = v.storage_path ? await apagarArquivo(v.storage_path) : null;
   const { error } = await supabase.from("treino_videos").delete().eq("id", v.id);
   if (error) throw error;
+  return { aviso };
 }
 
 /**
- * Remove o arquivo antigo do bucket. A falha não interrompe o fluxo (o registro
- * novo precisa ser salvo), mas é registrada para diagnosticar arquivos órfãos.
+ * Remove um arquivo do bucket. A falha não interrompe o fluxo (o registro novo
+ * precisa ser salvo), mas retorna um aviso para exibir na UI e registra no log
+ * para diagnosticar arquivos órfãos.
  */
-async function apagarArquivo(path: string) {
-  const { error } = await supabase.storage.from(TREINO_VIDEOS_BUCKET).remove([path]);
-  if (error) {
-    console.warn("[treino-videos] falha ao apagar arquivo antigo", path, error.message);
+async function apagarArquivo(path: string): Promise<string | null> {
+  try {
+    const { error } = await supabase.storage.from(TREINO_VIDEOS_BUCKET).remove([path]);
+    if (error) throw error;
+    return null;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[treino-videos] falha ao apagar arquivo antigo", path, msg);
+    return `O vídeo antigo não pôde ser removido do armazenamento (${path}). Ele ficará ocupando espaço até ser apagado manualmente.`;
   }
 }
 
