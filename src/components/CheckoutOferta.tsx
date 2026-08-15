@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
 import { PLANOS_ASSINATURA } from "@/data/training";
+import { CAMPANHA } from "@/data/campanha-copy";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/lib/player-store";
 import { trackMeta } from "@/lib/meta-pixel";
