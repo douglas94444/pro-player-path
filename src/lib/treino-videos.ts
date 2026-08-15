@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const TREINO_VIDEOS_BUCKET = "treinos-videos";
 export const MAX_VIDEO_MB = 200;
+/** Tipos aceitos no upload de vídeo (validado antes de enviar ao bucket). */
+export const VIDEO_MIME_PERMITIDOS = [
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-m4v",
+] as const;
 
 export type TreinoVideo = {
   id: string;
@@ -121,7 +128,8 @@ export async function enviarVideoArquivo(input: {
   file: File;
 }) {
   const { file, treinoId, exercicioNome } = input;
-  if (!file.type.startsWith("video/")) throw new Error("Envie um arquivo de vídeo (MP4, WebM, MOV).");
+  if (!VIDEO_MIME_PERMITIDOS.includes(file.type as (typeof VIDEO_MIME_PERMITIDOS)[number]))
+    throw new Error("Formato não aceito. Envie MP4, WebM ou MOV.");
   if (file.size > MAX_VIDEO_MB * 1024 * 1024)
     throw new Error(`Arquivo muito grande. Limite de ${MAX_VIDEO_MB} MB.`);
 
