@@ -253,6 +253,21 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         </div>
       </Section>
 
+      {/* Veja por dentro */}
+      <Section tone="card">
+        <Eyebrow>{CAMPANHA.showcase.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.showcase.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.showcase.body}</p>
+        <AppShowcase />
+      </Section>
+
+      {/* Modo Rápido */}
+      <Section>
+        <ModoRapidoCard onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+      </Section>
+
+
+
       {/* Benefícios */}
       <Section tone="card">
         <Eyebrow>Transformação</Eyebrow>
