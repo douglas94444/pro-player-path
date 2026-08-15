@@ -128,7 +128,8 @@ export async function enviarVideoArquivo(input: {
   file: File;
 }) {
   const { file, treinoId, exercicioNome } = input;
-  if (!file.type.startsWith("video/")) throw new Error("Envie um arquivo de vídeo (MP4, WebM, MOV).");
+  if (!VIDEO_MIME_PERMITIDOS.includes(file.type as (typeof VIDEO_MIME_PERMITIDOS)[number]))
+    throw new Error("Formato não aceito. Envie MP4, WebM ou MOV.");
   if (file.size > MAX_VIDEO_MB * 1024 * 1024)
     throw new Error(`Arquivo muito grande. Limite de ${MAX_VIDEO_MB} MB.`);
 
