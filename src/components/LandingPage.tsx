@@ -365,20 +365,18 @@ export function LandingPage({ search }: { search: LandingSearch }) {
 
       {/* Sticky mobile CTA */}
       <div className="animate-in slide-in-from-bottom-4 fixed inset-x-0 bottom-0 z-50 p-3 duration-500 md:hidden">
-        <div className="flex gap-2 rounded-[1.5rem] border border-border/60 bg-card/95 p-2 shadow-soft-lg backdrop-blur">
-          <Button size="lg" className="h-12 flex-1 text-xs font-extrabold" onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}>
-            {CAMPANHA.heroCta}
-          </Button>
+        <div className="rounded-[1.5rem] border border-border/60 bg-card/95 p-3 shadow-soft-lg backdrop-blur">
           <Button
             size="lg"
-            variant="outline"
-            className="h-12 flex-1 text-xs font-extrabold"
-            onClick={() => irParaOferta("semestral")}
+            className="h-12 w-full text-sm font-extrabold"
+            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
           >
-            Semestral
+            {CAMPANHA.heroCta} · R$47
           </Button>
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">{CAMPANHA.garantia.curta}</p>
         </div>
       </div>
+
 
     </main>
   );
