@@ -148,12 +148,13 @@ function VideoRow({
     };
   }, [registro]);
 
-  const run = async (fn: () => Promise<void>, ok: string) => {
+  const run = async (fn: () => Promise<void | { aviso?: string | null }>, ok: string) => {
     setBusy(true);
     try {
-      await fn();
+      const res = await fn();
       await onChange();
       toast.success(ok);
+      if (res && res.aviso) toast.warning(res.aviso);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falhou");
     } finally {
