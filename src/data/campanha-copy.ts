@@ -80,25 +80,77 @@ export const CAMPANHA = {
     pontos: ["Te tirar do nível atual", "Te levar para outro nível de jogo"],
   },
 
+  showcase: {
+    eyebrow: "Veja por dentro",
+    title: "É isto que você abre todo dia.",
+    body: "Nada de PDF ou playlist solta: um app com plano do dia, timer guiado e progresso registrado.",
+    dashboard: "Dashboard com streak de dias e evolução por pilar",
+    plano: "Plano de 4 semanas com progresso semana a semana",
+    treino: "Tela de treino com timer e lista de exercícios",
+  },
+
+  modoRapido: {
+    eyebrow: "Diferencial",
+    title: "Sem tempo hoje? O treino se ajusta a você.",
+    body: "Um toque e o sistema monta uma sessão curta e intensa que mantém seu streak vivo — em vez de você pular o dia e perder o ritmo.",
+    botao: "Tenho 10 minutos hoje",
+  },
+
   prova: {
     title: "O método em ação",
-    body: "Prova visual do tipo de treino e do ritmo do sistema — sem números inventados. Cases filmados dos assinantes entram aqui conforme forem gravados.",
-    depoimentos: [
-      {
-        quote: "Treino de 15 min e já sinto diferença no arranque no campo.",
-        autor: "Perfil típico · lateral",
-      },
-      {
-        quote: "Antes eu improvisava. Agora abro o app e faço o dia.",
-        autor: "Perfil típico · meia",
-      },
-      {
-        quote: "Consegui manter streak treinando sozinho com pouco tempo.",
-        autor: "Perfil típico · atacante",
-      },
-    ],
+    body: "Prova visual do tipo de treino e do ritmo do sistema — sem números inventados nem depoimentos fabricados. Cases filmados dos assinantes entram aqui conforme forem gravados.",
     slots: PROVA_SLOTS as ProofSlot[],
   },
+
+  garantia: {
+    titulo: "Garantia de 7 dias",
+    curta: "7 dias de garantia · cancele quando quiser",
+    body: "Testou e não é pra você? Peça o reembolso em até 7 dias e devolvemos tudo. Assinatura sem fidelidade: você cancela quando quiser, sem multa.",
+  },
+
+  pagamento: "Pix · Cartão · Pagamento seguro via Mercado Pago",
+
+  faq: [
+    {
+      pergunta: "Preciso de campo ou material especial?",
+      resposta:
+        "Não. Os treinos têm versões para casa, campo e academia. O básico é espaço para alguns passos e, quando pedido, uma bola.",
+    },
+    {
+      pergunta: "Serve para a minha idade?",
+      resposta:
+        "O sistema foi desenhado para jovens atletas e adultos que jogam por prazer. A partir de 14 anos; abaixo disso, com acompanhamento de um responsável.",
+    },
+    {
+      pergunta: "Quanto tempo por dia preciso?",
+      resposta:
+        "De 10 a 20 minutos. Em dias corridos, o Modo Rápido monta uma sessão de 10 minutos para você não perder o ritmo.",
+    },
+    {
+      pergunta: "Funciona para goleiro?",
+      resposta:
+        "Os pilares de explosão, controle de corpo e performance servem a qualquer posição. A biblioteca permite filtrar o que faz sentido pro seu jogo.",
+    },
+    {
+      pergunta: "Quais são as formas de pagamento?",
+      resposta: "Pix, cartão de crédito e boleto, processados com segurança pelo Mercado Pago.",
+    },
+    {
+      pergunta: "Como faço para cancelar?",
+      resposta:
+        "Pelo seu perfil, a qualquer momento. Não há fidelidade nem multa, e você mantém o acesso até o fim do período pago.",
+    },
+    {
+      pergunta: "Consigo usar no celular?",
+      resposta:
+        "Sim. O app funciona no navegador do celular, tablet e computador, com o mesmo progresso sincronizado na nuvem.",
+    },
+    {
+      pergunta: "O que acontece depois das 4 semanas?",
+      resposta:
+        "Você entra em novos ciclos com carga progressiva, além da biblioteca completa e dos modos pré-partida e pós-jogo.",
+    },
+  ],
 
   oferta: {
     title: "Acesso completo ao Jogador PRO System",
@@ -119,15 +171,9 @@ export const CAMPANHA = {
   urgencia: {
     title: "Você pode continuar treinando do jeito errado…",
     body: "ou começar hoje a evoluir com um plano.",
-    cta: "Começar agora",
+    cta: "Quero ser Jogador PRO",
   },
-
-  ctaVariacoes: [
-    "Começar minha evolução",
-    "Quero treinar como atleta",
-    "Liberar meu acesso",
-    "Virar Jogador PRO",
-  ],
 } as const;
+
 
 export { DEMO_VIDEOS };
