@@ -308,6 +308,33 @@ export type Database = {
         }
         Relationships: []
       }
+      sugestoes_rate_limit: {
+        Row: {
+          chave: string
+          created_at: string
+          envios: number
+          id: string
+          janela: string
+          updated_at: string
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          envios?: number
+          id?: string
+          janela: string
+          updated_at?: string
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          envios?: number
+          id?: string
+          janela?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       treino_videos: {
         Row: {
           created_at: string
