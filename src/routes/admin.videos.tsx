@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Link2, Trash2, Upload, Video } from "lucide-react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/AdminShell";
+import { ehEmbed } from "@/lib/video-url";
 import { Button } from "@/components/ui/button";
 import { TREINOS } from "@/data/training";
 import {
@@ -239,7 +240,7 @@ function VideoRow({
 
       {preview ? (
         <div className="mt-3 overflow-hidden rounded-xl border border-border">
-          {/youtube\.com|youtu\.be|vimeo\.com/.test(preview) ? (
+          {ehEmbed(preview) ? (
             <p className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
               <Video className="h-4 w-4" />
               <a href={preview} target="_blank" rel="noreferrer" className="truncate underline">

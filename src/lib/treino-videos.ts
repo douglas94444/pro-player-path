@@ -1,5 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { urlVideoSegura, MENSAGEM_URL_INVALIDA } from "@/lib/video-url";
+import {
+  salvarLinkVideoServer,
+  registrarUploadVideoServer,
+} from "@/lib/treino-videos.functions";
 
 export const TREINO_VIDEOS_BUCKET = "treinos-videos";
 export const MAX_VIDEO_MB = 200;
@@ -55,7 +60,8 @@ export async function resolveVideoUrl(v: TreinoVideo): Promise<string | null> {
     if (error) return null;
     return data?.signedUrl ?? null;
   }
-  return v.url ?? null;
+  // Registros antigos podem ter sido salvos antes da allowlist: sanitiza na leitura.
+  return urlVideoSegura(v.url);
 }
 
 export async function resolveVideoMap(rows: TreinoVideo[]): Promise<VideoMap> {
@@ -94,32 +100,21 @@ export async function salvarLinkVideo(input: {
   url: string;
   titulo?: string | null;
 }) {
-  const anterior = await buscarRegistro(input.treinoId, input.exercicioNome);
-  if (anterior?.storage_path) await apagarArquivo(anterior.storage_path);
+  // Validação de verdade acontece no servidor (admin + allowlist de domínio);
+  // aqui só evitamos uma ida de rede com um link obviamente inválido.
+  if (!urlVideoSegura(input.url)) throw new Error(MENSAGEM_URL_INVALIDA);
 
-  const { error } = await supabase.from("treino_videos").upsert(
-    {
-      treino_id: input.treinoId,
-      exercicio_nome: input.exercicioNome,
-      tipo: "link",
-      url: input.url,
-      storage_path: null,
+  const { storagePathAnterior } = await salvarLinkVideoServer({
+    data: {
+      treinoId: input.treinoId,
+      exercicioNome: input.exercicioNome,
+      url: input.url.trim(),
       titulo: input.titulo ?? null,
     },
-    { onConflict: "treino_id,exercicio_nome" },
-  );
-  if (error) {
-    // fallback quando o índice único é parcial (coalesce)
-    if (anterior) {
-      const { error: e2 } = await supabase
-        .from("treino_videos")
-        .update({ tipo: "link", url: input.url, storage_path: null, titulo: input.titulo ?? null })
-        .eq("id", anterior.id);
-      if (e2) throw e2;
-      return;
-    }
-    throw error;
-  }
+  });
+
+  const aviso = storagePathAnterior ? await apagarArquivo(storagePathAnterior) : null;
+  return { aviso };
 }
 
 export async function enviarVideoArquivo(input: {
@@ -142,28 +137,22 @@ export async function enviarVideoArquivo(input: {
     .upload(path, file, { contentType: file.type, upsert: false });
   if (upErr) throw upErr;
 
-  const anterior = await buscarRegistro(treinoId, exercicioNome);
-  if (anterior) {
-    const aviso = anterior.storage_path ? await apagarArquivo(anterior.storage_path) : null;
-    const { error } = await supabase
-      .from("treino_videos")
-      .update({ tipo: "upload", storage_path: path, url: null, titulo: file.name })
-      .eq("id", anterior.id);
-    if (error) throw error;
-    return { aviso };
-  }
-
-  const { error } = await supabase.from("treino_videos").insert({
-    treino_id: treinoId,
-    exercicio_nome: exercicioNome,
-    tipo: "upload",
-    storage_path: path,
-    url: null,
-    titulo: file.name,
+  // O metadado é gravado pelo servidor, que revalida admin, tipo e tamanho.
+  const { storagePathAnterior } = await registrarUploadVideoServer({
+    data: {
+      treinoId,
+      exercicioNome,
+      storagePath: path,
+      mime: file.type,
+      tamanho: file.size,
+      titulo: file.name.slice(0, 200),
+    },
   });
-  if (error) throw error;
-  return { aviso: null as string | null };
+
+  const aviso = storagePathAnterior ? await apagarArquivo(storagePathAnterior) : null;
+  return { aviso };
 }
+
 
 export async function removerVideo(v: TreinoVideo) {
   const aviso = v.storage_path ? await apagarArquivo(v.storage_path) : null;

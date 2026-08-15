@@ -1,16 +1,35 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+/** Só os domínios do projeto podem disparar eventos de conversão. */
+const ORIGENS_PERMITIDAS = [
+  /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
+  /^https:\/\/[a-z0-9-]+\.lovable\.dev$/,
+  /^http:\/\/localhost(:\d+)?$/,
+];
 
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+function corsFor(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") ?? "";
+  const permitido = ORIGENS_PERMITIDAS.some((re) => re.test(origin));
+  return {
+    "Access-Control-Allow-Origin": permitido ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    Vary: "Origin",
+  };
+}
 
 /** Meta Conversions API — envia Purchase/Subscribe server-side. */
 Deno.serve(async (req) => {
+  const cors = corsFor(req);
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (cors["Access-Control-Allow-Origin"] === "null") {
+    return json({ ok: false, error: "origem não permitida" }, 403);
+  }
 
   try {
     const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
