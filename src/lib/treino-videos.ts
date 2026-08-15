@@ -1,5 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { urlVideoSegura, MENSAGEM_URL_INVALIDA } from "@/lib/video-url";
+import {
+  salvarLinkVideoServer,
+  registrarUploadVideoServer,
+} from "@/lib/treino-videos.functions";
 
 export const TREINO_VIDEOS_BUCKET = "treinos-videos";
 export const MAX_VIDEO_MB = 200;
