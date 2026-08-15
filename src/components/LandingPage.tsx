@@ -286,21 +286,10 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.prova.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.prova.body}</p>
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          {CAMPANHA.prova.depoimentos.map((d) => (
-            <blockquote
-              key={d.autor}
-              className="rounded-[1.25rem] border border-border/60 bg-background/60 p-5 shadow-soft"
-            >
-              <p className="text-sm font-medium leading-relaxed text-foreground">&ldquo;{d.quote}&rdquo;</p>
-              <footer className="mt-3 text-xs font-bold text-primary">{d.autor}</footer>
-            </blockquote>
-          ))}
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {CAMPANHA.prova.slots.map((slot) => (
             <div
               key={slot.title}
-              className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-border bg-background/40 px-4 text-center"
+              className="flex aspect-video items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-background/40 px-4 text-center"
             >
               <ProofMedia slot={slot} />
             </div>
@@ -308,8 +297,15 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         </div>
       </Section>
 
+      {/* FAQ */}
+      <Section>
+        <Eyebrow>Dúvidas</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Antes de assinar</h2>
+        <FaqSection />
+      </Section>
+
       {/* Oferta */}
-      <Section id="oferta">
+      <Section id="oferta" tone="card">
         <Eyebrow>Oferta</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.oferta.title}</h2>
         <p className="mt-2 text-sm text-muted-foreground">Você recebe:</p>
@@ -320,6 +316,10 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             </li>
           ))}
         </ul>
+
+        <div className="mt-8 max-w-2xl">
+          <GarantiaBadge />
+        </div>
 
         <CheckoutOferta
           planoInicial={search.plano ?? CAMPANHA.heroCtaPlano}
@@ -332,26 +332,28 @@ export function LandingPage({ search }: { search: LandingSearch }) {
       <Section>
         <h2 className="max-w-2xl text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.urgencia.title}</h2>
         <p className="mt-3 text-lg font-semibold text-primary sm:text-xl">{CAMPANHA.urgencia.body}</p>
-        <Button
-          size="lg"
-          className="mt-8 h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[240px]"
-          onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
-        >
-          {CAMPANHA.urgencia.cta}
-        </Button>
-        <div className="mt-6 flex flex-wrap gap-2">
-          {CAMPANHA.ctaVariacoes.map((label) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => irParaOferta("semestral")}
-              className="rounded-full border border-border/60 bg-card px-3 py-2 text-xs font-semibold text-muted-foreground shadow-soft transition-colors hover:border-primary/40 hover:text-foreground"
-            >
-              {label}
-            </button>
-          ))}
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button
+            size="lg"
+            className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[240px]"
+            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+          >
+            {CAMPANHA.urgencia.cta}
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[200px]"
+            onClick={() => irParaOferta("semestral")}
+          >
+            {CAMPANHA.heroCtaSecundario}
+          </Button>
+        </div>
+        <div className="mt-4">
+          <GarantiaBadge compact />
         </div>
       </Section>
+
 
       <footer className="relative border-t border-border px-5 py-8 text-center text-xs text-muted-foreground">
         {CAMPANHA.brand} — treinos guiados para evoluir no jogo
