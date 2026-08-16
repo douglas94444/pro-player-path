@@ -104,6 +104,7 @@ function TreinoPage() {
   const [restaurado, setRestaurado] = useState(false);
   const [novasConquistas, setNovasConquistas] = useState<{ titulo: string; desc: string }[]>([]);
   const [semanaDesbloqueada, setSemanaDesbloqueada] = useState<number | null>(null);
+  const [mesConcluido, setMesConcluido] = useState<number | null>(null);
 
 
   // Retoma o treino em andamento após refresh/queda de conexão.
@@ -291,6 +292,13 @@ function TreinoPage() {
         if (fechou && PLANO.some((s) => s.semana === semanaNum + 1)) {
           setSemanaDesbloqueada(semanaNum + 1);
         }
+        if (fechou) {
+          const doMes = PLANO.filter((s) => s.mes === semana.mes);
+          const mesFechou = doMes.every((s) =>
+            s.dias.every((d) => feitos.has(`${s.semana}-${d.dia}`)),
+          );
+          if (mesFechou) setMesConcluido(semana.mes);
+        }
       }
     }
 
@@ -405,6 +413,15 @@ function TreinoPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : null}
+
+          {mesConcluido ? (
+            <div className="mt-3 rounded-2xl border border-primary/40 bg-primary/15 p-4 text-left animate-fade-in">
+              <p className="text-sm font-extrabold text-foreground">🏆 Mês {mesConcluido} concluído</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Mais um mesociclo fechado na sua jornada de 12 meses. O próximo bloco sobe a carga.
+              </p>
             </div>
           ) : null}
 
