@@ -14,7 +14,7 @@ export const CAMPANHA = {
   heroCta: "Quero ser Jogador PRO",
   heroCtaPlano: "mensal" as const,
   heroCtaSecundario: "Ver planos",
-  heroCtaHint: "Acesso completo ao plano de 4 semanas — sem freemium",
+  heroCtaHint: "Acesso completo à jornada de 12 meses — sem freemium",
   precoAncora: "A partir de R$16,41/mês no plano anual · Mensal R$47, sem fidelidade",
   precoComparativo: "Menos que uma mensalidade de escolinha — e você treina todo dia.",
 
@@ -221,7 +221,7 @@ export const CAMPANHA = {
   oferta: {
     title: "Acesso completo ao Jogador PRO System",
     recebe: [
-      "Plano guiado completo (4 semanas)",
+      "Jornada guiada completa de 12 meses",
       "Biblioteca + modos pré-partida e pós-jogo",
       "Comunidade PRO no Telegram",
       "Histórico, streak e evolução na nuvem",
