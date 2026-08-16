@@ -1,5 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { PLANO_FLAT, PLANO_MANUTENCAO, TREINOS, getTreino, type Nivel } from "@/data/training";
+import {
+  PLANO_FLAT,
+  PLANO_MANUTENCAO,
+  TOTAL_SEMANAS_PLANO,
+  TREINOS,
+  getTreino,
+  type Nivel,
+} from "@/data/training";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
@@ -424,7 +431,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const retorno = treinoRetorno(state.objetivo);
         proximo = {
           key: `retorno-${hoje()}`,
-          semana: 5,
+          semana: TOTAL_SEMANAS_PLANO + 1,
           dia: 0,
           treinoId: retorno.id,
           premium: true,
@@ -437,7 +444,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           const treinoId = ciclo.treinoIds[feitosCiclo]!;
           proximo = {
             key: `c-${ciclo.id}-${feitosCiclo + 1}`,
-            semana: 5,
+            semana: TOTAL_SEMANAS_PLANO + 1,
             dia: feitosCiclo + 1,
             treinoId,
             premium: true,
@@ -449,7 +456,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           const dia = PLANO_MANUTENCAO[idx]!;
           proximo = {
             key: `m-${feitosManut + 1}`,
-            semana: 5,
+            semana: TOTAL_SEMANAS_PLANO + 1,
             dia: dia.dia,
             treinoId: dia.treinoId,
             premium: true,
@@ -460,7 +467,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
 
     const totalTreinos = state.sessoes.length;
-    const semanaAtual = proximo?.manutencao ? 5 : (proximo?.semana ?? (planoBaseFeito ? 5 : 4));
+    const semanaAtual = proximo?.manutencao
+      ? TOTAL_SEMANAS_PLANO + 1
+      : (proximo?.semana ?? (planoBaseFeito ? TOTAL_SEMANAS_PLANO + 1 : TOTAL_SEMANAS_PLANO));
     const feitosNaSemana = proximo?.manutencao
       ? 0
       : PLANO_FLAT.filter((p) => p.semana === semanaAtual && unicos.includes(p.key)).length;
