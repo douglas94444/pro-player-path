@@ -360,7 +360,27 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <Eyebrow>{CAMPANHA.depoimentos.eyebrow}</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.depoimentos.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.depoimentos.body}</p>
+        <AvaliacoesWidget />
         <DepoimentosSection onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+      </Section>
+
+      {/* Tudo incluso */}
+      <Section tone="card">
+        <Eyebrow>{CAMPANHA.incluso.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.incluso.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.incluso.body}</p>
+        <InclusoStack />
+      </Section>
+
+      {/* Planos */}
+      <Section>
+        <Eyebrow>{CAMPANHA.planos.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.planos.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.planos.body}</p>
+        <PlanosTable onEscolher={(plano) => irParaOferta(plano)} />
+        <div className="mt-6">
+          <SelosConfianca />
+        </div>
       </Section>
 
       {/* FAQ */}
