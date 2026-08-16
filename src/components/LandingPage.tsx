@@ -372,37 +372,29 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <InclusoStack />
       </Section>
 
-      {/* Planos */}
-      <Section>
-        <Eyebrow>{CAMPANHA.planos.eyebrow}</Eyebrow>
-        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.planos.title}</h2>
-        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.planos.body}</p>
-        <PlanosTable onEscolher={(plano) => irParaOferta(plano)} />
-        <div className="mt-6">
-          <SelosConfianca />
-        </div>
-      </Section>
-
       {/* FAQ */}
       <Section>
-
         <Eyebrow>Dúvidas</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Antes de assinar</h2>
         <FaqSection />
       </Section>
 
-      {/* Oferta */}
+      {/* Planos + Oferta */}
       <Section id="oferta" tone="card">
-        <Eyebrow>Oferta</Eyebrow>
+        <Eyebrow>{CAMPANHA.planos.eyebrow}</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.oferta.title}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Você recebe:</p>
-        <ul className="mt-4 space-y-2">
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.planos.body}</p>
+
+        <p className="mt-6 text-sm text-muted-foreground">Você recebe:</p>
+        <ul className="mt-2 space-y-2">
           {CAMPANHA.oferta.recebe.map((item) => (
             <li key={item} className="flex items-center gap-2 text-sm text-foreground">
               <Check className="h-4 w-4 text-primary" /> {item}
             </li>
           ))}
         </ul>
+
+        <PlanosTable onEscolher={(plano) => dispararCheckout(plano, false)} />
 
         <div className="mt-8 max-w-2xl">
           <GarantiaBadge />
@@ -413,6 +405,10 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           refCode={search.ref}
           abrirAoMontar={search.checkout === "1"}
         />
+
+        <div className="mt-6">
+          <SelosConfianca />
+        </div>
       </Section>
 
       {/* Urgência */}
