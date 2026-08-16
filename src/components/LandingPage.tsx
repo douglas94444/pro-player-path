@@ -160,28 +160,6 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             <p className="text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
           </div>
 
-          <div className="mt-10 max-w-lg rounded-[1.5rem] border border-border/60 bg-card/90 p-5 shadow-soft">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-primary">{CAMPANHA.teaserTreino.titulo}</p>
-            <p className="mt-2 text-lg font-extrabold text-foreground">{CAMPANHA.teaserTreino.nome}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{CAMPANHA.teaserTreino.descricao}</p>
-            <p className="mt-2 text-xs font-semibold text-foreground">{CAMPANHA.teaserTreino.duracao} · preview</p>
-            {CAMPANHA.teaserTreino.videoSrc ? (
-              <video
-                className="mt-4 aspect-video w-full rounded-2xl object-cover"
-                src={CAMPANHA.teaserTreino.videoSrc}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                aria-label={CAMPANHA.teaserTreino.nome}
-              />
-            ) : (
-              <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-secondary text-xs text-muted-foreground">
-                Vídeo do método — cole a URL em campanha-copy.ts
-              </div>
-            )}
-          </div>
         </div>
       </section>
 
