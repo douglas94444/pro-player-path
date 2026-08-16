@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   CalendarDays,
   Check,
@@ -14,7 +14,7 @@ import { captureUtmFromSearch } from "@/lib/utm";
 import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/lib/player-store";
-import { CheckoutOferta, dispararCheckout, rolarParaOferta } from "@/components/CheckoutOferta";
+import { CheckoutOferta, dispararCheckout, rolarParaOferta, CHECKOUT_EVENT } from "@/components/CheckoutOferta";
 import { TopBar } from "@/components/landing/TopBar";
 import { GarantiaBadge } from "@/components/landing/GarantiaBadge";
 import { FaqSection } from "@/components/landing/FaqSection";
@@ -72,6 +72,7 @@ function ProofMedia({ slot }: { slot: ProofSlot }) {
 
 export function LandingPage({ search }: { search: LandingSearch }) {
   const { logado, state } = usePlayer();
+  const [planoAtivo, setPlanoAtivo] = useState<string | undefined>(search.plano ?? CAMPANHA.heroCtaPlano);
 
   useEffect(() => {
     captureUtmFromSearch(search);
@@ -103,16 +104,25 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-
+  // Sincroniza card ativo com o plano escolhido no checkout.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ plano?: string; iniciar?: boolean }>).detail;
+      if (detail?.plano) setPlanoAtivo(detail.plano);
+    };
+    window.addEventListener(CHECKOUT_EVENT, handler);
+    return () => window.removeEventListener(CHECKOUT_EVENT, handler);
+  }, []);
 
   // CTAs rolam até a oferta; quem já está logado (e ainda não é PRO) vai direto para o checkout.
   const irParaOferta = useCallback(
     (plano?: string) => {
       rolarParaOferta();
+      if (plano) setPlanoAtivo(plano);
       if (logado && !state.assinante) {
         window.setTimeout(() => dispararCheckout(plano, true), 350);
       } else if (plano) {
-        dispararCheckout(plano, false);
+        dispararCheckout(plano, true);
       }
     },
     [logado, state.assinante],
@@ -394,7 +404,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           ))}
         </ul>
 
-        <PlanosTable onEscolher={(plano) => dispararCheckout(plano, false)} />
+        <PlanosTable planoAtivo={planoAtivo} onEscolher={(plano) => dispararCheckout(plano, true)} />
 
         <div className="mt-8 max-w-2xl">
           <GarantiaBadge />

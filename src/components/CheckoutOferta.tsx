@@ -183,37 +183,7 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
 
   return (
     <div className="mt-8">
-      <div className="grid gap-3 md:grid-cols-3">
-        {PLANOS_ASSINATURA.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            aria-pressed={escolhido === p.id}
-            onClick={() => {
-              setEscolhido(p.id);
-              setMostrarBrick(false);
-              setPendingPix(false);
-            }}
-            className={cn(
-              "rounded-[1.5rem] border p-5 text-left shadow-soft transition-colors hover:border-primary/50",
-              escolhido === p.id ? "border-primary bg-primary/10" : "border-border/60 bg-card",
-            )}
-          >
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-base font-extrabold text-foreground">{p.nome}</span>
-              <span className="text-xl font-black text-foreground">
-                {p.preco}
-                <span className="text-xs font-medium text-muted-foreground">{p.periodo}</span>
-              </span>
-            </div>
-            <p className={cn("mt-1 text-xs", p.destaque ? "font-bold text-primary" : "text-muted-foreground")}>
-              {p.nota}
-            </p>
-          </button>
-        ))}
-      </div>
-
-      <div className="mx-auto mt-6 w-full max-w-xl">
+      <div className="mx-auto w-full max-w-xl">
         {!state.assinante ? (
           <div className="mb-4 flex gap-2">
             <Input
