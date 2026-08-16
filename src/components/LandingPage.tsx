@@ -125,7 +125,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
       </div>
 
       {/* Hero */}
-      <section className="relative mx-auto flex min-h-[calc(100svh-6.25rem)] w-full max-w-6xl flex-col justify-center px-5 py-14 sm:px-8 md:py-20">
+      <section className="relative mx-auto flex w-full max-w-6xl flex-col justify-center px-5 pb-12 pt-12 sm:px-8 md:pb-16 md:pt-16">
         <div className="animate-in fade-in slide-in-from-bottom-4 max-w-3xl duration-700">
           <p className="text-sm font-black uppercase tracking-[0.22em] text-primary sm:text-base">
             {CAMPANHA.brand}
