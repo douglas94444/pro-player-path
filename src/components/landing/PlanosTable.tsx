@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { CAMPANHA } from "@/data/campanha-copy";
 import { cn } from "@/lib/utils";
-import { CHECKOUT_EVENT, dispararCheckout } from "@/components/CheckoutOferta";
+import { CHECKOUT_EVENT } from "@/components/CheckoutOferta";
+import { CAMPANHA } from "@/data/campanha-copy";
+
 
 /** Planos lado a lado com ancoragem de preço; cada card abre o checkout diretamente. */
 export function PlanosTable({
-  onEscolher,
   planoAtivo,
 }: {
-  onEscolher: (plano: string) => void;
   planoAtivo?: string | undefined;
 }) {
+
   const [ativo, setAtivo] = useState<string | undefined>(planoAtivo);
 
   useEffect(() => {
