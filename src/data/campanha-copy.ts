@@ -223,7 +223,6 @@ export const CAMPANHA = {
     recebe: [
       "Jornada guiada completa de 12 meses",
       "Biblioteca + modos pré-partida e pós-jogo",
-      "Comunidade PRO no Telegram",
       "Histórico, streak e evolução na nuvem",
       "Atualizações e ciclos pós-plano",
     ],
