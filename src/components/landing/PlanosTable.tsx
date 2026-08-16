@@ -11,7 +11,7 @@ export function PlanosTable({
   planoAtivo,
 }: {
   onEscolher: (plano: string) => void;
-  planoAtivo?: string;
+  planoAtivo?: string | undefined;
 }) {
   const [ativo, setAtivo] = useState<string | undefined>(planoAtivo);
 
