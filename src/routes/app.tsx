@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/lib/player-store";
 import { canAccessTreino } from "@/lib/access";
 import { captureUtmFromLocation } from "@/lib/utm";
+import { MESES_PLANO, PLANO, TOTAL_MESES_PLANO } from "@/data/training";
 
 import { labelObjetivo, prefereModoRapido, treinoRapido } from "@/lib/recommendations";
 import { cn } from "@/lib/utils";
@@ -147,7 +148,7 @@ function Home() {
             {planoCompleto
               ? "Manutenção"
               : proximoPlano
-                ? `Treino de hoje · Dia ${proximoPlano.dia} da semana ${proximoPlano.semana}`
+                ? `Treino de hoje · Mês ${mesAtual} · Dia ${proximoPlano.dia} da semana ${semanaNoMes}`
                 : "Treino de hoje"}
           </p>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
