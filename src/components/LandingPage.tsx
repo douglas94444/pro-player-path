@@ -171,9 +171,30 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             <GarantiaBadge compact />
             <p className="text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
           </div>
+          <div className="mt-4">
+            <SelosConfianca />
+          </div>
 
         </div>
       </section>
+
+      {/* Benefícios em ícones */}
+      <Section tone="card">
+        <Eyebrow>{CAMPANHA.beneficiosIcones.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+          {CAMPANHA.beneficiosIcones.title}
+        </h2>
+        <BeneficiosGrid />
+        <div className="mt-8">
+          <Button
+            size="lg"
+            className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[260px]"
+            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+          >
+            {CAMPANHA.heroCta}
+          </Button>
+        </div>
+      </Section>
 
 
       {/* Problema */}
