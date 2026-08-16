@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   CalendarDays,
   Check,
@@ -14,7 +14,7 @@ import { captureUtmFromSearch } from "@/lib/utm";
 import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/lib/player-store";
-import { CheckoutOferta, dispararCheckout, rolarParaOferta } from "@/components/CheckoutOferta";
+import { CheckoutOferta, dispararCheckout, rolarParaOferta, CHECKOUT_EVENT } from "@/components/CheckoutOferta";
 import { TopBar } from "@/components/landing/TopBar";
 import { GarantiaBadge } from "@/components/landing/GarantiaBadge";
 import { FaqSection } from "@/components/landing/FaqSection";
