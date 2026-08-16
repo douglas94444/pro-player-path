@@ -20,6 +20,13 @@ import { GarantiaBadge } from "@/components/landing/GarantiaBadge";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { AppShowcase, ModoRapidoCard } from "@/components/landing/AppShowcase";
 import { DepoimentosSection } from "@/components/landing/DepoimentosSection";
+import { UrgencyBar } from "@/components/landing/UrgencyBar";
+import { BeneficiosGrid } from "@/components/landing/BeneficiosGrid";
+import { PreviewTreinos } from "@/components/landing/PreviewTreinos";
+import { InclusoStack } from "@/components/landing/InclusoStack";
+import { PlanosTable } from "@/components/landing/PlanosTable";
+import { AvaliacoesWidget } from "@/components/landing/AvaliacoesWidget";
+import { SelosConfianca } from "@/components/landing/SelosConfianca";
 
 
 export type LandingSearch = {
