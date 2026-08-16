@@ -1,20 +1,45 @@
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CAMPANHA } from "@/data/campanha-copy";
 import { cn } from "@/lib/utils";
+import { CHECKOUT_EVENT, dispararCheckout } from "@/components/CheckoutOferta";
 
-/** Planos lado a lado com ancoragem de preço; todos levam ao checkout existente. */
-export function PlanosTable({ onEscolher }: { onEscolher: (plano: string) => void }) {
+/** Planos lado a lado com ancoragem de preço; cada card abre o checkout diretamente. */
+export function PlanosTable({
+  onEscolher,
+  planoAtivo,
+}: {
+  onEscolher: (plano: string) => void;
+  planoAtivo?: string;
+}) {
+  const [ativo, setAtivo] = useState<string | undefined>(planoAtivo);
+
+  useEffect(() => {
+    setAtivo(planoAtivo);
+  }, [planoAtivo]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ plano?: string; iniciar?: boolean }>).detail;
+      if (detail?.plano) setAtivo(detail.plano);
+    };
+    window.addEventListener(CHECKOUT_EVENT, handler);
+    return () => window.removeEventListener(CHECKOUT_EVENT, handler);
+  }, []);
+
   return (
     <div className="mt-8 grid gap-4 lg:grid-cols-3">
       {CAMPANHA.planos.itens.map((plano) => {
         const destaque = Boolean(plano.badge) && plano.id === "semestral";
+        const selecionado = ativo === plano.id;
         return (
           <div
             key={plano.id}
             className={cn(
-              "relative flex flex-col rounded-[1.5rem] border bg-card/70 p-6 shadow-soft",
+              "relative flex flex-col rounded-[1.5rem] border bg-card/70 p-6 shadow-soft transition-all",
               destaque ? "border-primary ring-1 ring-primary/40" : "border-border/60",
+              selecionado && "bg-primary/5 ring-2 ring-primary",
             )}
           >
             {plano.badge ? (
@@ -51,7 +76,10 @@ export function PlanosTable({ onEscolher }: { onEscolher: (plano: string) => voi
               size="lg"
               variant={destaque ? "default" : "outline"}
               className="mt-6 h-12 w-full text-sm font-extrabold"
-              onClick={() => onEscolher(plano.id)}
+              onClick={() => {
+                onEscolher(plano.id);
+                dispararCheckout(plano.id, true);
+              }}
             >
               {plano.cta}
             </Button>
