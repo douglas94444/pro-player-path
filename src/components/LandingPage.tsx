@@ -325,7 +325,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
       </Section>
 
       {/* FAQ */}
-      <Section tone="card">
+      <Section>
 
         <Eyebrow>Dúvidas</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Antes de assinar</h2>
