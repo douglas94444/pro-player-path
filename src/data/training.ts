@@ -321,64 +321,165 @@ export type SemanaPlano = {
   titulo: string;
   foco: string;
   dias: DiaPlano[];
-  /** Semanas 3–4 exigem assinatura no plano guiado. */
+  /** Todo o plano guiado exige assinatura. */
   premium?: boolean;
+  /** Mês (mesociclo) ao qual a semana pertence. */
+  mes: number;
+  /** Pilar da semana dentro do mês. */
+  pilar: string;
+  /** Semana leve de regeneração ao fim de cada trimestre. */
+  regeneracao?: boolean;
 };
 
-export const PLANO: SemanaPlano[] = [
+export type FasePlano = {
+  id: string;
+  nome: string;
+  meses: [number, number];
+  foco: string;
+};
+
+/** As 4 fases da jornada de 12 meses. */
+export const FASES_PLANO: FasePlano[] = [
+  { id: "fundacao", nome: "Fundação", meses: [1, 3], foco: "Base física, técnica e hábito diário" },
+  { id: "dominio", nome: "Domínio", meses: [4, 6], foco: "Mais volume: controle fino e core forte" },
+  { id: "potencia", nome: "Potência", meses: [7, 9], foco: "Explosão, força e velocidade de arranque" },
+  { id: "elite", nome: "Elite", meses: [10, 12], foco: "Ritmo de jogo e performance de elite" },
+];
+
+export function faseDoMes(mes: number): FasePlano {
+  return FASES_PLANO.find((f) => mes >= f.meses[0] && mes <= f.meses[1]) ?? FASES_PLANO[0]!;
+}
+
+type PilarPlano = { nome: string; titulo: string; foco: string; rotacao: string[][] };
+
+/** Rotação de treinos por pilar — um array por fase (Fundação → Elite). */
+const PILARES: PilarPlano[] = [
   {
-    semana: 1,
-    titulo: "Semana 1 — Base",
+    nome: "Base",
+    titulo: "Base",
     foco: "Construir base física e ritmo de treino",
-    premium: true,
-    dias: [
-      { dia: 1, treinoId: "base-mobilidade" },
-      { dia: 2, treinoId: "controle-bola" },
-      { dia: 3, treinoId: "core-forte" },
-      { dia: 4, treinoId: "rapido-10" },
-      { dia: 5, treinoId: "base-mobilidade" },
+    rotacao: [
+      ["base-mobilidade", "controle-bola", "core-forte", "rapido-10", "base-mobilidade"],
+      ["base-mobilidade", "core-forte", "controle-bola", "forca-pernas", "base-mobilidade"],
+      ["base-mobilidade", "forca-pernas", "core-forte", "explosao-core", "resistencia-campo"],
+      ["base-mobilidade", "forca-pernas", "resistencia-campo", "explosao-core", "performance-final"],
     ],
   },
   {
-    semana: 2,
-    titulo: "Semana 2 — Controle + Core",
+    nome: "Controle",
+    titulo: "Controle + Core",
     foco: "Domínio de bola e estabilidade de tronco",
-    premium: true,
-    dias: [
-      { dia: 1, treinoId: "controle-bola" },
-      { dia: 2, treinoId: "core-forte" },
-      { dia: 3, treinoId: "explosao-core" },
-      { dia: 4, treinoId: "rapido-core" },
-      { dia: 5, treinoId: "controle-bola" },
+    rotacao: [
+      ["controle-bola", "core-forte", "explosao-core", "rapido-core", "controle-bola"],
+      ["controle-bola", "core-forte", "controle-bola", "explosao-core", "rapido-core"],
+      ["controle-bola", "explosao-core", "core-forte", "forca-pernas", "controle-bola"],
+      ["controle-bola", "explosao-core", "forca-pernas", "resistencia-campo", "performance-final"],
     ],
   },
   {
-    semana: 3,
-    titulo: "Semana 3 — Explosão",
+    nome: "Explosão",
+    titulo: "Explosão",
     foco: "Arranque, salto e velocidade",
-    premium: true,
-    dias: [
-      { dia: 1, treinoId: "explosao-core" },
-      { dia: 2, treinoId: "forca-pernas" },
-      { dia: 3, treinoId: "rapido-10" },
-      { dia: 4, treinoId: "explosao-core" },
-      { dia: 5, treinoId: "resistencia-campo" },
+    rotacao: [
+      ["explosao-core", "forca-pernas", "rapido-10", "explosao-core", "resistencia-campo"],
+      ["explosao-core", "forca-pernas", "explosao-core", "rapido-core", "resistencia-campo"],
+      ["explosao-core", "forca-pernas", "resistencia-campo", "explosao-core", "forca-pernas"],
+      ["explosao-core", "forca-pernas", "resistencia-campo", "performance-final", "explosao-core"],
     ],
   },
   {
-    semana: 4,
-    titulo: "Semana 4 — Performance",
+    nome: "Performance",
+    titulo: "Performance",
     foco: "Juntar tudo em ritmo de jogo",
-    premium: true,
-    dias: [
-      { dia: 1, treinoId: "resistencia-campo" },
-      { dia: 2, treinoId: "forca-pernas" },
-      { dia: 3, treinoId: "explosao-core" },
-      { dia: 4, treinoId: "controle-bola" },
-      { dia: 5, treinoId: "performance-final" },
+    rotacao: [
+      ["resistencia-campo", "forca-pernas", "explosao-core", "controle-bola", "performance-final"],
+      ["resistencia-campo", "explosao-core", "controle-bola", "forca-pernas", "performance-final"],
+      ["resistencia-campo", "explosao-core", "forca-pernas", "performance-final", "performance-final"],
+      ["performance-final", "explosao-core", "forca-pernas", "resistencia-campo", "performance-final"],
     ],
   },
 ];
+
+const SEMANA_REGENERACAO: string[] = [
+  "base-mobilidade",
+  "controle-bola",
+  "rapido-core",
+  "rapido-10",
+  "base-mobilidade",
+];
+
+const INTENSIDADE = [
+  "carga leve, foco em técnica limpa",
+  "volume maior, mesma execução",
+  "intensidade alta e menos pausa",
+  "ritmo de jogo do início ao fim",
+];
+
+function construirPlano(): SemanaPlano[] {
+  const semanas: SemanaPlano[] = [];
+  let n = 0;
+  for (let mes = 1; mes <= 12; mes++) {
+    const fase = faseDoMes(mes);
+    const faseIdx = FASES_PLANO.indexOf(fase);
+    for (let p = 0; p < PILARES.length; p++) {
+      const pilar = PILARES[p]!;
+      n += 1;
+      const rot = pilar.rotacao[faseIdx] ?? pilar.rotacao[0]!;
+      semanas.push({
+        semana: n,
+        mes,
+        pilar: pilar.nome,
+        titulo: `Semana ${n} — ${pilar.titulo}`,
+        foco: `${pilar.foco} · ${INTENSIDADE[faseIdx]!}`,
+        premium: true,
+        dias: rot.map((treinoId, i) => ({ dia: i + 1, treinoId })),
+      });
+    }
+    // Semana leve ao fim de cada trimestre (meses 3, 6, 9 e 12).
+    if (mes % 3 === 0) {
+      n += 1;
+      semanas.push({
+        semana: n,
+        mes,
+        pilar: "Regeneração",
+        titulo: `Semana ${n} — Regeneração`,
+        foco: "Semana leve para o corpo assimilar o bloco",
+        premium: true,
+        regeneracao: true,
+        dias: SEMANA_REGENERACAO.map((treinoId, i) => ({ dia: i + 1, treinoId })),
+      });
+    }
+  }
+  return semanas;
+}
+
+/** Jornada de 12 meses (52 semanas · 5 treinos por semana). */
+export const PLANO: SemanaPlano[] = construirPlano();
+
+export type MesPlano = {
+  mes: number;
+  fase: FasePlano;
+  titulo: string;
+  foco: string;
+  semanas: SemanaPlano[];
+};
+
+/** Metadados dos 12 mesociclos, para agrupar a UI sem recalcular. */
+export const MESES_PLANO: MesPlano[] = Array.from({ length: 12 }, (_, i) => {
+  const mes = i + 1;
+  const fase = faseDoMes(mes);
+  return {
+    mes,
+    fase,
+    titulo: `Mês ${mes} — ${fase.nome}`,
+    foco: fase.foco,
+    semanas: PLANO.filter((s) => s.mes === mes),
+  };
+});
+
+export const TOTAL_SEMANAS_PLANO = PLANO.length;
+export const TOTAL_MESES_PLANO = MESES_PLANO.length;
+
 
 /** Ciclo de manutenção após as 4 semanas (repete com chaves m-N). */
 export const PLANO_MANUTENCAO: DiaPlano[] = [
