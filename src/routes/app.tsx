@@ -29,7 +29,7 @@ export const Route = createFileRoute("/app")({
       { property: "og:title", content: "Jogador PRO System — seu treino de hoje" },
       {
         property: "og:description",
-        content: "Treinos guiados de futebol em 4 semanas. Streak, níveis e evolução real.",
+        content: "Jornada guiada de futebol de 12 meses. Streak, níveis e evolução real.",
       },
     ],
   }),
@@ -50,6 +50,12 @@ function Home() {
     isPaused,
   } = usePlayer();
   const navigate = useNavigate();
+  const semanaPlanoAtual = PLANO.find((s) => s.semana === semanaAtual);
+  const mesAtual = semanaPlanoAtual?.mes ?? TOTAL_MESES_PLANO;
+  const semanaNoMes =
+    semanaPlanoAtual && MESES_PLANO[mesAtual - 1]
+      ? MESES_PLANO[mesAtual - 1]!.semanas.findIndex((s) => s.semana === semanaAtual) + 1
+      : 1;
 
   useEffect(() => {
     captureUtmFromLocation();
@@ -158,7 +164,7 @@ function Home() {
             <span className="inline-flex items-center rounded-full bg-secondary px-3 py-1 font-medium">
               {planoCompleto
                 ? "Ciclo contínuo"
-                : `Semana ${semanaAtual} · Dia ${proximoPlano?.dia ?? 5}`}
+                : `Mês ${mesAtual} · Semana ${semanaNoMes} · Dia ${proximoPlano?.dia ?? 5}`}
             </span>
           </div>
           {treinoDeHoje ? (
@@ -192,7 +198,7 @@ function Home() {
           <section className="flex items-center justify-between gap-4 rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft sm:p-6">
             <div>
               <p className="text-sm font-bold text-foreground">
-                {planoCompleto ? "Manutenção" : `Semana ${Math.min(semanaAtual, 4)}`}
+                {planoCompleto ? "Manutenção" : `Mês ${mesAtual} · Semana ${semanaNoMes}`}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">Progresso da semana</p>
             </div>
