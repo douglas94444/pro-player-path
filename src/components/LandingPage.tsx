@@ -126,11 +126,14 @@ export function LandingPage({ search }: { search: LandingSearch }) {
 
       <TopBar logado={logado} onAssinar={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
 
-      {/* Social proof strip */}
-      <div className="relative mt-14 border-b border-border/60 bg-card/80 shadow-soft backdrop-blur">
-        <p className="animate-in fade-in slide-in-from-top-2 mx-auto max-w-6xl px-5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-primary duration-700 sm:text-xs">
-          {CAMPANHA.socialProof}
-        </p>
+      {/* Urgência + social proof strip */}
+      <div className="relative mt-14">
+        <UrgencyBar />
+        <div className="border-b border-border/60 bg-card/80 shadow-soft backdrop-blur">
+          <p className="animate-in fade-in slide-in-from-top-2 mx-auto max-w-6xl px-5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-primary duration-700 sm:text-xs">
+            {CAMPANHA.socialProof}
+          </p>
+        </div>
       </div>
 
       {/* Hero */}
