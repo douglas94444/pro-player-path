@@ -404,7 +404,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           ))}
         </ul>
 
-        <PlanosTable onEscolher={(plano) => dispararCheckout(plano, false)} />
+        <PlanosTable planoAtivo={planoAtivo} onEscolher={(plano) => dispararCheckout(plano, true)} />
 
         <div className="mt-8 max-w-2xl">
           <GarantiaBadge />
