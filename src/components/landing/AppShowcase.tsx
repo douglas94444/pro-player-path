@@ -54,15 +54,15 @@ function Phone({
         }`}
       >
         <span className="absolute left-1/2 top-2.5 z-10 h-4 w-20 -translate-x-1/2 rounded-b-2xl bg-card" />
-        <div className="relative aspect-[9/17] overflow-hidden rounded-[1.75rem] bg-background">
+        <div className="relative aspect-[9/17] overflow-hidden rounded-[1.75rem] bg-background p-1.5 pt-5">
           <img
             src={src}
             alt={alt}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-contain object-top"
+            className="h-full w-full rounded-[1.25rem] object-contain object-top"
           />
-                  </div>
+        </div>
       </div>
       <figcaption className="mx-auto mt-4 max-w-[16rem] text-center text-xs font-semibold text-muted-foreground">
         {legenda}
