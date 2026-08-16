@@ -102,25 +102,3 @@ export function ModoRapidoCard({ onCta }: { onCta: () => void }) {
   );
 }
 
-function Barra({ label, pct }: { label: string; pct: number }) {
-  return (
-    <div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <span className="min-w-0 truncate text-xs font-semibold text-muted-foreground">{label}</span>
-        <span className="shrink-0 text-xs font-bold text-foreground">{pct}%</span>
-      </div>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function Frame({ legenda, children }: { legenda: string; children: React.ReactNode }) {
-  return (
-    <figure className="rounded-[1.5rem] border border-border/60 bg-card/90 p-5 shadow-soft">
-      <div className="rounded-[1.25rem] border border-border/50 bg-background/70 p-4">{children}</div>
-      <figcaption className="mt-3 text-xs font-semibold text-muted-foreground">{legenda}</figcaption>
-    </figure>
-  );
-}
