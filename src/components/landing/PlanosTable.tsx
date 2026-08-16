@@ -4,14 +4,12 @@ import { cn } from "@/lib/utils";
 import { CHECKOUT_EVENT } from "@/components/CheckoutOferta";
 import { CAMPANHA } from "@/data/campanha-copy";
 
-
-/** Planos lado a lado com ancoragem de preço; cada card abre o checkout diretamente. */
+/** Planos lado a lado com ancoragem de preço. */
 export function PlanosTable({
   planoAtivo,
 }: {
   planoAtivo?: string | undefined;
 }) {
-
   const [ativo, setAtivo] = useState<string | undefined>(planoAtivo);
 
   useEffect(() => {
@@ -70,18 +68,6 @@ export function PlanosTable({
                 </li>
               ))}
             </ul>
-
-            <Button
-              size="lg"
-              variant={destaque ? "default" : "outline"}
-              className="mt-6 h-12 w-full text-sm font-extrabold"
-              onClick={() => {
-                onEscolher(plano.id);
-                dispararCheckout(plano.id, true);
-              }}
-            >
-              {plano.cta}
-            </Button>
           </div>
         );
       })}
