@@ -60,10 +60,9 @@ function Phone({
             alt={alt}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover object-top"
+            className="h-full w-full object-contain object-top"
           />
-          <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/80 to-transparent" />
-        </div>
+                  </div>
       </div>
       <figcaption className="mx-auto mt-4 max-w-[16rem] text-center text-xs font-semibold text-muted-foreground">
         {legenda}
