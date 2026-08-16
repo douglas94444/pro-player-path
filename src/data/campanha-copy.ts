@@ -239,6 +239,139 @@ export const CAMPANHA = {
     body: "ou começar hoje a evoluir com um plano.",
     cta: "Quero ser Jogador PRO",
   },
+
+  urgenciaBar: {
+    prefixo: "Condição promocional de hoje termina em",
+    sufixo: "Depois disso, o preço volta ao normal.",
+  },
+
+  beneficiosIcones: {
+    eyebrow: "O que você leva",
+    title: "Tudo que muda no seu treino a partir de hoje",
+    itens: [
+      { icone: "calendar", texto: "Jornada guiada de 12 meses, mês a mês" },
+      { icone: "clock", texto: "Treinos de 10 a 20 minutos por dia" },
+      { icone: "zap", texto: "Modo Rápido para os dias corridos" },
+      { icone: "flame", texto: "Streak diário que segura o hábito" },
+      { icone: "trophy", texto: "XP e patentes conforme você evolui" },
+      { icone: "library", texto: "Biblioteca completa com filtros" },
+      { icone: "phone", texto: "Funciona no celular, tablet e PC" },
+      { icone: "cloud", texto: "Progresso salvo na nuvem" },
+    ],
+  },
+
+  preview: {
+    eyebrow: "Veja o que você vai treinar",
+    title: "Treinos reais que já estão dentro do app",
+    body: "Cada sessão vem com exercícios, tempo e execução guiada. Nada de improviso.",
+    cta: "Quero acessar todos os treinos",
+    /** ids devem existir em TREINOS */
+    ids: [
+      "base-mobilidade",
+      "controle-bola",
+      "explosao-core",
+      "resistencia-jogo",
+      "forca-pernas",
+      "modo-rapido-explosao",
+      "pre-partida",
+      "performance-total",
+    ],
+    imagens: [
+      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=600&q=70",
+      "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=600&q=70",
+      "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=600&q=70",
+      "https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=600&q=70",
+    ],
+  },
+
+  incluso: {
+    eyebrow: "Está tudo incluso",
+    title: "Uma assinatura, o sistema inteiro",
+    body: "Sem upsell escondido e sem módulo bloqueado: ao assinar, você abre tudo.",
+    itens: [
+      {
+        titulo: "Jornada de 12 meses",
+        body: "52 semanas em mesociclos: Fundação, Domínio, Potência e Elite, com semanas de regeneração.",
+      },
+      {
+        titulo: "Biblioteca completa",
+        body: "Treinos por categoria (casa, campo, força, explosão, core) e por posição.",
+      },
+      {
+        titulo: "Modo Rápido",
+        body: "Sessão de 10 minutos montada na hora para você não perder o dia.",
+      },
+      {
+        titulo: "Progresso e gamificação",
+        body: "Streak, XP e patentes que mostram sua evolução treino após treino.",
+      },
+      {
+        titulo: "Pré-partida e pós-jogo",
+        body: "Protocolos para chegar ativado no jogo e recuperar depois dele.",
+      },
+      {
+        titulo: "Novos treinos e ciclos",
+        body: "O catálogo cresce e você recebe tudo sem pagar nada a mais.",
+      },
+    ],
+  },
+
+  planos: {
+    eyebrow: "Planos",
+    title: "Escolha como quer treinar",
+    body: "Mesmo acesso completo em todos os planos. Sem fidelidade, cancele quando quiser.",
+    itens: [
+      {
+        id: "mensal" as const,
+        nome: "Mensal",
+        preco: "R$47",
+        periodo: "por mês",
+        de: "",
+        badge: "",
+        equivalente: "R$47/mês",
+        cta: "Começar mensal",
+        inclui: ["Acesso completo ao sistema", "Cancele quando quiser", "Garantia de 7 dias"],
+      },
+      {
+        id: "semestral" as const,
+        nome: "Semestral",
+        preco: "R$147",
+        periodo: "por 6 meses",
+        de: "De R$282 no mensal",
+        badge: "Mais escolhido",
+        equivalente: "R$24,50/mês",
+        cta: "Quero o semestral",
+        inclui: [
+          "Acesso completo ao sistema",
+          "Economia de R$135 vs. mensal",
+          "Ciclos completos de Fundação e Domínio",
+          "Garantia de 7 dias",
+        ],
+      },
+      {
+        id: "anual" as const,
+        nome: "Anual",
+        preco: "R$197",
+        periodo: "por 12 meses",
+        de: "De R$564 no mensal",
+        badge: "Melhor valor",
+        equivalente: "R$16,41/mês",
+        cta: "Quero o anual",
+        inclui: [
+          "Acesso completo ao sistema",
+          "Economia de R$367 vs. mensal",
+          "A jornada de 12 meses inteira",
+          "Garantia de 7 dias",
+        ],
+      },
+    ],
+  },
+
+  selos: [
+    "Acesso imediato após o pagamento",
+    "Pagamento seguro via Mercado Pago",
+    "7 dias de garantia incondicional",
+  ],
 } as const;
 
 
