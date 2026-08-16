@@ -20,6 +20,13 @@ import { GarantiaBadge } from "@/components/landing/GarantiaBadge";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { AppShowcase, ModoRapidoCard } from "@/components/landing/AppShowcase";
 import { DepoimentosSection } from "@/components/landing/DepoimentosSection";
+import { UrgencyBar } from "@/components/landing/UrgencyBar";
+import { BeneficiosGrid } from "@/components/landing/BeneficiosGrid";
+import { PreviewTreinos } from "@/components/landing/PreviewTreinos";
+import { InclusoStack } from "@/components/landing/InclusoStack";
+import { PlanosTable } from "@/components/landing/PlanosTable";
+import { AvaliacoesWidget } from "@/components/landing/AvaliacoesWidget";
+import { SelosConfianca } from "@/components/landing/SelosConfianca";
 
 
 export type LandingSearch = {
@@ -119,11 +126,14 @@ export function LandingPage({ search }: { search: LandingSearch }) {
 
       <TopBar logado={logado} onAssinar={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
 
-      {/* Social proof strip */}
-      <div className="relative mt-14 border-b border-border/60 bg-card/80 shadow-soft backdrop-blur">
-        <p className="animate-in fade-in slide-in-from-top-2 mx-auto max-w-6xl px-5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-primary duration-700 sm:text-xs">
-          {CAMPANHA.socialProof}
-        </p>
+      {/* Urgência + social proof strip */}
+      <div className="relative mt-14">
+        <UrgencyBar />
+        <div className="border-b border-border/60 bg-card/80 shadow-soft backdrop-blur">
+          <p className="animate-in fade-in slide-in-from-top-2 mx-auto max-w-6xl px-5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-primary duration-700 sm:text-xs">
+            {CAMPANHA.socialProof}
+          </p>
+        </div>
       </div>
 
       {/* Hero */}
@@ -161,9 +171,30 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             <GarantiaBadge compact />
             <p className="text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
           </div>
+          <div className="mt-4">
+            <SelosConfianca />
+          </div>
 
         </div>
       </section>
+
+      {/* Benefícios em ícones */}
+      <Section tone="card">
+        <Eyebrow>{CAMPANHA.beneficiosIcones.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+          {CAMPANHA.beneficiosIcones.title}
+        </h2>
+        <BeneficiosGrid />
+        <div className="mt-8">
+          <Button
+            size="lg"
+            className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[260px]"
+            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+          >
+            {CAMPANHA.heroCta}
+          </Button>
+        </div>
+      </Section>
 
 
       {/* Problema */}
@@ -261,8 +292,16 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <AppShowcase />
       </Section>
 
-      {/* Modo Rápido */}
+      {/* Preview de treinos reais */}
       <Section>
+        <Eyebrow>{CAMPANHA.preview.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.preview.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.preview.body}</p>
+        <PreviewTreinos onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+      </Section>
+
+      {/* Modo Rápido */}
+      <Section tone="card">
         <ModoRapidoCard onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
       </Section>
 
@@ -321,7 +360,27 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <Eyebrow>{CAMPANHA.depoimentos.eyebrow}</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.depoimentos.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.depoimentos.body}</p>
+        <AvaliacoesWidget />
         <DepoimentosSection onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+      </Section>
+
+      {/* Tudo incluso */}
+      <Section tone="card">
+        <Eyebrow>{CAMPANHA.incluso.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.incluso.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.incluso.body}</p>
+        <InclusoStack />
+      </Section>
+
+      {/* Planos */}
+      <Section>
+        <Eyebrow>{CAMPANHA.planos.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.planos.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.planos.body}</p>
+        <PlanosTable onEscolher={(plano) => irParaOferta(plano)} />
+        <div className="mt-6">
+          <SelosConfianca />
+        </div>
       </Section>
 
       {/* FAQ */}
