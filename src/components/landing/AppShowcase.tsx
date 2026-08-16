@@ -1,91 +1,73 @@
-import { Flame, Timer, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { CAMPANHA } from "@/data/campanha-copy";
+import planoAsset from "@/assets/app-plano.png.asset.json";
+import dashboardAsset from "@/assets/app-dashboard.png.asset.json";
+import treinosAsset from "@/assets/app-treinos.png.asset.json";
 
 /**
- * "Veja por dentro" — mockups fiéis das telas do app renderizados em CSS
- * (sem fotos genéricas), para mostrar o produto antes da compra.
+ * "Veja por dentro" — prints reais do app em mockups de celular.
  */
 export function AppShowcase() {
   return (
-    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {/* Dashboard + streak */}
-      <Frame legenda={CAMPANHA.showcase.dashboard}>
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <p className="min-w-0 truncate text-sm font-extrabold text-foreground">Olá, atleta</p>
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-black text-primary">
-            <Flame className="h-3.5 w-3.5" /> 7
-          </span>
-        </div>
-        <div className="mt-4 grid grid-cols-7 gap-1.5">
-          {["S", "T", "Q", "Q", "S", "S", "D"].map((d, i) => (
-            <div
-              key={`${d}-${i}`}
-              className={
-                "grid h-8 place-items-center rounded-lg text-[10px] font-bold " +
-                (i < 5 ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground")
-              }
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 space-y-2">
-          <Barra label="Técnica" pct={72} />
-          <Barra label="Explosão" pct={54} />
-          <Barra label="Performance" pct={38} />
-        </div>
-      </Frame>
-
-      {/* Plano de 4 semanas */}
-      <Frame legenda={CAMPANHA.showcase.plano}>
-        <p className="text-xs font-bold uppercase tracking-widest text-primary">Plano guiado</p>
-        <ul className="mt-3 space-y-2">
-          {[
-            { s: 1, t: "Base física", pct: 100 },
-            { s: 2, t: "Controle + Core", pct: 60 },
-            { s: 3, t: "Explosão", pct: 0 },
-            { s: 4, t: "Performance", pct: 0 },
-          ].map((w) => (
-            <li key={w.s} className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-                  Semana {w.s} · {w.t}
-                </span>
-                <span className="shrink-0 text-xs font-bold text-primary">{w.pct}%</span>
-              </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${w.pct}%` }} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Frame>
-
-      {/* Tela de treino */}
-      <Frame legenda={CAMPANHA.showcase.treino}>
-        <div className="grid place-items-center rounded-2xl bg-secondary/60 py-6">
-          <Timer className="h-6 w-6 text-primary" />
-          <p className="mt-2 text-4xl font-black tabular-nums text-foreground">00:45</p>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Sprint curto · 3/8
-          </p>
-        </div>
-        <ul className="mt-4 space-y-2 text-sm">
-          {["Aquecimento dinâmico", "Condução em zigue-zague", "Sprint curto", "Core final"].map((e, i) => (
-            <li
-              key={e}
-              className={
-                "flex items-center gap-2 rounded-lg px-3 py-2 " +
-                (i === 2 ? "bg-primary/10 font-bold text-foreground" : "text-muted-foreground")
-              }
-            >
-              <span className="text-primary">{i < 2 ? "✓" : "•"}</span>
-              <span className="min-w-0 truncate">{e}</span>
-            </li>
-          ))}
-        </ul>
-      </Frame>
+    <div className="mt-10 grid items-end gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+      <Phone
+        src={planoAsset.url}
+        alt="Tela Meu plano do app, com a jornada guiada de 12 meses"
+        legenda={CAMPANHA.showcase.plano}
+        className="lg:rotate-[-3deg]"
+      />
+      <Phone
+        src={dashboardAsset.url}
+        alt="Dashboard do app com meta da semana, patente e treino de hoje"
+        legenda={CAMPANHA.showcase.dashboard}
+        className="lg:z-10 lg:scale-[1.06]"
+        destaque
+      />
+      <Phone
+        src={treinosAsset.url}
+        alt="Biblioteca de treinos do app com filtros por categoria"
+        legenda={CAMPANHA.showcase.treino}
+        className="sm:col-span-2 sm:mx-auto sm:max-w-sm lg:col-span-1 lg:mx-0 lg:max-w-none lg:rotate-[3deg]"
+      />
     </div>
+  );
+}
+
+function Phone({
+  src,
+  alt,
+  legenda,
+  className = "",
+  destaque = false,
+}: {
+  src: string;
+  alt: string;
+  legenda: string;
+  className?: string;
+  destaque?: boolean;
+}) {
+  return (
+    <figure className={`min-w-0 ${className}`}>
+      <div
+        className={`relative mx-auto w-full max-w-[15rem] rounded-[2.25rem] border bg-card p-2.5 shadow-soft ${
+          destaque ? "border-primary/40 shadow-lg" : "border-border/70"
+        }`}
+      >
+        <span className="absolute left-1/2 top-2.5 z-10 h-4 w-20 -translate-x-1/2 rounded-b-2xl bg-card" />
+        <div className="relative aspect-[9/17] overflow-hidden rounded-[1.75rem] bg-background p-1.5 pt-5">
+          <img
+            src={src}
+            alt={alt}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full rounded-[1.25rem] object-contain object-top"
+          />
+        </div>
+      </div>
+      <figcaption className="mx-auto mt-4 max-w-[16rem] text-center text-xs font-semibold text-muted-foreground">
+        {legenda}
+      </figcaption>
+    </figure>
   );
 }
 
@@ -119,25 +101,3 @@ export function ModoRapidoCard({ onCta }: { onCta: () => void }) {
   );
 }
 
-function Barra({ label, pct }: { label: string; pct: number }) {
-  return (
-    <div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <span className="min-w-0 truncate text-xs font-semibold text-muted-foreground">{label}</span>
-        <span className="shrink-0 text-xs font-bold text-foreground">{pct}%</span>
-      </div>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function Frame({ legenda, children }: { legenda: string; children: React.ReactNode }) {
-  return (
-    <figure className="rounded-[1.5rem] border border-border/60 bg-card/90 p-5 shadow-soft">
-      <div className="rounded-[1.25rem] border border-border/50 bg-background/70 p-4">{children}</div>
-      <figcaption className="mt-3 text-xs font-semibold text-muted-foreground">{legenda}</figcaption>
-    </figure>
-  );
-}
