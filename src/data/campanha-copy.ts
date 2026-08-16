@@ -169,9 +169,9 @@ export const CAMPANHA = {
 
 
   garantia: {
-    titulo: "Garantia de 7 dias",
-    curta: "7 dias de garantia · cancele quando quiser",
-    body: "Testou e não é pra você? Peça o reembolso em até 7 dias e devolvemos tudo. Assinatura sem fidelidade: você cancela quando quiser, sem multa.",
+    titulo: "Garantia de 14 dias",
+    curta: "14 dias de garantia · cancele quando quiser",
+    body: "Testou e não é pra você? Peça o reembolso em até 14 dias e devolvemos tudo. Assinatura sem fidelidade: você cancela quando quiser, sem multa.",
   },
 
   pagamento: "Pix · Cartão · Pagamento seguro via Mercado Pago",
@@ -329,7 +329,7 @@ export const CAMPANHA = {
         badge: "",
         equivalente: "R$47/mês",
         cta: "Começar mensal",
-        inclui: ["Acesso completo ao sistema", "Cancele quando quiser", "Garantia de 7 dias"],
+        inclui: ["Acesso completo ao sistema", "Cancele quando quiser", "Garantia de 14 dias"],
       },
       {
         id: "semestral" as const,
@@ -344,7 +344,7 @@ export const CAMPANHA = {
           "Acesso completo ao sistema",
           "Economia de R$135 vs. mensal",
           "Ciclos completos de Fundação e Domínio",
-          "Garantia de 7 dias",
+          "Garantia de 14 dias",
         ],
       },
       {
@@ -360,7 +360,7 @@ export const CAMPANHA = {
           "Acesso completo ao sistema",
           "Economia de R$367 vs. mensal",
           "A jornada de 12 meses inteira",
-          "Garantia de 7 dias",
+          "Garantia de 14 dias",
         ],
       },
     ],
@@ -369,7 +369,7 @@ export const CAMPANHA = {
   selos: [
     "Acesso imediato após o pagamento",
     "Pagamento seguro via Mercado Pago",
-    "7 dias de garantia incondicional",
+    "14 dias de garantia incondicional",
   ],
 } as const;
 

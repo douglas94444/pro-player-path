@@ -3,7 +3,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Clock, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
 import { PLANOS_ASSINATURA } from "@/data/training";
 import { CAMPANHA } from "@/data/campanha-copy";
@@ -38,9 +37,7 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
   const [escolhido, setEscolhido] = useState(planoInicial ?? "semestral");
   const [mostrarBrick, setMostrarBrick] = useState(false);
   const [pendingPix, setPendingPix] = useState(false);
-  const [cupomInput, setCupomInput] = useState("");
   const [cupomAplicado, setCupomAplicado] = useState<{ code: string; discount: number } | null>(null);
-  const [validandoCupom, setValidandoCupom] = useState(false);
 
   useEffect(() => {
     if (planoInicial) setEscolhido(planoInicial);
@@ -73,54 +70,10 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
         achado = porAfiliado.data;
       }
       if (achado) {
-        setCupomInput(achado.code);
         setCupomAplicado({ code: achado.code, discount: achado.discount_percent });
       }
     })();
   }, [refCode]);
-
-  const aplicarCupom = async () => {
-    const code = cupomInput.trim().toUpperCase();
-    if (!code) {
-      toast.message("Digite um cupom");
-      return;
-    }
-    if (!codigoValido(code)) {
-      toast.error("Cupom inválido");
-      setCupomAplicado(null);
-      return;
-    }
-    setValidandoCupom(true);
-    try {
-      const { data, error } = await supabase
-        .from("coupons")
-        .select("code, discount_percent, active, max_redemptions, redemptions, affiliate_code")
-        .eq("code", code)
-        .maybeSingle();
-      if (error || !data || !data.active) {
-        toast.error("Cupom inválido");
-        setCupomAplicado(null);
-        return;
-      }
-      if (data.max_redemptions != null && data.redemptions >= data.max_redemptions) {
-        toast.error("Cupom esgotado");
-        setCupomAplicado(null);
-        return;
-      }
-      if (data.affiliate_code) {
-        try {
-          sessionStorage.setItem("jogador-pro-affiliate-ref", data.affiliate_code);
-        } catch {
-          /* ignore */
-        }
-      }
-      setCupomAplicado({ code: data.code, discount: data.discount_percent });
-      setMostrarBrick(false);
-      toast.success(`Cupom ${data.code} · −${data.discount_percent}%`);
-    } finally {
-      setValidandoCupom(false);
-    }
-  };
 
   const checkoutTrackedRef = useRef(false);
   const abrirBrick = useCallback((plano: string) => {
@@ -184,31 +137,12 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
   return (
     <div className="mt-8">
       <div className="mx-auto w-full max-w-xl">
-        {!state.assinante ? (
-          <div className="mb-4 flex gap-2">
-            <Input
-              value={cupomInput}
-              onChange={(e) => setCupomInput(e.target.value.toUpperCase())}
-              placeholder="Cupom (ex. PRO10)"
-              aria-label="Código de cupom"
-              className="h-11"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 shrink-0"
-              disabled={validandoCupom}
-              onClick={() => void aplicarCupom()}
-            >
-              Aplicar
-            </Button>
-          </div>
-        ) : null}
         {cupomAplicado ? (
           <p className="mb-3 text-center text-xs font-semibold text-primary">
             {cupomAplicado.code} ativo · {cupomAplicado.discount}% off
           </p>
         ) : null}
+
 
         {state.assinante ? (
           <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
