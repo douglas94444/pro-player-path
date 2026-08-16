@@ -84,9 +84,9 @@ export const CAMPANHA = {
     eyebrow: "Veja por dentro",
     title: "É isto que você abre todo dia.",
     body: "Nada de PDF ou playlist solta: um app com plano do dia, timer guiado e progresso registrado.",
-    dashboard: "Dashboard com streak de dias e evolução por pilar",
-    plano: "Plano de 4 semanas com progresso semana a semana",
-    treino: "Tela de treino com timer e lista de exercícios",
+    dashboard: "Seu dia pronto: meta da semana, streak e treino de hoje",
+    plano: "Jornada guiada de 12 meses, mês a mês",
+    treino: "Biblioteca completa de treinos com filtros",
   },
 
   modoRapido: {
