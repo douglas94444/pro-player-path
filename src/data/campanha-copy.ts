@@ -102,6 +102,72 @@ export const CAMPANHA = {
     slots: PROVA_SLOTS as ProofSlot[],
   },
 
+  depoimentos: {
+    eyebrow: "Quem já treina",
+    title: "O que os alunos mandam depois dos treinos",
+    body: "Mensagens de quem está seguindo o sistema — transcritas na íntegra, só com pontuação ajustada.",
+    selo: "Mensagens reais enviadas por alunos. Identidades preservadas a pedido deles.",
+    cta: "Quero treinar como eles",
+    itens: [
+      {
+        nome: "Aluno PRO",
+        inicial: "M",
+        texto:
+          "Mano, comecei faz ele ontem e já melhorei muito meu físico e minha força técnica. Faço tudo pelo celular da minha mãe, por isso aparece com nome de mulher, skskss.",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "R",
+        texto:
+          "Já perdi muito dinheiro com curso que não ensinava nada que funcionasse. Graças a Deus encontrei um confiável.",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "L",
+        texto:
+          "Muito obrigado por esse treino, tava precisando muito. Já fui enganado de ter comprado curso, mas agora esse treino pode ser confiável 👍",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "G",
+        texto:
+          "Tô aprendendo o último drible e ele é insano. Não é tão difícil de aprender: 1 ou 2 meses de treino e você já consegue aplicar em jogos de verdade.",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "J",
+        texto:
+          "O 6º drible eu uso pra fazer gol. Funciona no golzinho, aí passa por baixo da perna do adversário.",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "V",
+        texto: "Mano, parece que ele acelera o vídeo de tão rápido e ágil que é 😂 Brabo demais.",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "P",
+        texto: "Perfeito, eu vou conseguir. Eu vou conseguir jogar mais bom 😮",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "D",
+        texto: "Que veio só pra humilhar na escola, kkkk.",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "T",
+        texto: "Opa, mano, valeu aew pelo treino.",
+      },
+      {
+        nome: "Aluno PRO",
+        inicial: "F",
+        texto: "Poha, vídeo foda 🔥",
+      },
+    ],
+  },
+
+
   garantia: {
     titulo: "Garantia de 7 dias",
     curta: "7 dias de garantia · cancele quando quiser",
