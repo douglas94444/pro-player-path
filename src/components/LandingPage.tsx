@@ -292,8 +292,16 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <AppShowcase />
       </Section>
 
-      {/* Modo Rápido */}
+      {/* Preview de treinos reais */}
       <Section>
+        <Eyebrow>{CAMPANHA.preview.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.preview.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.preview.body}</p>
+        <PreviewTreinos onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+      </Section>
+
+      {/* Modo Rápido */}
+      <Section tone="card">
         <ModoRapidoCard onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
       </Section>
 
