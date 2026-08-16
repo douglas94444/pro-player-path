@@ -19,6 +19,8 @@ import { TopBar } from "@/components/landing/TopBar";
 import { GarantiaBadge } from "@/components/landing/GarantiaBadge";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { AppShowcase, ModoRapidoCard } from "@/components/landing/AppShowcase";
+import { DepoimentosSection } from "@/components/landing/DepoimentosSection";
+
 
 export type LandingSearch = {
   from?: string;
@@ -314,8 +316,17 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         </div>
       </Section>
 
+      {/* Depoimentos */}
+      <Section>
+        <Eyebrow>{CAMPANHA.depoimentos.eyebrow}</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.depoimentos.title}</h2>
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.depoimentos.body}</p>
+        <DepoimentosSection onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+      </Section>
+
       {/* FAQ */}
       <Section>
+
         <Eyebrow>Dúvidas</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Antes de assinar</h2>
         <FaqSection />
