@@ -7,8 +7,10 @@ import { CAMPANHA } from "@/data/campanha-copy";
 /** Planos lado a lado com ancoragem de preço. */
 export function PlanosTable({
   planoAtivo,
+  onSelecionar,
 }: {
   planoAtivo?: string | undefined;
+  onSelecionar?: (plano: string) => void;
 }) {
   const [ativo, setAtivo] = useState<string | undefined>(planoAtivo);
 
@@ -25,6 +27,12 @@ export function PlanosTable({
     return () => window.removeEventListener(CHECKOUT_EVENT, handler);
   }, []);
 
+  const selecionar = (plano: string) => {
+    setAtivo(plano);
+    onSelecionar?.(plano);
+    window.dispatchEvent(new CustomEvent(CHECKOUT_EVENT, { detail: { plano, iniciar: false } }));
+  };
+
   return (
     <div className="mt-8 grid gap-4 lg:grid-cols-3">
       {CAMPANHA.planos.itens.map((plano) => {
@@ -33,8 +41,17 @@ export function PlanosTable({
         return (
           <div
             key={plano.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => selecionar(plano.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                selecionar(plano.id);
+              }
+            }}
             className={cn(
-              "relative flex flex-col rounded-[1.5rem] border bg-card/70 p-6 shadow-soft transition-all",
+              "relative flex flex-col rounded-[1.5rem] border bg-card/70 p-6 shadow-soft transition-all cursor-pointer hover:border-primary/70 hover:shadow-md",
               destaque ? "border-primary ring-1 ring-primary/40" : "border-border/60",
               selecionado && "bg-primary/5 ring-2 ring-primary",
             )}
@@ -74,3 +91,4 @@ export function PlanosTable({
     </div>
   );
 }
+
