@@ -185,7 +185,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
 
       const local = lerLocal();
-      const role = await ensureAdminRole();
+      // Verificação de admin não bloqueia a liberação da tela.
+      const rolePromise = ensureAdminRole().catch(() => "user" as const);
+      void rolePromise.then((r) => {
+        if (!cancelado && r === "admin") setState((s) => ({ ...s, role: "admin" }));
+      });
       const [{ data: perfil }, { data: sessoes }] = await Promise.all([
         supabase
           .from("profiles")
