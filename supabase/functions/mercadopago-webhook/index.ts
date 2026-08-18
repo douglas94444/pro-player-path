@@ -56,6 +56,12 @@ Deno.serve(async (req) => {
     );
 
     if (userId && approved) {
+      const { data: perfilAntes } = await admin
+        .from("profiles")
+        .select("assinante")
+        .eq("id", userId)
+        .maybeSingle();
+
       await admin
         .from("profiles")
         .update({
@@ -74,7 +80,7 @@ Deno.serve(async (req) => {
           const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
           return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
         };
-        const md = (payment.metadata ?? {}) as Record<string, string | null>;
+        const md = (payment.metadata ?? {}) as Record<string, string | number | null>;
         const email = String(payment.payer?.email ?? "").toLowerCase().trim();
         const userData: Record<string, unknown> = { external_id: [await sha256(userId)] };
         if (email) userData.em = [await sha256(email)];
@@ -83,6 +89,19 @@ Deno.serve(async (req) => {
         if (md.meta_client_user_agent) userData.client_user_agent = md.meta_client_user_agent;
         const testEventCode = Deno.env.get("META_TEST_EVENT_CODE");
 
+        // Pix/boleto confirmam depois: usamos a hora real da aprovação e,
+        // como o evento é "atrasado", apontamos para o checkout original.
+        const agora = Math.floor(Date.now() / 1000);
+        const limite = agora - 7 * 24 * 3600;
+        const aprovado = payment.date_approved
+          ? Math.floor(new Date(payment.date_approved).getTime() / 1000)
+          : agora;
+        const eventTime = aprovado > limite && aprovado <= agora + 60 ? aprovado : agora;
+        const checkoutTime = Number(md.meta_checkout_time);
+        const segmentation =
+          (md.meta_segmentation as string | null) ??
+          (perfilAntes?.assinante ? "existing_customer_to_business" : "new_customer_to_business");
+
         await fetch(`https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${capiToken}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -90,11 +109,20 @@ Deno.serve(async (req) => {
             data: [
               {
                 event_name: "Purchase",
-                event_time: Math.floor(Date.now() / 1000),
+                event_time: eventTime,
                 // mesmo event_id do pixel/checkout → o Meta deduplica
                 event_id: `mp-${payment.id}`,
                 action_source: "website",
                 event_source_url: md.meta_event_source_url ?? undefined,
+                data_processing_options: [],
+                ...(Number.isFinite(checkoutTime) && checkoutTime > limite
+                  ? {
+                      original_event_data: {
+                        event_name: "InitiateCheckout",
+                        event_time: checkoutTime,
+                      },
+                    }
+                  : {}),
                 user_data: userData,
                 custom_data: {
                   currency: "BRL",
@@ -103,6 +131,7 @@ Deno.serve(async (req) => {
                   coupon: md.coupon_code ?? undefined,
                   utm_source: md.utm_source ?? undefined,
                   utm_campaign: md.utm_campaign ?? undefined,
+                  customer_segmentation: segmentation,
                 },
               },
             ],
@@ -111,6 +140,7 @@ Deno.serve(async (req) => {
         }).catch(console.error);
       }
     }
+
 
 
     if (userId && (payment.status === "cancelled" || payment.status === "refunded" || payment.status === "charged_back")) {
