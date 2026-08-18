@@ -8,7 +8,7 @@ import { PLANOS_ASSINATURA } from "@/data/training";
 import { CAMPANHA } from "@/data/campanha-copy";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/lib/player-store";
-import { trackMeta } from "@/lib/meta-pixel";
+import { trackMetaDedup } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 
 const CODE_RE = /^[A-Za-z0-9_-]{1,40}$/;
