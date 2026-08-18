@@ -95,25 +95,43 @@ export function trackMetaDedup(
 
   const value = typeof payload?.["value"] === "number" ? (payload["value"] as number) : 0;
   const fbp = cookie("_fbp");
-  const fbc = cookie("_fbc");
-  // Sem e-mail nem cookies do pixel a CAPI não tem identificador válido:
-  // o evento já foi contabilizado pelo pixel do navegador.
-  if (!options?.email && !fbp && !fbc) return;
-  void supabase.functions
-    .invoke("meta-capi", {
+  const fbc = getFbc();
+  const eventSourceUrl = window.location.href;
+  const referrer = document.referrer || undefined;
+
+  void (async () => {
+    // external_id amarra o mesmo usuário entre dispositivos (hash feito no servidor).
+    let externalId: string | undefined;
+    let email = options?.email ?? undefined;
+    try {
+      const { data } = await supabase.auth.getSession();
+      externalId = data.session?.user.id;
+      if (!email) email = data.session?.user.email ?? undefined;
+    } catch {
+      /* ignore */
+    }
+
+    // Sem nenhum identificador a CAPI rejeita o evento: o pixel já o contabilizou.
+    if (!email && !fbp && !fbc && !externalId) return;
+
+    await supabase.functions.invoke("meta-capi", {
       body: {
         event_name: event,
         event_id: eventId,
-        email: options?.email ?? undefined,
+        email,
+        external_id: externalId,
         value,
         currency: (payload?.["currency"] as string) ?? "BRL",
         custom_data: payload ?? {},
-        event_source_url: window.location.href,
+        event_source_url: eventSourceUrl,
+        referrer_url: referrer,
         client_user_agent: navigator.userAgent,
         fbp,
         fbc,
       },
-    })
+    });
+  })()
+
     .catch(() => {
       /* tracking nunca quebra a UI */
     });
