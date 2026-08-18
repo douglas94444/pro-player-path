@@ -111,11 +111,8 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ plano?: string; iniciar?: boolean }>).detail;
       if (detail?.iniciar === false) {
-        if (detail.plano) {
-          setEscolhido(detail.plano);
-          setMostrarBrick(false);
-          setPendingPix(false);
-        }
+        // Só troca o plano selecionado — nunca fecha um checkout já aberto.
+        if (detail.plano) setEscolhido(detail.plano);
         return;
       }
       iniciarCheckout(detail?.plano);
