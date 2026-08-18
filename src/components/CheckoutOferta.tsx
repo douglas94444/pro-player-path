@@ -121,15 +121,15 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
     return () => window.removeEventListener(CHECKOUT_EVENT, handler);
   }, [iniciarCheckout]);
 
-  // Retomada pós-login (?checkout=1)
+  // Retomada pós-login (?checkout=1) — só depois que o perfil hidratou.
   const autoRef = useRef(false);
   useEffect(() => {
-    if (abrirAoMontar && logado && !state.assinante && !autoRef.current) {
+    if (abrirAoMontar && hydrated && logado && !state.assinante && !autoRef.current) {
       autoRef.current = true;
       abrirBrick(escolhido);
       rolarParaOferta();
     }
-  }, [abrirAoMontar, logado, state.assinante, abrirBrick, escolhido]);
+  }, [abrirAoMontar, hydrated, logado, state.assinante, abrirBrick, escolhido]);
 
   return (
     <div className="mt-8">
