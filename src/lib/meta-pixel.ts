@@ -25,6 +25,38 @@ function cookie(name: string): string | undefined {
   return m ? decodeURIComponent(m[2]!) : undefined;
 }
 
+const FBC_KEY = "jps:fbc";
+
+/**
+ * Captura o `fbclid` da URL do anúncio e persiste o `fbc` no formato exigido
+ * pela Meta (`fb.1.<timestamp>.<fbclid>`) por 90 dias — o cookie `_fbc` só é
+ * criado pelo Pixel e pode não existir na primeira visita.
+ */
+export function captureFbclid(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const fbclid = new URLSearchParams(window.location.search).get("fbclid");
+    if (!fbclid) return;
+    const valor = `fb.1.${Date.now()}.${fbclid}`;
+    localStorage.setItem(FBC_KEY, valor);
+    document.cookie = `_fbc=${valor}; path=/; max-age=${60 * 60 * 24 * 90}; SameSite=Lax`;
+  } catch {
+    /* ignore */
+  }
+}
+
+/** `_fbc` do Pixel, com fallback para o valor derivado do `fbclid`. */
+export function getFbc(): string | undefined {
+  const doCookie = cookie("_fbc");
+  if (doCookie) return doCookie;
+  try {
+    return localStorage.getItem(FBC_KEY) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+
 export function trackMeta(event: string, payload?: MetaPayload, eventId?: string) {
   if (typeof window === "undefined") return;
   try {
