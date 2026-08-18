@@ -25,6 +25,38 @@ function cookie(name: string): string | undefined {
   return m ? decodeURIComponent(m[2]!) : undefined;
 }
 
+const FBC_KEY = "jps:fbc";
+
+/**
+ * Captura o `fbclid` da URL do anúncio e persiste o `fbc` no formato exigido
+ * pela Meta (`fb.1.<timestamp>.<fbclid>`) por 90 dias — o cookie `_fbc` só é
+ * criado pelo Pixel e pode não existir na primeira visita.
+ */
+export function captureFbclid(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const fbclid = new URLSearchParams(window.location.search).get("fbclid");
+    if (!fbclid) return;
+    const valor = `fb.1.${Date.now()}.${fbclid}`;
+    localStorage.setItem(FBC_KEY, valor);
+    document.cookie = `_fbc=${valor}; path=/; max-age=${60 * 60 * 24 * 90}; SameSite=Lax`;
+  } catch {
+    /* ignore */
+  }
+}
+
+/** `_fbc` do Pixel, com fallback para o valor derivado do `fbclid`. */
+export function getFbc(): string | undefined {
+  const doCookie = cookie("_fbc");
+  if (doCookie) return doCookie;
+  try {
+    return localStorage.getItem(FBC_KEY) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+
 export function trackMeta(event: string, payload?: MetaPayload, eventId?: string) {
   if (typeof window === "undefined") return;
   try {
@@ -63,25 +95,43 @@ export function trackMetaDedup(
 
   const value = typeof payload?.["value"] === "number" ? (payload["value"] as number) : 0;
   const fbp = cookie("_fbp");
-  const fbc = cookie("_fbc");
-  // Sem e-mail nem cookies do pixel a CAPI não tem identificador válido:
-  // o evento já foi contabilizado pelo pixel do navegador.
-  if (!options?.email && !fbp && !fbc) return;
-  void supabase.functions
-    .invoke("meta-capi", {
+  const fbc = getFbc();
+  const eventSourceUrl = window.location.href;
+  const referrer = document.referrer || undefined;
+
+  void (async () => {
+    // external_id amarra o mesmo usuário entre dispositivos (hash feito no servidor).
+    let externalId: string | undefined;
+    let email = options?.email ?? undefined;
+    try {
+      const { data } = await supabase.auth.getSession();
+      externalId = data.session?.user.id;
+      if (!email) email = data.session?.user.email ?? undefined;
+    } catch {
+      /* ignore */
+    }
+
+    // Sem nenhum identificador a CAPI rejeita o evento: o pixel já o contabilizou.
+    if (!email && !fbp && !fbc && !externalId) return;
+
+    await supabase.functions.invoke("meta-capi", {
       body: {
         event_name: event,
         event_id: eventId,
-        email: options?.email ?? undefined,
+        email,
+        external_id: externalId,
         value,
         currency: (payload?.["currency"] as string) ?? "BRL",
         custom_data: payload ?? {},
-        event_source_url: window.location.href,
+        event_source_url: eventSourceUrl,
+        referrer_url: referrer,
         client_user_agent: navigator.userAgent,
         fbp,
         fbc,
       },
-    })
+    });
+  })()
+
     .catch(() => {
       /* tracking nunca quebra a UI */
     });

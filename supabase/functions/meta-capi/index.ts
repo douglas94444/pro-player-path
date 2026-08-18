@@ -47,12 +47,25 @@ Deno.serve(async (req) => {
     const currency = String(body.currency ?? "BRL");
     const customData = (body.custom_data ?? {}) as Record<string, unknown>;
 
+    const sha256 = async (valor: string) => {
+      const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(valor));
+      return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    };
+
     const userData: Record<string, unknown> = {};
-    if (email) {
-      const enc = new TextEncoder();
-      const hash = await crypto.subtle.digest("SHA-256", enc.encode(email));
-      userData.em = [Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("")];
+    if (email) userData.em = [await sha256(email)];
+
+    const phoneRaw = typeof body.phone === "string" ? body.phone.replace(/\D/g, "") : "";
+    if (phoneRaw) userData.ph = [await sha256(phoneRaw)];
+
+    // external_id: aceita valor já hasheado (64 hex) ou em texto puro.
+    const externalId = typeof body.external_id === "string" ? body.external_id.trim() : "";
+    if (externalId) {
+      userData.external_id = [
+        /^[a-f0-9]{64}$/i.test(externalId) ? externalId.toLowerCase() : await sha256(externalId),
+      ];
     }
+
     const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
     const ip = body.client_ip_address ?? forwarded;
     if (ip) userData.client_ip_address = ip;
@@ -63,10 +76,14 @@ Deno.serve(async (req) => {
 
     // O Meta rejeita eventos sem identificador de cliente (erro 2804050).
     // Nesses casos o pixel do navegador já contabilizou o evento.
-    const temIdentificador = Boolean(userData.em || userData.fbp || userData.fbc);
+    const temIdentificador = Boolean(
+      userData.em || userData.ph || userData.external_id || userData.fbp || userData.fbc,
+    );
     if (!temIdentificador) {
       return json({ ok: false, skipped: "no user_data identifiers" });
     }
+
+    const testEventCode = Deno.env.get("META_TEST_EVENT_CODE") ?? body.test_event_code;
 
     const payload = {
       data: [
@@ -76,6 +93,7 @@ Deno.serve(async (req) => {
           event_id: eventId,
           action_source: "website",
           event_source_url: body.event_source_url ?? undefined,
+          referrer_url: body.referrer_url ?? undefined,
           user_data: userData,
           custom_data: {
             currency,
@@ -84,7 +102,9 @@ Deno.serve(async (req) => {
           },
         },
       ],
+      ...(testEventCode ? { test_event_code: String(testEventCode) } : {}),
     };
+
 
     const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${accessToken}`;
     const res = await fetch(url, {

@@ -13,7 +13,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PlayerProvider } from "@/lib/player-store";
-import { META_PIXEL_ID, trackMetaDedup } from "@/lib/meta-pixel";
+import { META_PIXEL_ID, captureFbclid, trackMetaDedup } from "@/lib/meta-pixel";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -121,6 +121,7 @@ function MetaPixelPageView() {
 
   useEffect(() => {
     captureUtmFromLocation();
+    captureFbclid();
   }, []);
 
   useEffect(() => {
