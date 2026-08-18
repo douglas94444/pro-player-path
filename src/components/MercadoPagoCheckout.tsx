@@ -94,6 +94,7 @@ export function MercadoPagoCheckout({
                 fbc: getFbc() ?? null,
                 client_user_agent: navigator.userAgent,
                 event_source_url: window.location.href,
+                checkout_time: Math.floor(Date.now() / 1000),
               },
             },
           });
