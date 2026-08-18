@@ -201,15 +201,21 @@ Deno.serve(async (req) => {
       const capiToken = Deno.env.get("META_CAPI_ACCESS_TOKEN");
       if (capiToken) {
         const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
+        const sha256 = async (v: string) => {
+          const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
+          return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+        };
         const email = (user.email ?? "").toLowerCase().trim();
-        let em: string | undefined;
-        if (email) {
-          const enc = new TextEncoder();
-          const hash = await crypto.subtle.digest("SHA-256", enc.encode(email));
-          em = Array.from(new Uint8Array(hash))
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join("");
-        }
+        const userData: Record<string, unknown> = {
+          external_id: [await sha256(user.id)],
+        };
+        if (email) userData.em = [await sha256(email)];
+        if (metaAttr.fbp) userData.fbp = metaAttr.fbp;
+        if (metaAttr.fbc) userData.fbc = metaAttr.fbc;
+        if (clientUa) userData.client_user_agent = clientUa;
+        if (clientIp) userData.client_ip_address = clientIp;
+        const testEventCode = Deno.env.get("META_TEST_EVENT_CODE");
+
         void fetch(`https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${capiToken}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -220,7 +226,8 @@ Deno.serve(async (req) => {
                 event_time: Math.floor(Date.now() / 1000),
                 event_id: `mp-${payment.id}`,
                 action_source: "website",
-                user_data: em ? { em: [em] } : {},
+                event_source_url: metaAttr.event_source_url ?? undefined,
+                user_data: userData,
                 custom_data: {
                   currency: "BRL",
                   value: amount,
@@ -231,9 +238,11 @@ Deno.serve(async (req) => {
                 },
               },
             ],
+            ...(testEventCode ? { test_event_code: testEventCode } : {}),
           }),
         }).catch(console.error);
       }
+
     }
 
     return new Response(
