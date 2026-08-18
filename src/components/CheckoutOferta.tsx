@@ -79,7 +79,7 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
   const abrirBrick = useCallback((plano: string) => {
     if (!checkoutTrackedRef.current) {
       checkoutTrackedRef.current = true;
-      trackMeta("InitiateCheckout", {
+      trackMetaDedup("InitiateCheckout", {
         content_name: plano,
         currency: "BRL",
         value: (PLANOS_ASSINATURA.find((p) => p.id === plano)?.precoCentavos ?? 0) / 100,
