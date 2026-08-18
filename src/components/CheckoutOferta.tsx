@@ -183,10 +183,19 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
             </p>
             <Button
               size="lg"
+              disabled={!hydrated || pendenteRef.current !== null}
               className="h-14 w-full text-base font-extrabold"
               onClick={() => iniciarCheckout()}
             >
-              {CAMPANHA.oferta.cta} — {PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.preco}
+              {!hydrated ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando seu checkout…
+                </>
+              ) : (
+                <>
+                  {CAMPANHA.oferta.cta} — {PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.preco}
+                </>
+              )}
             </Button>
             <p className="mt-2 text-center text-xs text-muted-foreground">{CAMPANHA.garantia.curta}</p>
           </>
