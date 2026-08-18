@@ -32,7 +32,7 @@ type Props = {
 };
 
 export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) {
-  const { refreshEntitlement, logado, state, email } = usePlayer();
+  const { refreshEntitlement, logado, state, email, hydrated } = usePlayer();
   const navigate = useNavigate();
   const [escolhido, setEscolhido] = useState(planoInicial ?? "semestral");
   const [mostrarBrick, setMostrarBrick] = useState(false);
