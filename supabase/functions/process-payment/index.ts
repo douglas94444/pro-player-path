@@ -109,6 +109,17 @@ Deno.serve(async (req) => {
     const metaAttr = (body.meta ?? {}) as Record<string, string | undefined>;
     const clientUa = metaAttr.client_user_agent ?? req.headers.get("user-agent") ?? undefined;
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    const checkoutTime = Number(metaAttr.checkout_time) || Math.floor(Date.now() / 1000);
+
+    // Primeira compra x renovação — vira customer_segmentation na CAPI.
+    const { data: perfilAntes } = await admin
+      .from("profiles")
+      .select("assinante")
+      .eq("id", user.id)
+      .maybeSingle();
+    const segmentation = perfilAntes?.assinante
+      ? "existing_customer_to_business"
+      : "new_customer_to_business";
 
     const notificationUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/mercadopago-webhook`;
     const paymentBody = {
@@ -128,7 +139,10 @@ Deno.serve(async (req) => {
         meta_fbc: metaAttr.fbc ?? null,
         meta_event_source_url: metaAttr.event_source_url ?? null,
         meta_client_user_agent: clientUa ?? null,
+        meta_checkout_time: checkoutTime,
+        meta_segmentation: segmentation,
       },
+
       notification_url: notificationUrl,
       payer: {
         ...(formData.payer ?? {}),
