@@ -109,8 +109,16 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
       }
       abrirBrick(alvo);
     },
-    [escolhido, logado, state.assinante, navigate, abrirBrick],
+    [escolhido, hydrated, logado, state.assinante, navigate, abrirBrick],
   );
+
+  // Intenção guardada enquanto o perfil carregava.
+  useEffect(() => {
+    if (!hydrated || !pendenteRef.current) return;
+    const alvo = pendenteRef.current;
+    pendenteRef.current = null;
+    iniciarCheckout(alvo);
+  }, [hydrated, iniciarCheckout]);
 
   // CTAs da landing pedem abertura do checkout via evento.
   useEffect(() => {
