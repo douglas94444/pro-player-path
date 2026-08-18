@@ -103,6 +103,12 @@ Deno.serve(async (req) => {
     delete formData.utm;
     delete formData.affiliate_ref;
     delete formData.coupon_code;
+    delete formData.meta;
+
+    // Dados de atribuição do Meta (fbp/fbc/user agent/URL) para a CAPI.
+    const metaAttr = (body.meta ?? {}) as Record<string, string | undefined>;
+    const clientUa = metaAttr.client_user_agent ?? req.headers.get("user-agent") ?? undefined;
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
 
     const notificationUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/mercadopago-webhook`;
     const paymentBody = {
@@ -118,6 +124,10 @@ Deno.serve(async (req) => {
         affiliate_ref: affiliateRef,
         coupon_code: couponCode,
         discount_percent: discountPercent || null,
+        meta_fbp: metaAttr.fbp ?? null,
+        meta_fbc: metaAttr.fbc ?? null,
+        meta_event_source_url: metaAttr.event_source_url ?? null,
+        meta_client_user_agent: clientUa ?? null,
       },
       notification_url: notificationUrl,
       payer: {
@@ -125,6 +135,7 @@ Deno.serve(async (req) => {
         email: formData.payer?.email ?? user.email,
       },
     };
+
 
     const idempotencyKey = crypto.randomUUID();
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
