@@ -132,7 +132,7 @@ function AuthPage() {
 
       if (from === "planos") {
         await navigate({
-          to: "/planos",
+          to: "/",
           search: {
             from: "auth",
             ...(plano ? { plano } : {}),
