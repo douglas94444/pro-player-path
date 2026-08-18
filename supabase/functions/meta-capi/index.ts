@@ -85,25 +85,53 @@ Deno.serve(async (req) => {
 
     const testEventCode = Deno.env.get("META_TEST_EVENT_CODE") ?? body.test_event_code;
 
+    // event_time: aceita o horário real da ação; a Meta rejeita futuro ou >7 dias.
+    const agora = Math.floor(Date.now() / 1000);
+    const normalizarTempo = (v: unknown, fallback: number) => {
+      const n = Number(v);
+      if (!Number.isFinite(n) || n <= 0) return fallback;
+      if (n > agora + 60 || n < agora - 7 * 24 * 3600) return fallback;
+      return Math.floor(n);
+    };
+    const eventTime = normalizarTempo(body.event_time, agora);
+
+    const segmentation =
+      typeof body.customer_segmentation === "string" ? body.customer_segmentation : undefined;
+
+    let originalEventData: Record<string, unknown> | undefined;
+    const oed = body.original_event_data as Record<string, unknown> | undefined;
+    if (oed && typeof oed.event_name === "string") {
+      originalEventData = {
+        event_name: oed.event_name,
+        ...(oed.event_time ? { event_time: normalizarTempo(oed.event_time, eventTime) } : {}),
+      };
+    }
+
     const payload = {
       data: [
         {
           event_name: eventName,
-          event_time: Math.floor(Date.now() / 1000),
+          event_time: eventTime,
           event_id: eventId,
           action_source: "website",
           event_source_url: body.event_source_url ?? undefined,
           referrer_url: body.referrer_url ?? undefined,
+          ...(body.opt_out === true ? { opt_out: true } : {}),
+          // Público brasileiro: LDU não se aplica — array vazio é explícito.
+          data_processing_options: [],
+          ...(originalEventData ? { original_event_data: originalEventData } : {}),
           user_data: userData,
           custom_data: {
             currency,
             value,
             ...customData,
+            ...(segmentation ? { customer_segmentation: segmentation } : {}),
           },
         },
       ],
       ...(testEventCode ? { test_event_code: String(testEventCode) } : {}),
     };
+
 
 
     const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${accessToken}`;

@@ -8,7 +8,7 @@ import { PLANOS_ASSINATURA } from "@/data/training";
 import { CAMPANHA } from "@/data/campanha-copy";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/lib/player-store";
-import { trackMeta } from "@/lib/meta-pixel";
+import { trackMetaDedup } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 
 const CODE_RE = /^[A-Za-z0-9_-]{1,40}$/;
@@ -79,7 +79,7 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
   const abrirBrick = useCallback((plano: string) => {
     if (!checkoutTrackedRef.current) {
       checkoutTrackedRef.current = true;
-      trackMeta("InitiateCheckout", {
+      trackMetaDedup("InitiateCheckout", {
         content_name: plano,
         currency: "BRL",
         value: (PLANOS_ASSINATURA.find((p) => p.id === plano)?.precoCentavos ?? 0) / 100,

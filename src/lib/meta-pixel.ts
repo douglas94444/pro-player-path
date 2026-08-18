@@ -86,7 +86,16 @@ export function trackMetaCustom(event: string, payload?: MetaPayload, eventId?: 
 export function trackMetaDedup(
   event: string,
   payload?: MetaPayload,
-  options?: { eventId?: string; email?: string | null; custom?: boolean },
+  options?: {
+    eventId?: string;
+    email?: string | null;
+    custom?: boolean;
+    /** Unix em segundos — quando a ação ocorreu de fato. */
+    eventTime?: number;
+    /** Só atribuição, sem otimização de entrega. */
+    optOut?: boolean;
+    customerSegmentation?: string;
+  },
 ) {
   if (typeof window === "undefined") return;
   const eventId = options?.eventId ?? newEventId(event.toLowerCase());
@@ -118,11 +127,14 @@ export function trackMetaDedup(
       body: {
         event_name: event,
         event_id: eventId,
+        event_time: options?.eventTime ?? Math.floor(Date.now() / 1000),
         email,
         external_id: externalId,
         value,
         currency: (payload?.["currency"] as string) ?? "BRL",
         custom_data: payload ?? {},
+        customer_segmentation: options?.customerSegmentation,
+        opt_out: options?.optOut,
         event_source_url: eventSourceUrl,
         referrer_url: referrer,
         client_user_agent: navigator.userAgent,
@@ -131,6 +143,7 @@ export function trackMetaDedup(
       },
     });
   })()
+
 
     .catch(() => {
       /* tracking nunca quebra a UI */

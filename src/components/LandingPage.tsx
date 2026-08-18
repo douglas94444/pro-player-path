@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { CAMPANHA, type ProofSlot } from "@/data/campanha-copy";
 import { PLANOS_ASSINATURA } from "@/data/training";
 import { captureUtmFromSearch } from "@/lib/utm";
-import { trackMeta, trackMetaCustom } from "@/lib/meta-pixel";
+import { trackMetaCustom, trackMetaDedup } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/lib/player-store";
 import { CheckoutOferta, dispararCheckout, rolarParaOferta, CHECKOUT_EVENT } from "@/components/CheckoutOferta";
@@ -76,7 +76,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
 
   useEffect(() => {
     captureUtmFromSearch(search);
-    trackMeta("ViewContent", {
+    trackMetaDedup("ViewContent", {
       content_name: "landing_campanha",
       content_category: search.utm_campaign ?? "organic",
     });

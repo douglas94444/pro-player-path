@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
 import { PLANOS_ASSINATURA } from "@/data/training";
 import { supabase } from "@/integrations/supabase/client";
-import { getFbc, trackMeta } from "@/lib/meta-pixel";
+import { getFbc, trackMeta, trackMetaDedup } from "@/lib/meta-pixel";
 import { getStoredUtm } from "@/lib/utm";
 import { toast } from "sonner";
 
@@ -94,6 +94,7 @@ export function MercadoPagoCheckout({
                 fbc: getFbc() ?? null,
                 client_user_agent: navigator.userAgent,
                 event_source_url: window.location.href,
+                checkout_time: Math.floor(Date.now() / 1000),
               },
             },
           });
@@ -116,7 +117,11 @@ export function MercadoPagoCheckout({
             // event_id igual ao enviado pela CAPI no backend (mp-<payment_id>) → dedup no Meta
             const eventId = payload?.id ? `mp-${payload.id}` : undefined;
             trackMeta("Purchase", { value: paid, currency: "BRL", content_name: planoId }, eventId);
-            trackMeta("Subscribe", { value: paid, currency: "BRL", content_name: planoId }, eventId ? `${eventId}-sub` : undefined);
+            trackMetaDedup(
+              "Subscribe",
+              { value: paid, currency: "BRL", content_name: planoId },
+              eventId ? { eventId: `${eventId}-sub` } : undefined,
+            );
             toast.success("Pagamento aprovado");
             onApproved(planoId);
             return;
