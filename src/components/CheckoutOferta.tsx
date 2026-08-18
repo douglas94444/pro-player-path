@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Clock, Shield } from "lucide-react";
+import { Clock, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
