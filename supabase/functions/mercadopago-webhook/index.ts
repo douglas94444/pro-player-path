@@ -65,7 +65,53 @@ Deno.serve(async (req) => {
           mp_payer_id: payment.payer?.id ? String(payment.payer.id) : null,
         })
         .eq("id", userId);
+
+      // Purchase server-side com os identificadores capturados no checkout.
+      const capiToken = Deno.env.get("META_CAPI_ACCESS_TOKEN");
+      if (capiToken) {
+        const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
+        const sha256 = async (v: string) => {
+          const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
+          return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+        };
+        const md = (payment.metadata ?? {}) as Record<string, string | null>;
+        const email = String(payment.payer?.email ?? "").toLowerCase().trim();
+        const userData: Record<string, unknown> = { external_id: [await sha256(userId)] };
+        if (email) userData.em = [await sha256(email)];
+        if (md.meta_fbp) userData.fbp = md.meta_fbp;
+        if (md.meta_fbc) userData.fbc = md.meta_fbc;
+        if (md.meta_client_user_agent) userData.client_user_agent = md.meta_client_user_agent;
+        const testEventCode = Deno.env.get("META_TEST_EVENT_CODE");
+
+        await fetch(`https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${capiToken}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: [
+              {
+                event_name: "Purchase",
+                event_time: Math.floor(Date.now() / 1000),
+                // mesmo event_id do pixel/checkout → o Meta deduplica
+                event_id: `mp-${payment.id}`,
+                action_source: "website",
+                event_source_url: md.meta_event_source_url ?? undefined,
+                user_data: userData,
+                custom_data: {
+                  currency: "BRL",
+                  value: Number(payment.transaction_amount ?? 0),
+                  content_name: plano,
+                  coupon: md.coupon_code ?? undefined,
+                  utm_source: md.utm_source ?? undefined,
+                  utm_campaign: md.utm_campaign ?? undefined,
+                },
+              },
+            ],
+            ...(testEventCode ? { test_event_code: testEventCode } : {}),
+          }),
+        }).catch(console.error);
+      }
     }
+
 
     if (userId && (payment.status === "cancelled" || payment.status === "refunded" || payment.status === "charged_back")) {
       await admin
