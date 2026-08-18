@@ -116,7 +116,11 @@ export function MercadoPagoCheckout({
             // event_id igual ao enviado pela CAPI no backend (mp-<payment_id>) → dedup no Meta
             const eventId = payload?.id ? `mp-${payload.id}` : undefined;
             trackMeta("Purchase", { value: paid, currency: "BRL", content_name: planoId }, eventId);
-            trackMeta("Subscribe", { value: paid, currency: "BRL", content_name: planoId }, eventId ? `${eventId}-sub` : undefined);
+            trackMetaDedup(
+              "Subscribe",
+              { value: paid, currency: "BRL", content_name: planoId },
+              eventId ? { eventId: `${eventId}-sub` } : undefined,
+            );
             toast.success("Pagamento aprovado");
             onApproved(planoId);
             return;
