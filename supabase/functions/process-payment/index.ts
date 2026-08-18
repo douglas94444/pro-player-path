@@ -237,10 +237,13 @@ Deno.serve(async (req) => {
             data: [
               {
                 event_name: "Purchase",
-                event_time: Math.floor(Date.now() / 1000),
+                event_time: Math.floor(
+                  new Date(payment.date_approved ?? Date.now()).getTime() / 1000,
+                ),
                 event_id: `mp-${payment.id}`,
                 action_source: "website",
                 event_source_url: metaAttr.event_source_url ?? undefined,
+                data_processing_options: [],
                 user_data: userData,
                 custom_data: {
                   currency: "BRL",
@@ -249,8 +252,10 @@ Deno.serve(async (req) => {
                   utm_source: utm.utm_source,
                   utm_campaign: utm.utm_campaign,
                   coupon: couponCode,
+                  customer_segmentation: segmentation,
                 },
               },
+
             ],
             ...(testEventCode ? { test_event_code: testEventCode } : {}),
           }),
