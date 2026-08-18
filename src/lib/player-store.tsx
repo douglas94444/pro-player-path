@@ -151,6 +151,7 @@ type Ctx = {
   reset: () => void;
   sair: () => Promise<void>;
   hydrated: boolean;
+  authReady: boolean;
   logado: boolean;
   email: string | null;
   isAdmin: boolean;
@@ -164,6 +165,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [authPromptSeen, setAuthPromptSeen] = useState(false);
   const logado = !!user;
+  const authReady = !loading;
 
   useEffect(() => {
     try {
@@ -190,7 +192,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       void rolePromise.then((r) => {
         if (!cancelado && r === "admin") setState((s) => ({ ...s, role: "admin" }));
       });
-      const [{ data: perfil }, { data: sessoes }] = await Promise.all([
+      const [perfilResult, sessoesResult] = await Promise.allSettled([
         supabase
           .from("profiles")
           .select(
@@ -205,6 +207,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           .order("data", { ascending: true }),
       ]);
       if (cancelado) return;
+
+      const perfil = perfilResult.status === "fulfilled" ? perfilResult.value.data : null;
+      const sessoes = sessoesResult.status === "fulfilled" ? sessoesResult.value.data : null;
 
       const remoteSessoes: Sessao[] = (sessoes ?? []).map((s) => ({
         treinoId: s.treino_id,
@@ -278,7 +283,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
 
     setHydrated(false);
-    void carregar();
+    void carregar().catch(() => {
+      if (cancelado) return;
+      const local = lerLocal();
+      setState({ ...local, assinante: false, plano: null, role: "user" });
+      setHydrated(true);
+    });
     return () => {
       cancelado = true;
     };
@@ -485,6 +495,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     return {
       state,
       hydrated,
+      authReady,
       logado,
       email: user?.email ?? null,
       isAdmin: state.role === "admin",
@@ -561,6 +572,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [
     state,
     hydrated,
+    authReady,
     logado,
     user,
     concluirTreino,
