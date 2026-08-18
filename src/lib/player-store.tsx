@@ -258,7 +258,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         nome: nomeFinal,
         assinante: perfil?.assinante ?? false,
         plano: perfil?.plano ?? null,
-        role: perfil?.role === "admin" || role === "admin" ? "admin" : "user",
+        role: perfil?.role === "admin" ? "admin" : "user",
         sessoes: merged,
         ultimoTreinoId: merged.length ? merged[merged.length - 1]!.treinoId : null,
         onboardingDone: true,
