@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
 import { PLANOS_ASSINATURA } from "@/data/training";
 import { supabase } from "@/integrations/supabase/client";
-import { trackMeta } from "@/lib/meta-pixel";
+import { getFbc, trackMeta } from "@/lib/meta-pixel";
 import { getStoredUtm } from "@/lib/utm";
 import { toast } from "sonner";
 
