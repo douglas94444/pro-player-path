@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageFrame } from "@/components/PageFrame";
-import { trackMeta } from "@/lib/meta-pixel";
+import { trackMetaDedup } from "@/lib/meta-pixel";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export type AuthSearch = {
@@ -120,7 +120,7 @@ function AuthPage() {
           setErro("Este e-mail já tem conta. Faça login ou use “Esqueci minha senha”.");
           return;
         }
-        trackMeta("CompleteRegistration", { content_name: "email_signup", status: true });
+        trackMetaDedup("CompleteRegistration", { content_name: "email_signup", status: true });
         if (!data.session) {
           setMsg("Conta criada! Confirme o e-mail que enviamos para começar a treinar.");
           return;
