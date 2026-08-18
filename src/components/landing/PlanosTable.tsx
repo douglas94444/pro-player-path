@@ -30,7 +30,7 @@ export function PlanosTable({
   const selecionar = (plano: string) => {
     setAtivo(plano);
     onSelecionar?.(plano);
-    window.dispatchEvent(new CustomEvent(CHECKOUT_EVENT, { detail: { plano, iniciar: false } }));
+    window.dispatchEvent(new CustomEvent(CHECKOUT_EVENT, { detail: { plano, iniciar: true } }));
   };
 
   return (

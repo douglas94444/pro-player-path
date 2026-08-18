@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Clock, Shield } from "lucide-react";
+import { Clock, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
@@ -32,7 +32,7 @@ type Props = {
 };
 
 export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) {
-  const { refreshEntitlement, logado, state, email } = usePlayer();
+  const { refreshEntitlement, logado, state, email, hydrated } = usePlayer();
   const navigate = useNavigate();
   const [escolhido, setEscolhido] = useState(planoInicial ?? "semestral");
   const [mostrarBrick, setMostrarBrick] = useState(false);
@@ -89,10 +89,16 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
     setMostrarBrick(true);
   }, []);
 
+  const pendenteRef = useRef<string | null>(null);
   const iniciarCheckout = useCallback(
     (plano?: string) => {
       const alvo = plano ?? escolhido;
       setEscolhido(alvo);
+      if (!hydrated) {
+        // Ainda carregando perfil: guarda a intenção e abre assim que hidratar.
+        pendenteRef.current = alvo;
+        return;
+      }
       if (state.assinante) {
         void navigate({ to: "/app" });
         return;
@@ -103,19 +109,24 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
       }
       abrirBrick(alvo);
     },
-    [escolhido, logado, state.assinante, navigate, abrirBrick],
+    [escolhido, hydrated, logado, state.assinante, navigate, abrirBrick],
   );
+
+  // Intenção guardada enquanto o perfil carregava.
+  useEffect(() => {
+    if (!hydrated || !pendenteRef.current) return;
+    const alvo = pendenteRef.current;
+    pendenteRef.current = null;
+    iniciarCheckout(alvo);
+  }, [hydrated, iniciarCheckout]);
 
   // CTAs da landing pedem abertura do checkout via evento.
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ plano?: string; iniciar?: boolean }>).detail;
       if (detail?.iniciar === false) {
-        if (detail.plano) {
-          setEscolhido(detail.plano);
-          setMostrarBrick(false);
-          setPendingPix(false);
-        }
+        // Só troca o plano selecionado — nunca fecha um checkout já aberto.
+        if (detail.plano) setEscolhido(detail.plano);
         return;
       }
       iniciarCheckout(detail?.plano);
@@ -124,15 +135,15 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
     return () => window.removeEventListener(CHECKOUT_EVENT, handler);
   }, [iniciarCheckout]);
 
-  // Retomada pós-login (?checkout=1)
+  // Retomada pós-login (?checkout=1) — só depois que o perfil hidratou.
   const autoRef = useRef(false);
   useEffect(() => {
-    if (abrirAoMontar && logado && !state.assinante && !autoRef.current) {
+    if (abrirAoMontar && hydrated && logado && !state.assinante && !autoRef.current) {
       autoRef.current = true;
       abrirBrick(escolhido);
       rolarParaOferta();
     }
-  }, [abrirAoMontar, logado, state.assinante, abrirBrick, escolhido]);
+  }, [abrirAoMontar, hydrated, logado, state.assinante, abrirBrick, escolhido]);
 
   return (
     <div className="mt-8">
@@ -172,10 +183,19 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
             </p>
             <Button
               size="lg"
+              disabled={!hydrated || pendenteRef.current !== null}
               className="h-14 w-full text-base font-extrabold"
               onClick={() => iniciarCheckout()}
             >
-              {CAMPANHA.oferta.cta} — {PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.preco}
+              {!hydrated ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando seu checkout…
+                </>
+              ) : (
+                <>
+                  {CAMPANHA.oferta.cta} — {PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.preco}
+                </>
+              )}
             </Button>
             <p className="mt-2 text-center text-xs text-muted-foreground">{CAMPANHA.garantia.curta}</p>
           </>
