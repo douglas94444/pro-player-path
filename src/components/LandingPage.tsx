@@ -76,7 +76,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
 
   useEffect(() => {
     captureUtmFromSearch(search);
-    trackMeta("ViewContent", {
+    trackMetaDedup("ViewContent", {
       content_name: "landing_campanha",
       content_category: search.utm_campaign ?? "organic",
     });
