@@ -32,7 +32,7 @@ type Props = {
 };
 
 export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) {
-  const { refreshEntitlement, logado, state, email, hydrated } = usePlayer();
+  const { refreshEntitlement, logado, state, email, authReady } = usePlayer();
   const navigate = useNavigate();
   const [escolhido, setEscolhido] = useState(planoInicial ?? "semestral");
   const [mostrarBrick, setMostrarBrick] = useState(false);
@@ -94,8 +94,8 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
     (plano?: string) => {
       const alvo = plano ?? escolhido;
       setEscolhido(alvo);
-      if (!hydrated) {
-        // Ainda carregando perfil: guarda a intenção e abre assim que hidratar.
+      if (!authReady) {
+        // Ainda confirmando a sessão: guarda a intenção e abre assim que terminar.
         pendenteRef.current = alvo;
         return;
       }
@@ -109,16 +109,16 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
       }
       abrirBrick(alvo);
     },
-    [escolhido, hydrated, logado, state.assinante, navigate, abrirBrick],
+    [escolhido, authReady, logado, state.assinante, navigate, abrirBrick],
   );
 
-  // Intenção guardada enquanto o perfil carregava.
+  // Intenção guardada enquanto a sessão era confirmada.
   useEffect(() => {
-    if (!hydrated || !pendenteRef.current) return;
+    if (!authReady || !pendenteRef.current) return;
     const alvo = pendenteRef.current;
     pendenteRef.current = null;
     iniciarCheckout(alvo);
-  }, [hydrated, iniciarCheckout]);
+  }, [authReady, iniciarCheckout]);
 
   // CTAs da landing pedem abertura do checkout via evento.
   useEffect(() => {
@@ -135,15 +135,15 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
     return () => window.removeEventListener(CHECKOUT_EVENT, handler);
   }, [iniciarCheckout]);
 
-  // Retomada pós-login (?checkout=1) — só depois que o perfil hidratou.
+  // Retomada pós-login (?checkout=1) — assim que a sessão estiver confirmada.
   const autoRef = useRef(false);
   useEffect(() => {
-    if (abrirAoMontar && hydrated && logado && !state.assinante && !autoRef.current) {
+    if (abrirAoMontar && authReady && logado && !state.assinante && !autoRef.current) {
       autoRef.current = true;
       abrirBrick(escolhido);
       rolarParaOferta();
     }
-  }, [abrirAoMontar, hydrated, logado, state.assinante, abrirBrick, escolhido]);
+  }, [abrirAoMontar, authReady, logado, state.assinante, abrirBrick, escolhido]);
 
   return (
     <div className="mt-8">
@@ -183,11 +183,11 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
             </p>
             <Button
               size="lg"
-              disabled={!hydrated || pendenteRef.current !== null}
+              disabled={!authReady || pendenteRef.current !== null}
               className="h-14 w-full text-base font-extrabold"
               onClick={() => iniciarCheckout()}
             >
-              {!hydrated ? (
+              {!authReady ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando seu checkout…
                 </>
