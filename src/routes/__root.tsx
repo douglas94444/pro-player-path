@@ -121,6 +121,7 @@ function MetaPixelPageView() {
 
   useEffect(() => {
     captureUtmFromLocation();
+    captureFbclid();
   }, []);
 
   useEffect(() => {
