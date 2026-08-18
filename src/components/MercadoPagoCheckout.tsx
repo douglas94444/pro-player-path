@@ -81,6 +81,7 @@ export function MercadoPagoCheckout({
           } catch {
             /* ignore */
           }
+          const fbp = document.cookie.match(/(^|; )_fbp=([^;]*)/)?.[2];
           const { data, error } = await supabase.functions.invoke("process-payment", {
             body: {
               plano: planoId,
@@ -88,8 +89,15 @@ export function MercadoPagoCheckout({
               utm: getStoredUtm(),
               affiliate_ref,
               coupon_code: couponCode || null,
+              meta: {
+                fbp: fbp ? decodeURIComponent(fbp) : null,
+                fbc: getFbc() ?? null,
+                client_user_agent: navigator.userAgent,
+                event_source_url: window.location.href,
+              },
             },
           });
+
 
           if (error) {
             toast.error("Pagamento não concluído", { description: error.message });
