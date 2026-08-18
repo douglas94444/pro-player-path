@@ -70,7 +70,7 @@ export function MercadoPagoCheckout({
           paymentMethods: {
             creditCard: "all",
             debitCard: "all",
-            ticket: "all",
+            ticket: "none",
             bankTransfer: "all",
           },
         }}

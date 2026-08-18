@@ -199,7 +199,7 @@ export const CAMPANHA = {
     },
     {
       pergunta: "Quais são as formas de pagamento?",
-      resposta: "Pix, cartão de crédito e boleto, processados com segurança pelo Mercado Pago.",
+      resposta: "Pix e cartão, processados com segurança pelo Mercado Pago.",
     },
     {
       pergunta: "Como faço para cancelar?",

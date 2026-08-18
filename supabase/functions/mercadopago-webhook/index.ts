@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
         if (md.meta_client_user_agent) userData.client_user_agent = md.meta_client_user_agent;
         const testEventCode = Deno.env.get("META_TEST_EVENT_CODE");
 
-        // Pix/boleto confirmam depois: usamos a hora real da aprovação e,
+        // Pix confirma depois: usamos a hora real da aprovação e,
         // como o evento é "atrasado", apontamos para o checkout original.
         const agora = Math.floor(Date.now() / 1000);
         const limite = agora - 7 * 24 * 3600;
