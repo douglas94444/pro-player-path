@@ -89,10 +89,16 @@ export function CheckoutOferta({ planoInicial, refCode, abrirAoMontar }: Props) 
     setMostrarBrick(true);
   }, []);
 
+  const pendenteRef = useRef<string | null>(null);
   const iniciarCheckout = useCallback(
     (plano?: string) => {
       const alvo = plano ?? escolhido;
       setEscolhido(alvo);
+      if (!hydrated) {
+        // Ainda carregando perfil: guarda a intenção e abre assim que hidratar.
+        pendenteRef.current = alvo;
+        return;
+      }
       if (state.assinante) {
         void navigate({ to: "/app" });
         return;
