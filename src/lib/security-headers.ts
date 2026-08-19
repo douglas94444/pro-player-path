@@ -29,7 +29,7 @@ function csp(host?: string | null) {
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
     "media-src 'self' blob: https://*.supabase.co https://videos.pexels.com",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graph.facebook.com https://connect.facebook.net https://www.facebook.com https://*.facebook.com https://api.mercadopago.com https://events.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com https://http2.mlstatic.com https://*.mlstatic.com https://*.lovable.app https://*.lovable.dev https://*.lovableproject.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graph.facebook.com https://connect.facebook.net https://www.facebook.com https://*.facebook.com https://api.mercadopago.com https://events.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com https://http2.mlstatic.com https://*.mlstatic.com https://*.ecs.us-east-2.on.aws https://*.lovable.app https://*.lovable.dev https://*.lovableproject.com",
     "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.facebook.com https://*.facebook.com https://*.mercadopago.com https://*.mercadolibre.com",
     `frame-ancestors ${ancestors}`,
     "object-src 'none'",

@@ -31,17 +31,26 @@ function corsFor(req: Request): Record<string, string> {
   };
 }
 
-async function authorizeCaller(req: Request): Promise<boolean> {
+/** Eventos com valor monetário exigem chamador confiável (sessão ou segredo). */
+const EVENTOS_SENSIVEIS = new Set(["Purchase", "Subscribe"]);
+
+type Confianca = "anon" | "auth";
+
+async function nivelDoChamador(req: Request): Promise<Confianca> {
   const shared = Deno.env.get("META_CAPI_APP_SECRET") ?? "";
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-  if (shared && token === shared) return true;
-  if (!token) return false;
-  const supabase = createUserClient(auth);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return Boolean(user);
+  if (shared && token === shared) return "auth";
+  if (!token) return "anon";
+  try {
+    const supabase = createUserClient(auth);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user ? "auth" : "anon";
+  } catch {
+    return "anon";
+  }
 }
 
 Deno.serve(async (req) => {
@@ -56,9 +65,7 @@ Deno.serve(async (req) => {
   if (cors["Access-Control-Allow-Origin"] === "null") {
     return json({ ok: false, error: "origem não permitida" }, 403);
   }
-  if (!(await authorizeCaller(req))) {
-    return json({ ok: false, error: "Unauthorized" }, 401);
-  }
+  const confianca = await nivelDoChamador(req);
 
   try {
     const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
@@ -71,6 +78,9 @@ Deno.serve(async (req) => {
     const eventName = String(body.event_name ?? "Purchase");
     if (!EVENTOS_PERMITIDOS.has(eventName)) {
       return json({ ok: false, error: "invalid_event" }, 400);
+    }
+    if (EVENTOS_SENSIVEIS.has(eventName) && confianca !== "auth") {
+      return json({ ok: false, error: "Unauthorized" }, 401);
     }
     const eventId = String(body.event_id ?? crypto.randomUUID());
     const email = typeof body.email === "string" ? body.email.toLowerCase().trim() : undefined;
