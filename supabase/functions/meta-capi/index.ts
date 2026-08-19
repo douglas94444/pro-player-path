@@ -65,9 +65,7 @@ Deno.serve(async (req) => {
   if (cors["Access-Control-Allow-Origin"] === "null") {
     return json({ ok: false, error: "origem não permitida" }, 403);
   }
-  if (!(await authorizeCaller(req))) {
-    return json({ ok: false, error: "Unauthorized" }, 401);
-  }
+  const confianca = await nivelDoChamador(req);
 
   try {
     const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
