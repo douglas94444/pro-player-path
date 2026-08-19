@@ -39,7 +39,7 @@ export type Database = {
           purchased_at: string | null
           recovered_at: string | null
           started_at: string
-          status: string
+          status: string | null
           user_id: string
         }
         Insert: {
@@ -48,6 +48,7 @@ export type Database = {
           purchased_at?: string | null
           recovered_at?: string | null
           started_at?: string
+          status?: string | null
           user_id: string
         }
         Update: {
@@ -56,6 +57,7 @@ export type Database = {
           purchased_at?: string | null
           recovered_at?: string | null
           started_at?: string
+          status?: string | null
           user_id?: string
         }
         Relationships: []
@@ -147,6 +149,30 @@ export type Database = {
         }
         Relationships: []
       }
+      lifecycle_emails: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          sent_on: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          sent_on?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          sent_on?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_events: {
         Row: {
           affiliate_ref: string | null
@@ -208,8 +234,8 @@ export type Database = {
           assinante_until: string | null
           cancel_reason: string | null
           cancelled_at: string | null
-          created_at: string
           cpf: string | null
+          created_at: string
           disponibilidade: string | null
           id: string
           mp_payer_id: string | null
@@ -237,8 +263,8 @@ export type Database = {
           assinante_until?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
-          created_at?: string
           cpf?: string | null
+          created_at?: string
           disponibilidade?: string | null
           id: string
           mp_payer_id?: string | null
@@ -266,8 +292,8 @@ export type Database = {
           assinante_until?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
-          created_at?: string
           cpf?: string | null
+          created_at?: string
           disponibilidade?: string | null
           id?: string
           mp_payer_id?: string | null
@@ -465,23 +491,23 @@ export type Database = {
       }
     }
     Functions: {
-      is_admin: { Args: never; Returns: boolean }
       acesso_pro_ativo: { Args: never; Returns: boolean }
-      redeem_coupon: { Args: { p_code: string }; Returns: boolean }
-      vault_secret: { Args: { p_name: string }; Returns: string | null }
       admin_search_users: {
         Args: { p_q?: string }
         Returns: {
-          id: string
-          nome: string
           assinante: boolean
-          plano: string | null
-          role: string
           created_at: string
-          email: string | null
-          mp_payment_id: string | null
+          email: string
+          id: string
+          mp_payment_id: string
+          nome: string
+          plano: string
+          role: string
         }[]
       }
+      is_admin: { Args: never; Returns: boolean }
+      redeem_coupon: { Args: { p_code: string }; Returns: boolean }
+      vault_secret: { Args: { p_name: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
