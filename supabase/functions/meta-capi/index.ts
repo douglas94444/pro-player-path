@@ -31,17 +31,26 @@ function corsFor(req: Request): Record<string, string> {
   };
 }
 
-async function authorizeCaller(req: Request): Promise<boolean> {
+/** Eventos com valor monetário exigem chamador confiável (sessão ou segredo). */
+const EVENTOS_SENSIVEIS = new Set(["Purchase", "Subscribe"]);
+
+type Confianca = "anon" | "auth";
+
+async function nivelDoChamador(req: Request): Promise<Confianca> {
   const shared = Deno.env.get("META_CAPI_APP_SECRET") ?? "";
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-  if (shared && token === shared) return true;
-  if (!token) return false;
-  const supabase = createUserClient(auth);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return Boolean(user);
+  if (shared && token === shared) return "auth";
+  if (!token) return "anon";
+  try {
+    const supabase = createUserClient(auth);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user ? "auth" : "anon";
+  } catch {
+    return "anon";
+  }
 }
 
 Deno.serve(async (req) => {
