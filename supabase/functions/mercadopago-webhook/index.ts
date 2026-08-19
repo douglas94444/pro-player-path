@@ -1,28 +1,46 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { createAdminClient } from "../_shared/auth.ts";
+import { extenderAcesso } from "../_shared/acesso.ts";
+import { sendCapi, hashIdentifier } from "../_shared/capi.ts";
+import { verifyMpWebhookSignature } from "../_shared/mp.ts";
 
 Deno.serve(async (req) => {
   const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
   if (!accessToken) return new Response("Mercado Pago not configured", { status: 500 });
 
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  const secret = Deno.env.get("MERCADOPAGO_WEBHOOK_SECRET") ?? "";
+  const url = new URL(req.url);
+  let paymentId = url.searchParams.get("data.id") ?? url.searchParams.get("id");
+
+  let body: Record<string, unknown> = {};
+  if (req.method === "POST") {
+    body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const data = body["data"] as { id?: string | number } | undefined;
+    if (data?.id) paymentId = String(data.id);
+    else if (body["id"]) paymentId = String(body["id"]);
+  }
+
+  const signed = await verifyMpWebhookSignature({
+    xSignature: req.headers.get("x-signature"),
+    xRequestId: req.headers.get("x-request-id"),
+    dataId: paymentId ?? "",
+    secret,
+  });
+  if (!signed) {
+    return new Response(JSON.stringify({ error: "invalid_signature" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const admin = createAdminClient();
 
   try {
-    const url = new URL(req.url);
-    let paymentId = url.searchParams.get("data.id") ?? url.searchParams.get("id");
     const topic = url.searchParams.get("type") ?? url.searchParams.get("topic");
+    const bodyType = typeof body["type"] === "string" ? String(body["type"]) : "";
+    const effectiveTopic = topic || bodyType;
 
-    if (req.method === "POST") {
-      const body = await req.json().catch(() => ({} as Record<string, unknown>));
-      const data = body["data"] as { id?: string | number } | undefined;
-      if (data?.id) paymentId = String(data.id);
-      else if (body["id"]) paymentId = String(body["id"]);
-    }
-
-    if (!paymentId || (topic && topic !== "payment" && topic !== "payment.updated")) {
+    if (!paymentId || (effectiveTopic && effectiveTopic !== "payment" && effectiveTopic !== "payment.updated")) {
       return new Response(JSON.stringify({ ok: true, skipped: true }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -58,39 +76,42 @@ Deno.serve(async (req) => {
     if (userId && approved) {
       const { data: perfilAntes } = await admin
         .from("profiles")
-        .select("assinante")
+        .select("assinante, assinante_until, mp_payment_id")
         .eq("id", userId)
         .maybeSingle();
 
+      const mesmoPagamento = perfilAntes?.mp_payment_id === String(payment.id);
       await admin
         .from("profiles")
         .update({
           assinante: true,
           plano,
+          ...(mesmoPagamento ? {} : { assinante_until: extenderAcesso(perfilAntes?.assinante_until, plano) }),
           mp_payment_id: String(payment.id),
           mp_payer_id: payment.payer?.id ? String(payment.payer.id) : null,
+          paused_until: null,
+          pause_reason: null,
+          pause_used_at: null,
+          cancelled_at: null,
+          cancel_reason: null,
         })
         .eq("id", userId);
 
-      // Purchase server-side com os identificadores capturados no checkout.
+      await admin
+        .from("checkout_intents")
+        .update({ purchased_at: new Date().toISOString(), plano })
+        .eq("user_id", userId);
+
       const capiToken = Deno.env.get("META_CAPI_ACCESS_TOKEN");
       if (capiToken) {
-        const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
-        const sha256 = async (v: string) => {
-          const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
-          return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
-        };
         const md = (payment.metadata ?? {}) as Record<string, string | number | null>;
         const email = String(payment.payer?.email ?? "").toLowerCase().trim();
-        const userData: Record<string, unknown> = { external_id: [await sha256(userId)] };
-        if (email) userData.em = [await sha256(email)];
+        const userData: Record<string, unknown> = { external_id: [await hashIdentifier(userId)] };
+        if (email) userData.em = [await hashIdentifier(email)];
         if (md.meta_fbp) userData.fbp = md.meta_fbp;
         if (md.meta_fbc) userData.fbc = md.meta_fbc;
         if (md.meta_client_user_agent) userData.client_user_agent = md.meta_client_user_agent;
-        const testEventCode = Deno.env.get("META_TEST_EVENT_CODE");
 
-        // Pix confirma depois: usamos a hora real da aprovação e,
-        // como o evento é "atrasado", apontamos para o checkout original.
         const agora = Math.floor(Date.now() / 1000);
         const limite = agora - 7 * 24 * 3600;
         const aprovado = payment.date_approved
@@ -102,51 +123,36 @@ Deno.serve(async (req) => {
           (md.meta_segmentation as string | null) ??
           (perfilAntes?.assinante ? "existing_customer_to_business" : "new_customer_to_business");
 
-        await fetch(`https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${capiToken}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: [
-              {
-                event_name: "Purchase",
-                event_time: eventTime,
-                // mesmo event_id do pixel/checkout → o Meta deduplica
-                event_id: `mp-${payment.id}`,
-                action_source: "website",
-                event_source_url: md.meta_event_source_url ?? undefined,
-                data_processing_options: [],
-                ...(Number.isFinite(checkoutTime) && checkoutTime > limite
-                  ? {
-                      original_event_data: {
-                        event_name: "InitiateCheckout",
-                        event_time: checkoutTime,
-                      },
-                    }
-                  : {}),
-                user_data: userData,
-                custom_data: {
-                  currency: "BRL",
-                  value: Number(payment.transaction_amount ?? 0),
-                  content_name: plano,
-                  coupon: md.coupon_code ?? undefined,
-                  utm_source: md.utm_source ?? undefined,
-                  utm_campaign: md.utm_campaign ?? undefined,
-                  customer_segmentation: segmentation,
-                },
-              },
-            ],
-            ...(testEventCode ? { test_event_code: testEventCode } : {}),
-          }),
-        }).catch(console.error);
+        await sendCapi({
+          eventName: "Purchase",
+          eventId: `mp-${payment.id}`,
+          eventTime,
+          eventSourceUrl: typeof md.meta_event_source_url === "string" ? md.meta_event_source_url : undefined,
+          originalEventData:
+            Number.isFinite(checkoutTime) && checkoutTime > limite
+              ? { event_name: "InitiateCheckout", event_time: checkoutTime }
+              : undefined,
+          userData,
+          customData: {
+            currency: "BRL",
+            value: Number(payment.transaction_amount ?? 0),
+            content_name: plano,
+            coupon: md.coupon_code ?? undefined,
+            utm_source: md.utm_source ?? undefined,
+            utm_campaign: md.utm_campaign ?? undefined,
+            customer_segmentation: segmentation,
+          },
+        });
       }
     }
 
-
-
-    if (userId && (payment.status === "cancelled" || payment.status === "refunded" || payment.status === "charged_back")) {
+    if (
+      userId &&
+      (payment.status === "cancelled" || payment.status === "refunded" || payment.status === "charged_back")
+    ) {
       await admin
         .from("profiles")
-        .update({ assinante: false, plano: null })
+        .update({ assinante: false, plano: null, assinante_until: null })
         .eq("id", userId)
         .eq("mp_payment_id", String(payment.id));
     }

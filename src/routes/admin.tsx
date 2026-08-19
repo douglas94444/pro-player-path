@@ -1,11 +1,10 @@
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/use-auth";
+import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { ensureAdminRole } from "@/lib/admin";
 import { supabase } from "@/integrations/supabase/client";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   errorComponent: RouteError,
   notFoundComponent: RouteNotFound,
   head: () => ({
@@ -14,55 +13,24 @@ export const Route = createFileRoute("/admin")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
+  beforeLoad: async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      throw redirect({ to: "/auth", search: { from: "admin" } });
+    }
+    await ensureAdminRole();
+    const { data } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", sessionData.session.user.id)
+      .maybeSingle();
+    if (data?.role !== "admin") {
+      throw redirect({ to: "/app" });
+    }
+  },
   component: AdminLayout,
 });
 
 function AdminLayout() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
-  const [allowed, setAllowed] = useState(false);
-
-  useEffect(() => {
-    let cancel = false;
-
-    async function gate() {
-      if (loading) return;
-      if (!user) {
-        void navigate({ to: "/auth", search: { from: "admin" } });
-        return;
-      }
-
-      try {
-        await ensureAdminRole();
-        const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-        if (cancel) return;
-        if (data?.role !== "admin") {
-          void navigate({ to: "/app" });
-          return;
-        }
-        setAllowed(true);
-      } catch {
-        if (!cancel) void navigate({ to: "/app" });
-
-      } finally {
-        if (!cancel) setChecking(false);
-      }
-    }
-
-    void gate();
-    return () => {
-      cancel = true;
-    };
-  }, [user, loading, navigate]);
-
-  if (loading || checking || !allowed) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Verificando acesso admin…</p>
-      </div>
-    );
-  }
-
   return <Outlet />;
 }

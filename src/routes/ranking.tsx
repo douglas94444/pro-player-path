@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -30,28 +30,27 @@ function weekStartIso() {
 
 function RankingPage() {
   const { state } = usePlayer();
-  const [rows, setRows] = useState<Row[]>([]);
-
-  useEffect(() => {
-    const week = weekStartIso();
-    // View pública de ranking: só nome + métricas, sem expor user_id.
-    void supabase
-      .from("ranking_semanal")
-      .select("nome, treinos, minutos, streak_peak")
-      .eq("week_start", week)
-      .order("posicao", { ascending: true })
-      .limit(20)
-      .then(({ data }) => {
-        setRows(
-          (data ?? []).map((r) => ({
-            nome: r.nome ?? "Jogador",
-            treinos: r.treinos ?? 0,
-            minutos: r.minutos ?? 0,
-            streak_peak: r.streak_peak ?? 0,
-          })),
-        );
-      });
-  }, []);
+  const week = weekStartIso();
+  const { data: rows = [], isError } = useQuery({
+    queryKey: ["ranking-semanal", week],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ranking_semanal")
+        .select("nome, treinos, minutos, streak_peak")
+        .eq("week_start", week)
+        .order("posicao", { ascending: true })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        nome: r.nome ?? "Jogador",
+        treinos: r.treinos ?? 0,
+        minutos: r.minutos ?? 0,
+        streak_peak: r.streak_peak ?? 0,
+      }));
+    },
+    enabled: state.assinante,
+    staleTime: 60_000,
+  });
 
   if (!state.assinante) {
     return (
@@ -60,7 +59,7 @@ function RankingPage() {
           <Trophy className="mx-auto h-8 w-8 text-primary" />
           <p className="mt-3 text-sm text-muted-foreground">Ranking disponível para assinantes.</p>
           <Button asChild className="mt-4 w-full font-extrabold">
-            <Link to="/planos" search={{ from: "ranking" }}>
+            <Link to="/checkout" search={{ from: "ranking" }}>
               Assinar
             </Link>
           </Button>
@@ -72,7 +71,11 @@ function RankingPage() {
   return (
     <AppShell title="Ranking da semana" subtitle="Consistência entre assinantes PRO">
       <ul className="space-y-2">
-        {rows.length === 0 ? (
+        {isError ? (
+          <li className="rounded-2xl border border-destructive/30 bg-card p-6 text-center text-sm text-destructive">
+            Não deu para carregar o ranking. Tente de novo em instantes.
+          </li>
+        ) : rows.length === 0 ? (
           <li className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
             Ainda sem entradas esta semana. Complete um treino para entrar na liga.
           </li>

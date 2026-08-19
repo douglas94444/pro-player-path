@@ -43,19 +43,30 @@ function enfileirar(item: Omit<PendingWrite, "id" | "tries">) {
   gravarFila(fila);
 }
 
+type Filterable = {
+  eq: (column: string, value: unknown) => Filterable;
+} & PromiseLike<WriteResult>;
+
+type WriteBuilder = {
+  insert: (payload: Record<string, unknown>) => PromiseLike<WriteResult>;
+  upsert: (
+    payload: Record<string, unknown>,
+    opts?: { onConflict?: string },
+  ) => PromiseLike<WriteResult>;
+  update: (payload: Record<string, unknown>) => Filterable;
+};
+
 async function executar(item: PendingWrite): Promise<WriteResult> {
-  // A tipagem gerada é por tabela; a fila é genérica por natureza.
-  const query = supabase.from(item.table as never);
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const q = query as any;
+  const q = supabase.from(item.table as never) as unknown as WriteBuilder;
   if (item.op === "insert") return await q.insert(item.payload);
   if (item.op === "upsert") {
     return await q.upsert(item.payload, item.onConflict ? { onConflict: item.onConflict } : undefined);
   }
-  let up = q.update(item.payload);
-  for (const [k, v] of Object.entries(item.match ?? {})) up = up.eq(k, v);
+  let up: Filterable = q.update(item.payload);
+  for (const [k, v] of Object.entries(item.match ?? {})) {
+    up = up.eq(k, v);
+  }
   return await up;
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 let processando = false;

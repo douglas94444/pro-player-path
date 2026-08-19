@@ -7,35 +7,6 @@
 export const TEASER_TREINO_VIDEO =
   "https://videos.pexels.com/video-files/6077718/6077718-sd_640_360_24fps.mp4";
 
-/** Slots de prova social (fotos reais de treino/jogo — Unsplash). */
-export const PROVA_SLOTS = [
-  {
-    type: "image" as const,
-    src: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=900&q=80",
-    title: "Treino com bola no campo",
-  },
-  {
-    type: "image" as const,
-    src: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?auto=format&fit=crop&w=900&q=80",
-    title: "Ritmo de jogo",
-  },
-  {
-    type: "video" as const,
-    src: "https://videos.pexels.com/video-files/4770380/4770380-sd_640_360_25fps.mp4",
-    title: "Ativação e arranque",
-  },
-  {
-    type: "image" as const,
-    src: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=900&q=80",
-    title: "Consistência no dia a dia",
-  },
-  {
-    type: "image" as const,
-    src: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=900&q=80",
-    title: "Treino solo em casa/campo",
-  },
-];
-
 /** Demos curtos por tipo de exercício (Pexels — demonstração do movimento). */
 export const DEMO_VIDEOS = {
   mobilidade:

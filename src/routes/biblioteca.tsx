@@ -229,7 +229,7 @@ function Biblioteca() {
             return bloqueado ? (
               <Link
                 key={t.id}
-                to="/planos"
+                to="/checkout"
                 search={{
                   from: `treino:${t.id}`,
                   teaser: `${t.nome} — ${t.descricao}`,

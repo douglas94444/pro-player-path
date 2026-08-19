@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Clock, Loader2, Shield, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CheckoutAuth, type CheckoutDados } from "@/components/CheckoutAuth";
 import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
 import { PLANOS_ASSINATURA } from "@/data/training";
 import { CAMPANHA } from "@/data/campanha-copy";
 import { supabase } from "@/integrations/supabase/client";
+import { PLANO_PADRAO, registrarCheckoutIntent } from "@/lib/checkout";
+import { cpfValido, phoneValido } from "@/lib/br-docs";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaDedup } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
@@ -15,12 +18,12 @@ import { cn } from "@/lib/utils";
 const CODE_RE = /^[A-Za-z0-9_-]{1,40}$/;
 export const codigoValido = (v: string) => CODE_RE.test(v);
 
-/** Evento disparado pelos CTAs da landing para abrir o checkout de um plano. */
-export const CHECKOUT_EVENT = "jps:checkout";
+const PIX_PENDING_KEY = "jogador-pro-pix-pending";
+const PIX_POLL_MS = 4000;
+const PIX_POLL_MAX_MS = 20 * 60 * 1000;
 
-export function dispararCheckout(plano?: string, iniciar = true) {
-  window.dispatchEvent(new CustomEvent(CHECKOUT_EVENT, { detail: { plano, iniciar } }));
-}
+/** Evento disparado pelos CTAs da landing para destacar um plano. */
+export const CHECKOUT_EVENT = "jps:checkout";
 
 export function rolarParaOferta() {
   const alvo = document.getElementById("pagamento") ?? document.getElementById("oferta");
@@ -48,33 +51,50 @@ export async function buscarCupomAtivo(codigo: string) {
   return porAfiliado.data;
 }
 
+export type CheckoutSlots = {
+  dados: ReactNode;
+  pagamento: ReactNode;
+  cupom: ReactNode;
+  cta: ReactNode;
+  desconto: number;
+  cupomCode: string | null;
+};
+
 type Props = {
   planoInicial?: string | undefined;
   refCode?: string | undefined;
   abrirAoMontar?: boolean | undefined;
-  variant?: "embed" | "page";
   onPlanoChange?: (plano: string) => void;
   onCupomChange?: (discount: number, code: string | null) => void;
+  children?: (slots: CheckoutSlots) => ReactNode;
 };
 
 export function CheckoutOferta({
   planoInicial,
   refCode,
   abrirAoMontar,
-  variant = "embed",
   onPlanoChange,
   onCupomChange,
+  children,
 }: Props) {
   const { refreshEntitlement, logado, state, email, authReady } = usePlayer();
   const navigate = useNavigate();
-  const page = variant === "page";
-  const [escolhido, setEscolhido] = useState(planoInicial ?? "semestral");
+  const page = true;
+  const [escolhido, setEscolhido] = useState(planoInicial ?? PLANO_PADRAO);
   const [mostrarBrick, setMostrarBrick] = useState(false);
-  const [pendingPix, setPendingPix] = useState(false);
+  const [pendingPix, setPendingPix] = useState(() => {
+    try {
+      return sessionStorage.getItem(PIX_PENDING_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const [cupomAplicado, setCupomAplicado] = useState<{ code: string; discount: number } | null>(null);
   const [cupomDraft, setCupomDraft] = useState("");
   const [cupomErro, setCupomErro] = useState<string | null>(null);
   const [aplicandoCupom, setAplicandoCupom] = useState(false);
+  const [docs, setDocs] = useState<{ cpf: string | null; phone: string | null } | null>(null);
+  const docsProntos = !logado || docs !== null;
 
   useEffect(() => {
     if (planoInicial) setEscolhido(planoInicial);
@@ -89,6 +109,24 @@ export function CheckoutOferta({
   }, [cupomAplicado, onCupomChange]);
 
   useEffect(() => {
+    if (!logado) {
+      setDocs(null);
+      return;
+    }
+    let cancel = false;
+    void supabase.auth.getUser().then(async ({ data }) => {
+      const id = data.user?.id;
+      if (!id) return;
+      const { data: perfil } = await supabase.from("profiles").select("cpf, phone").eq("id", id).maybeSingle();
+      if (cancel) return;
+      setDocs({ cpf: perfil?.cpf ?? null, phone: perfil?.phone ?? null });
+    });
+    return () => {
+      cancel = true;
+    };
+  }, [logado]);
+
+  useEffect(() => {
     if (!refCode || !codigoValido(refCode)) return;
     try {
       sessionStorage.setItem("jogador-pro-affiliate-ref", refCode);
@@ -100,6 +138,22 @@ export function CheckoutOferta({
       if (achado) setCupomAplicado({ code: achado.code, discount: achado.discount_percent });
     });
   }, [refCode]);
+
+  const marcarPixPendente = useCallback((ativo: boolean) => {
+    setPendingPix(ativo);
+    try {
+      if (ativo) sessionStorage.setItem(PIX_PENDING_KEY, "1");
+      else sessionStorage.removeItem(PIX_PENDING_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const irParaPro = useCallback(() => {
+    marcarPixPendente(false);
+    toast.success("Acesso PRO liberado");
+    void navigate({ to: "/bem-vindo-pro", replace: true });
+  }, [marcarPixPendente, navigate]);
 
   const aplicarCupomManual = async () => {
     setCupomErro(null);
@@ -117,7 +171,7 @@ export function CheckoutOferta({
       }
       setCupomAplicado({ code: achado.code, discount: achado.discount_percent });
       setCupomDraft("");
-      toast.success(`${achado.code} aplicado · ${achado.discount}% off`);
+      toast.success(`${achado.code} aplicado · ${achado.discount_percent}% off`);
     } finally {
       setAplicandoCupom(false);
     }
@@ -135,7 +189,14 @@ export function CheckoutOferta({
       });
     }
     setMostrarBrick(true);
+    void registrarCheckoutIntent(plano).catch(() => {
+      toast.message("Não deu para registrar o checkout", { description: "Você ainda pode pagar normalmente." });
+    });
   }, []);
+
+  const precisaDocs = Boolean(
+    logado && docs && (!cpfValido(docs.cpf ?? "") || !phoneValido(docs.phone ?? "")),
+  );
 
   const pendenteRef = useRef<string | null>(null);
   const iniciarCheckout = useCallback(
@@ -150,13 +211,13 @@ export function CheckoutOferta({
         void navigate({ to: "/app" });
         return;
       }
-      if (!logado) {
-        void navigate({ to: "/auth", search: { from: "planos", plano: alvo } });
+      if (!logado || precisaDocs) {
+        document.getElementById("checkout-dados")?.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
       abrirBrick(alvo);
     },
-    [escolhido, authReady, logado, state.assinante, navigate, abrirBrick],
+    [escolhido, authReady, logado, precisaDocs, state.assinante, navigate, abrirBrick],
   );
 
   useEffect(() => {
@@ -181,17 +242,44 @@ export function CheckoutOferta({
 
   const autoRef = useRef(false);
   useEffect(() => {
-    if (abrirAoMontar && authReady && logado && !state.assinante && !autoRef.current) {
+    if (abrirAoMontar && authReady && logado && !state.assinante && docsProntos && !precisaDocs && !autoRef.current) {
       autoRef.current = true;
       abrirBrick(escolhido);
       rolarParaOferta();
     }
-  }, [abrirAoMontar, authReady, logado, state.assinante, abrirBrick, escolhido]);
+  }, [abrirAoMontar, authReady, logado, state.assinante, docsProntos, precisaDocs, abrirBrick, escolhido]);
+
+  useEffect(() => {
+    if (!pendingPix || !logado || state.assinante) return;
+    const iniciado = Date.now();
+    const poll = () => {
+      if (Date.now() - iniciado > PIX_POLL_MAX_MS) return;
+      void refreshEntitlement();
+    };
+    poll();
+    const id = window.setInterval(poll, PIX_POLL_MS);
+    const onVisivel = () => {
+      if (document.visibilityState === "visible") poll();
+    };
+    document.addEventListener("visibilitychange", onVisivel);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisivel);
+    };
+  }, [pendingPix, logado, state.assinante, refreshEntitlement]);
+
+  useEffect(() => {
+    if (pendingPix && state.assinante) irParaPro();
+  }, [pendingPix, state.assinante, irParaPro]);
 
   const precoLabel = PLANOS_ASSINATURA.find((p) => p.id === escolhido)?.preco;
 
+  const onDados = (dados: CheckoutDados) => {
+    setDocs({ cpf: dados.cpf, phone: dados.phone });
+  };
+
   const cupomCampo = (
-    <div className={cn("mb-4", page ? "text-left" : "mx-auto max-w-sm")}>
+    <div className={cn(page ? "text-left" : "mx-auto mb-4 max-w-sm")}>
       <label htmlFor="cupom-checkout" className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
         <Tag className="h-3.5 w-3.5" />
         Cupom de desconto
@@ -212,7 +300,7 @@ export function CheckoutOferta({
           }}
           placeholder="PRO10"
           autoCapitalize="characters"
-          className="h-11 rounded-full bg-background uppercase"
+          className="h-11 bg-background uppercase"
         />
         <Button
           type="button"
@@ -233,33 +321,157 @@ export function CheckoutOferta({
     </div>
   );
 
+  const pixBanner = pendingPix ? (
+    <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-center">
+      <Clock className="mx-auto h-6 w-6 text-primary" />
+      <p className="mt-2 text-sm font-extrabold text-foreground">Aguardando o Pix</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Mantenha o QR ou o código visível. Confirmamos sozinhos em alguns segundos.
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-3"
+        onClick={() => {
+          void refreshEntitlement().then(() => toast.message("Status atualizado"));
+        }}
+      >
+        Já paguei — atualizar agora
+      </Button>
+    </div>
+  ) : null;
+
+  const authBlock = (
+    <CheckoutAuth
+      plano={escolhido}
+      hideSubmit={page}
+      formId="checkout-dados"
+      inicial={logado && precisaDocs ? "completar" : "cadastro"}
+      onDados={onDados}
+      onAuthenticated={() => abrirBrick(escolhido)}
+    />
+  );
+
+  const dados: ReactNode =
+    state.assinante ? (
+      <p className="text-sm text-muted-foreground">Sua assinatura PRO já está ativa.</p>
+    ) : !logado || precisaDocs ? (
+      authBlock
+    ) : (
+      <p className="text-sm text-muted-foreground">
+        Logado como <span className="font-semibold text-foreground">{email}</span>
+      </p>
+    );
+
+  const pagamento: ReactNode = state.assinante ? (
+    <Button asChild size="lg" className="h-12 w-full font-extrabold">
+      <Link to="/app">Ir para o app</Link>
+    </Button>
+  ) : mostrarBrick || pendingPix ? (
+    <>
+      {pixBanner}
+      <MercadoPagoCheckout
+        planoId={escolhido}
+        email={email}
+        cpf={docs?.cpf ?? null}
+        couponCode={cupomAplicado?.code ?? null}
+        discountPercent={cupomAplicado?.discount ?? 0}
+        onApproved={() => {
+          void refreshEntitlement().then(() => irParaPro());
+        }}
+        onPending={() => {
+          marcarPixPendente(true);
+          void refreshEntitlement();
+        }}
+      />
+    </>
+  ) : (
+    <p className="text-sm text-muted-foreground">
+      Pix à vista ou cartão em até 12x. O Mercado Pago abre ao finalizar o pedido.
+    </p>
+  );
+
+  const cta: ReactNode = state.assinante ? (
+    <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
+      <Link to="/app">Você já é PRO — ir para o app</Link>
+    </Button>
+  ) : !logado || precisaDocs ? (
+    <Button type="submit" form="checkout-dados" size="lg" className="h-14 w-full text-base font-extrabold">
+      Finalizar pedido
+    </Button>
+  ) : mostrarBrick || pendingPix ? (
+    <Button
+      type="button"
+      size="lg"
+      variant="outline"
+      className="h-14 w-full text-base font-extrabold"
+      onClick={() => document.getElementById("pagamento")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+    >
+      Conclua o pagamento ao lado
+    </Button>
+  ) : (
+    <Button
+      type="button"
+      size="lg"
+      disabled={!authReady}
+      className="h-14 w-full text-base font-extrabold"
+      onClick={() => iniciarCheckout()}
+    >
+      {!authReady ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando seu checkout…
+        </>
+      ) : (
+        <>Finalizar pedido — {precoLabel}</>
+      )}
+    </Button>
+  );
+
+  if (children) {
+    return (
+      <>
+        {children({
+          dados,
+          pagamento,
+          cupom: cupomCampo,
+          cta,
+          desconto: cupomAplicado?.discount ?? 0,
+          cupomCode: cupomAplicado?.code ?? null,
+        })}
+      </>
+    );
+  }
+
   return (
     <div id="pagamento" className={page ? "scroll-mt-24" : "mt-8"}>
       <div className={cn("w-full", page ? "" : "mx-auto max-w-xl")}>
-        {cupomCampo}
+        {page ? null : cupomCampo}
 
         {state.assinante ? (
           <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
             <Link to="/app">Você já é PRO — ir para o app</Link>
           </Button>
-        ) : pendingPix ? (
-          <div className="rounded-[1.5rem] border border-primary/30 bg-card p-5 text-center shadow-soft">
-            <Clock className="mx-auto h-8 w-8 text-primary" />
-            <p className="mt-3 text-base font-extrabold text-foreground">Aguardando confirmação do Pix</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Assim que o Mercado Pago confirmar, seu acesso PRO libera automaticamente.
-            </p>
-            <Button
-              variant="outline"
-              className="mt-4 w-full"
-              onClick={() => {
-                void refreshEntitlement().then(() => toast.message("Status atualizado"));
+        ) : !logado || precisaDocs ? (
+          authBlock
+        ) : mostrarBrick || pendingPix ? (
+          <>
+            {pixBanner}
+            <MercadoPagoCheckout
+              planoId={escolhido}
+              email={email}
+              cpf={docs?.cpf ?? null}
+              couponCode={cupomAplicado?.code ?? null}
+              discountPercent={cupomAplicado?.discount ?? 0}
+              onApproved={() => {
+                void refreshEntitlement().then(() => irParaPro());
               }}
-            >
-              Já paguei — atualizar status
-            </Button>
-          </div>
-        ) : !mostrarBrick ? (
+              onPending={() => {
+                marcarPixPendente(true);
+                void refreshEntitlement();
+              }}
+            />
+          </>
+        ) : (
           <>
             <p className={cn("mb-2 text-xs font-semibold text-muted-foreground", !page && "text-center")}>
               {CAMPANHA.pagamento}
@@ -274,36 +486,14 @@ export function CheckoutOferta({
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando seu checkout…
                 </>
-              ) : logado ? (
-                <>Pagar com Mercado Pago — {precoLabel}</>
               ) : (
-                <>
-                  {page ? "Entrar e pagar" : CAMPANHA.oferta.cta} — {precoLabel}
-                </>
+                <>Pagar com Mercado Pago — {precoLabel}</>
               )}
             </Button>
             <p className={cn("mt-2 text-xs text-muted-foreground", !page && "text-center")}>
               {CAMPANHA.garantia.curta}
             </p>
           </>
-        ) : (
-          <MercadoPagoCheckout
-            planoId={escolhido}
-            email={email}
-            couponCode={cupomAplicado?.code ?? null}
-            discountPercent={cupomAplicado?.discount ?? 0}
-            onApproved={() => {
-              void refreshEntitlement().then(() => {
-                toast.success("Acesso PRO liberado");
-                void navigate({ to: "/bem-vindo-pro", replace: true });
-              });
-            }}
-            onPending={() => {
-              setPendingPix(true);
-              setMostrarBrick(false);
-              void refreshEntitlement();
-            }}
-          />
         )}
 
         {page ? null : (
@@ -315,7 +505,7 @@ export function CheckoutOferta({
             <p>
               {logado
                 ? "Checkout transparente (cartão e Pix). Acesso liberado após aprovação."
-                : "Você criará a conta antes do pagamento — e voltamos direto ao checkout."}
+                : "Crie a conta aqui mesmo — o pagamento abre em seguida."}
             </p>
           </div>
         )}

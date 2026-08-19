@@ -52,9 +52,13 @@ function OnboardingPage() {
   const [posicao, setPosicao] = useState("qualquer");
 
   useEffect(() => {
-    if (hydrated && state.onboardingDone) {
-      if (state.assinante) void navigate({ to: "/app" });
-      else void navigate({ to: "/planos", search: { from: "onboarding" } });
+    if (!hydrated) return;
+    if (!state.assinante) {
+      void navigate({ to: "/", search: { from: "onboarding" }, hash: "oferta" });
+      return;
+    }
+    if (state.onboardingDone) {
+      void navigate({ to: "/app" });
     }
   }, [hydrated, state.onboardingDone, state.assinante, navigate]);
 
@@ -66,21 +70,11 @@ function OnboardingPage() {
     }
     completeOnboarding({ nome, objetivo, disponibilidade, posicao });
     trackMetaCustom("CompleteOnboarding", { objetivo, disponibilidade, posicao });
-    if (state.assinante) {
-      void navigate({
-        to: "/treino/$treinoId",
-        params: { treinoId: primeiroTreino.id },
-        search: { plano: "1-1" },
-      });
-    } else {
-      void navigate({
-        to: "/planos",
-        search: {
-          from: "onboarding",
-          teaser: `${primeiroTreino.nome} — seu Dia 1 está pronto após a assinatura`,
-        },
-      });
-    }
+    void navigate({
+      to: "/treino/$treinoId",
+      params: { treinoId: primeiroTreino.id },
+      search: { plano: "1-1" },
+    });
   };
 
   return (
@@ -175,7 +169,7 @@ function OnboardingPage() {
                 <p className="mt-1 text-xs text-muted-foreground">{primeiroTreino.descricao}</p>
                 <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
                   <Timer className="h-3.5 w-3.5 text-primary" />
-                  {primeiroTreino.duracaoMin} min · liberado após assinar
+                  {primeiroTreino.duracaoMin} min · já incluso no seu PRO
                 </p>
               </div>
             </>
@@ -188,7 +182,7 @@ function OnboardingPage() {
           disabled={step === 0 && nome.trim().length < 2}
           onClick={next}
         >
-          {step === 3 ? "Ver planos e começar" : "Continuar"}
+          {step === 3 ? "Começar meu 1º treino" : "Continuar"}
         </Button>
       </div>
     </PageFrame>

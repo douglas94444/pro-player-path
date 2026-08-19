@@ -1,10 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
+import { createAdminClient, requireUser } from "../_shared/auth.ts";
 
 type Body = {
   action?: "cancel" | "pause" | "resume" | "downgrade_mensal";
@@ -13,76 +9,80 @@ type Body = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method === "OPTIONS") return optionsResponse();
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
-    }
+    const auth = await requireUser(req);
+    if (auth instanceof Response) return auth;
+    const { user } = auth;
 
     const body = (await req.json().catch(() => ({}))) as Body;
     const action = body.action ?? "cancel";
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const admin = createAdminClient();
 
     if (action === "pause") {
+      const { data: perfil } = await admin
+        .from("profiles")
+        .select("assinante, assinante_until, paused_until, pause_used_at")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!perfil?.assinante) return jsonResponse({ error: "not_subscriber" }, 400);
+      if (perfil.paused_until && new Date(perfil.paused_until).getTime() > Date.now()) {
+        return jsonResponse({ error: "already_paused" }, 400);
+      }
+      if (perfil.pause_used_at) {
+        const used = new Date(perfil.pause_used_at).getTime();
+        const until = perfil.assinante_until ? new Date(perfil.assinante_until).getTime() : 0;
+        if (!until || used < until) return jsonResponse({ error: "pause_already_used" }, 400);
+      }
+
       const dias = Math.min(30, Math.max(1, Number(body.dias) || 7));
       const until = new Date();
-      until.setDate(until.getDate() + dias);
+      until.setUTCDate(until.getUTCDate() + dias);
       const { error } = await admin
         .from("profiles")
         .update({
           paused_until: until.toISOString(),
           pause_reason: body.motivo ?? "save_offer",
+          pause_used_at: new Date().toISOString(),
         })
         .eq("id", user.id);
       if (error) throw error;
-      return new Response(JSON.stringify({ ok: true, action, paused_until: until.toISOString() }), {
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ ok: true, action, paused_until: until.toISOString() });
     }
 
     if (action === "resume") {
+      const { data: perfil } = await admin
+        .from("profiles")
+        .select("paused_until, pause_used_at, assinante_until")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      let assinanteUntil = perfil?.assinante_until ?? null;
+      if (perfil?.paused_until && perfil.pause_used_at) {
+        const pausedStart = new Date(perfil.pause_used_at).getTime();
+        const pausedEnd = Math.min(Date.now(), new Date(perfil.paused_until).getTime());
+        const elapsedMs = Math.max(0, pausedEnd - pausedStart);
+        if (assinanteUntil && elapsedMs > 0) {
+          assinanteUntil = new Date(new Date(assinanteUntil).getTime() + elapsedMs).toISOString();
+        }
+      }
+
       const { error } = await admin
         .from("profiles")
-        .update({ paused_until: null, pause_reason: null })
+        .update({
+          paused_until: null,
+          pause_reason: null,
+          ...(assinanteUntil ? { assinante_until: assinanteUntil } : {}),
+        })
         .eq("id", user.id);
       if (error) throw error;
-      return new Response(JSON.stringify({ ok: true, action }), {
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ ok: true, action });
     }
 
     if (action === "downgrade_mensal") {
       const { data: perfil } = await admin.from("profiles").select("assinante, plano").eq("id", user.id).maybeSingle();
-      if (!perfil?.assinante) {
-        return new Response(JSON.stringify({ error: "not_subscriber" }), {
-          status: 400,
-          headers: { ...cors, "Content-Type": "application/json" },
-        });
-      }
+      if (!perfil?.assinante) return jsonResponse({ error: "not_subscriber" }, 400);
       const { error } = await admin
         .from("profiles")
         .update({
@@ -93,9 +93,7 @@ Deno.serve(async (req) => {
         })
         .eq("id", user.id);
       if (error) throw error;
-      return new Response(JSON.stringify({ ok: true, action, plano: "mensal" }), {
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ ok: true, action, plano: "mensal" });
     }
 
     await admin
@@ -103,6 +101,7 @@ Deno.serve(async (req) => {
       .update({
         assinante: false,
         plano: null,
+        assinante_until: null,
         mp_payment_id: null,
         paused_until: null,
         pause_reason: null,
@@ -111,14 +110,9 @@ Deno.serve(async (req) => {
       })
       .eq("id", user.id);
 
-    return new Response(JSON.stringify({ ok: true, action: "cancel" }), {
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ ok: true, action: "cancel" });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "error" }), {
-      status: 500,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: error instanceof Error ? error.message : "error" }, 500);
   }
 });

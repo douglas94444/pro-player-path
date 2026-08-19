@@ -13,17 +13,17 @@
  */
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://sdk.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://sdk.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com https://http2.mlstatic.com https://*.mlstatic.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https://*.supabase.co https://videos.pexels.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graph.facebook.com https://connect.facebook.net https://api.mercadopago.com https://*.mercadopago.com https://*.lovable.app https://*.lovable.dev https://*.lovableproject.com",
-  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://*.mercadopago.com https://*.mercadolibre.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://graph.facebook.com https://connect.facebook.net https://www.facebook.com https://*.facebook.com https://api.mercadopago.com https://events.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com https://http2.mlstatic.com https://*.mlstatic.com https://*.lovable.app https://*.lovable.dev https://*.lovableproject.com",
+  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.facebook.com https://*.facebook.com https://*.mercadopago.com https://*.mercadolibre.com",
   "frame-ancestors 'self' https://*.lovable.app https://*.lovable.dev https://lovable.dev https://*.lovableproject.com",
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  "form-action 'self' https://www.facebook.com https://*.mercadopago.com",
   "upgrade-insecure-requests",
 ].join("; ");
 
@@ -31,7 +31,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
   "content-security-policy": CSP,
   "x-content-type-options": "nosniff",
   "referrer-policy": "strict-origin-when-cross-origin",
-  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(self), usb=()",
   "strict-transport-security": "max-age=31536000; includeSubDomains",
   "cross-origin-opener-policy": "same-origin-allow-popups",
 };

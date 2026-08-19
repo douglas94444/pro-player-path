@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BemVindoProRouteImport } from './routes/bem-vindo-pro'
 import { Route as BibliotecaRouteImport } from './routes/biblioteca'
 import { Route as CampanhaRouteImport } from './routes/campanha'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as EscolinhasRouteImport } from './routes/escolinhas'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PerfilRouteImport } from './routes/perfil'
@@ -65,6 +66,11 @@ const BibliotecaRoute = BibliotecaRouteImport.update({
 const CampanhaRoute = CampanhaRouteImport.update({
   id: '/campanha',
   path: '/campanha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EscolinhasRoute = EscolinhasRouteImport.update({
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
+  '/checkout': typeof CheckoutRoute
   '/escolinhas': typeof EscolinhasRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
+  '/checkout': typeof CheckoutRoute
   '/escolinhas': typeof EscolinhasRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/bem-vindo-pro': typeof BemVindoProRoute
   '/biblioteca': typeof BibliotecaRoute
   '/campanha': typeof CampanhaRoute
+  '/checkout': typeof CheckoutRoute
   '/escolinhas': typeof EscolinhasRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
+    | '/checkout'
     | '/escolinhas'
     | '/onboarding'
     | '/perfil'
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
+    | '/checkout'
     | '/escolinhas'
     | '/onboarding'
     | '/perfil'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/bem-vindo-pro'
     | '/biblioteca'
     | '/campanha'
+    | '/checkout'
     | '/escolinhas'
     | '/onboarding'
     | '/perfil'
@@ -297,6 +309,7 @@ export interface RootRouteChildren {
   BemVindoProRoute: typeof BemVindoProRoute
   BibliotecaRoute: typeof BibliotecaRoute
   CampanhaRoute: typeof CampanhaRoute
+  CheckoutRoute: typeof CheckoutRoute
   EscolinhasRoute: typeof EscolinhasRoute
   OnboardingRoute: typeof OnboardingRoute
   PerfilRoute: typeof PerfilRoute
@@ -357,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: '/campanha'
       fullPath: '/campanha'
       preLoaderRoute: typeof CampanhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/escolinhas': {
@@ -495,6 +515,7 @@ const rootRouteChildren: RootRouteChildren = {
   BemVindoProRoute: BemVindoProRoute,
   BibliotecaRoute: BibliotecaRoute,
   CampanhaRoute: CampanhaRoute,
+  CheckoutRoute: CheckoutRoute,
   EscolinhasRoute: EscolinhasRoute,
   OnboardingRoute: OnboardingRoute,
   PerfilRoute: PerfilRoute,

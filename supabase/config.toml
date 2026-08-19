@@ -1,1 +1,31 @@
 project_id = "zuqjyxcjftrtrhqxuvfq"
+
+[functions.process-payment]
+verify_jwt = true
+
+[functions.cancel-subscription]
+verify_jwt = true
+
+[functions.ensure-admin-role]
+verify_jwt = true
+
+[functions.mercadopago-webhook]
+verify_jwt = false
+
+[functions.send-winback]
+verify_jwt = false
+
+[functions.send-streak-reminder]
+verify_jwt = false
+
+[functions.send-checkout-recovery]
+verify_jwt = false
+
+[functions.meta-capi]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

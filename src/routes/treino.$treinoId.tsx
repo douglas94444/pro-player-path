@@ -197,7 +197,7 @@ function TreinoPage() {
             </li>
             <li className="flex gap-2">
               <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              Plano completo de 4 semanas + biblioteca
+              Plano completo de 12 meses + biblioteca
             </li>
             <li className="flex gap-2">
               <Zap className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -209,7 +209,7 @@ function TreinoPage() {
             className="mt-6 h-12 w-full font-extrabold"
             onClick={() =>
               void navigate({
-                to: "/planos",
+                to: "/checkout",
                 search: { from: `treino:${treino.id}`, teaser },
               })
             }
@@ -217,7 +217,7 @@ function TreinoPage() {
             Assinar e desbloquear
           </Button>
           <Button asChild variant="ghost" className="mt-2 w-full">
-            <Link to="/planos" search={{ from: `treino:${treino.id}` }}>
+            <Link to="/" search={{ from: `treino:${treino.id}` }} hash="oferta">
               Ver planos
             </Link>
           </Button>

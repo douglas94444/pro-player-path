@@ -32,6 +32,34 @@ export type Database = {
         }
         Relationships: []
       }
+      checkout_intents: {
+        Row: {
+          last_seen_at: string
+          plano: string
+          purchased_at: string | null
+          recovered_at: string | null
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          plano: string
+          purchased_at?: string | null
+          recovered_at?: string | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          plano?: string
+          purchased_at?: string | null
+          recovered_at?: string | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           active: boolean
@@ -177,17 +205,22 @@ export type Database = {
         Row: {
           affiliate_code: string | null
           assinante: boolean
+          assinante_until: string | null
           cancel_reason: string | null
           cancelled_at: string | null
           created_at: string
+          cpf: string | null
           disponibilidade: string | null
           id: string
           mp_payer_id: string | null
           mp_payment_id: string | null
           nome: string
           objetivo: string | null
+          onboarding_done: boolean
           pause_reason: string | null
+          pause_used_at: string | null
           paused_until: string | null
+          phone: string | null
           plano: string | null
           posicao: string | null
           referred_by: string | null
@@ -201,17 +234,22 @@ export type Database = {
         Insert: {
           affiliate_code?: string | null
           assinante?: boolean
+          assinante_until?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
           created_at?: string
+          cpf?: string | null
           disponibilidade?: string | null
           id: string
           mp_payer_id?: string | null
           mp_payment_id?: string | null
           nome?: string
           objetivo?: string | null
+          onboarding_done?: boolean
           pause_reason?: string | null
+          pause_used_at?: string | null
           paused_until?: string | null
+          phone?: string | null
           plano?: string | null
           posicao?: string | null
           referred_by?: string | null
@@ -225,17 +263,22 @@ export type Database = {
         Update: {
           affiliate_code?: string | null
           assinante?: boolean
+          assinante_until?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
           created_at?: string
+          cpf?: string | null
           disponibilidade?: string | null
           id?: string
           mp_payer_id?: string | null
           mp_payment_id?: string | null
           nome?: string
           objetivo?: string | null
+          onboarding_done?: boolean
           pause_reason?: string | null
+          pause_used_at?: string | null
           paused_until?: string | null
+          phone?: string | null
           plano?: string | null
           posicao?: string | null
           referred_by?: string | null
@@ -423,6 +466,8 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      acesso_pro_ativo: { Args: never; Returns: boolean }
+      redeem_coupon: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

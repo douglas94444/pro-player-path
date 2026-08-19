@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageFrame } from "@/components/PageFrame";
 import { trackMetaDedup } from "@/lib/meta-pixel";
+import { checkoutEmailRedirect, isCheckoutAuthFrom, traduzErroAuth } from "@/lib/checkout";
+import { acessoProAtivo } from "@/lib/acesso";
+import { forcaSenha } from "@/lib/auth-ui";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export type AuthSearch = {
@@ -39,15 +42,16 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-function forcaSenha(senha: string) {
-  let pontos = 0;
-  if (senha.length >= 8) pontos++;
-  if (senha.length >= 12) pontos++;
-  if (/[a-z]/.test(senha) && /[A-Z]/.test(senha)) pontos++;
-  if (/\d/.test(senha)) pontos++;
-  if (/[^A-Za-z0-9]/.test(senha)) pontos++;
-  const nivel = Math.min(3, Math.max(1, Math.ceil(pontos / 2)));
-  return { nivel, label: nivel === 1 ? "Fraca" : nivel === 2 ? "Média" : "Forte" };
+async function perfilTemAcessoPro() {
+  const { data } = await supabase.auth.getUser();
+  const userId = data.user?.id;
+  if (!userId) return false;
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("assinante, assinante_until, paused_until")
+    .eq("id", userId)
+    .maybeSingle();
+  return acessoProAtivo(perfil?.assinante ?? false, perfil?.assinante_until, perfil?.paused_until);
 }
 
 function ForcaSenha({ senha }: { senha: string }) {
@@ -73,21 +77,12 @@ function ForcaSenha({ senha }: { senha: string }) {
   );
 }
 
-function traduzErroAuth(mensagem: string) {
-  const m = mensagem.toLowerCase();
-  if (m.includes("already registered") || m.includes("user already"))
-    return "Este e-mail já tem conta. Faça login ou use “Esqueci minha senha”.";
-  if (m.includes("invalid login credentials")) return "E-mail ou senha incorretos.";
-  if (m.includes("email not confirmed")) return "Confirme seu e-mail antes de entrar.";
-  if (m.includes("password should be")) return "Senha muito curta. Use pelo menos 8 caracteres.";
-  if (m.includes("rate limit") || m.includes("too many")) return "Muitas tentativas. Aguarde alguns minutos.";
-  return mensagem;
-}
-
 function AuthPage() {
   const navigate = useNavigate();
   const { from, plano } = Route.useSearch();
-  const [modo, setModo] = useState<"login" | "cadastro" | "recuperar">(from === "pos-treino" ? "cadastro" : "login");
+  const [modo, setModo] = useState<"login" | "cadastro" | "recuperar">(
+    isCheckoutAuthFrom(from) || from === "pos-treino" ? "cadastro" : "login",
+  );
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -113,7 +108,10 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password: senha,
-          options: { emailRedirectTo: window.location.origin, data: { nome } },
+          options: {
+            emailRedirectTo: checkoutEmailRedirect(window.location.origin, plano),
+            data: { nome },
+          },
         });
         if (error) throw error;
         if (data.user && (data.user.identities?.length ?? 0) === 0) {
@@ -122,7 +120,11 @@ function AuthPage() {
         }
         trackMetaDedup("CompleteRegistration", { content_name: "email_signup", status: true });
         if (!data.session) {
-          setMsg("Conta criada! Confirme o e-mail que enviamos para começar a treinar.");
+          setMsg(
+            isCheckoutAuthFrom(from)
+              ? "Conta criada. Confirme o e-mail — o link volta direto para o pagamento."
+              : "Conta criada! Confirme o e-mail que enviamos para começar a treinar.",
+          );
           return;
         }
       } else {
@@ -130,9 +132,9 @@ function AuthPage() {
         if (error) throw error;
       }
 
-      if (from === "planos") {
+      if (isCheckoutAuthFrom(from)) {
         await navigate({
-          to: "/planos",
+          to: "/checkout",
           search: {
             from: "auth",
             ...(plano ? { plano } : {}),
@@ -143,6 +145,16 @@ function AuthPage() {
       }
       if (from === "admin") {
         await navigate({ to: "/admin" });
+        return;
+      }
+      if (!(await perfilTemAcessoPro())) {
+        await navigate({
+          to: "/checkout",
+          search: {
+            from: "auth",
+            ...(plano ? { plano } : {}),
+          },
+        });
         return;
       }
       await navigate({ to: "/app" });
@@ -157,12 +169,22 @@ function AuthPage() {
   return (
     <PageFrame max="sm" className="justify-center">
       <div className="w-full rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-soft-lg sm:p-8">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Voltar
-        </Link>
+        {isCheckoutAuthFrom(from) ? (
+          <Link
+            to="/checkout"
+            search={{ from: "auth", checkout: "1", ...(plano ? { plano } : {}) }}
+            className="mb-6 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Voltar ao pagamento
+          </Link>
+        ) : (
+          <Link
+            to="/"
+            className="mb-6 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Voltar
+          </Link>
+        )}
 
 
         <h1 className="text-2xl font-extrabold leading-tight text-foreground sm:text-3xl">
@@ -171,8 +193,8 @@ function AuthPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           {modo === "recuperar"
             ? "Informe o e-mail da sua conta e enviaremos um link para criar uma nova senha."
-            : from === "planos"
-            ? "Entre para continuar o checkout da assinatura PRO."
+            : isCheckoutAuthFrom(from)
+            ? "Crie sua conta ou entre para continuar o pagamento no Mercado Pago."
             : from === "admin"
               ? "Entre com uma conta admin para acessar o painel."
               : from === "pos-treino"

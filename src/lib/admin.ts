@@ -29,7 +29,7 @@ export type AdminPaymentRow = {
   plano: string | null;
   stripe_event_id: string | null;
   created_at: string;
-  payload: unknown;
+  payload: Record<string, unknown> | null;
 };
 
 export async function ensureAdminRole(): Promise<"admin" | "user"> {
@@ -229,6 +229,20 @@ export async function fetchAdminPayments() {
     .limit(200);
   if (error) throw error;
   return (data ?? []) as AdminPaymentRow[];
+}
+
+export function exportFunilCsv(rows: FunilUtmRow[]) {
+  const header = "source,checkouts,aprovados,d0,d7,d0_rate,d7_rate";
+  const lines = rows.map((r) =>
+    [r.source.replaceAll(",", " "), r.checkouts, r.aprovados, r.d0, r.d7, r.d0Rate, r.d7Rate].join(","),
+  );
+  const blob = new Blob([`${header}\n${lines.join("\n")}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `funil-utm-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export async function updateAdminUser(

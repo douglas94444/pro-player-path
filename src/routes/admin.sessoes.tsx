@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminShell } from "@/components/AdminShell";
-import { fetchAdminSessoes, type AdminSessaoRow } from "@/lib/admin";
+import { fetchAdminSessoes } from "@/lib/admin";
+import { useAdminTable } from "@/hooks/use-admin-table";
 import { getTreino } from "@/data/training";
-import { toast } from "sonner";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
 export const Route = createFileRoute("/admin/sessoes")({
@@ -13,15 +13,8 @@ export const Route = createFileRoute("/admin/sessoes")({
 });
 
 function AdminSessoes() {
-  const [rows, setRows] = useState<AdminSessaoRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    void fetchAdminSessoes()
-      .then(setRows)
-      .catch((e) => toast.error(e instanceof Error ? e.message : "Erro ao listar"))
-      .finally(() => setLoading(false));
-  }, []);
+  const loader = useCallback(() => fetchAdminSessoes(), []);
+  const { rows, loading } = useAdminTable(loader);
 
   return (
     <AdminShell title="Sessões" subtitle="Treinos concluídos pelos jogadores">

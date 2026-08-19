@@ -30,7 +30,7 @@ export function PlanosTable({
   const selecionar = (plano: string) => {
     setAtivo(plano);
     onSelecionar?.(plano);
-    window.dispatchEvent(new CustomEvent(CHECKOUT_EVENT, { detail: { plano, iniciar: true } }));
+    window.dispatchEvent(new CustomEvent(CHECKOUT_EVENT, { detail: { plano, iniciar: false } }));
   };
 
   return (
@@ -76,6 +76,9 @@ export function PlanosTable({
             <p className="mt-1 text-4xl font-black tracking-tight text-foreground">{plano.preco}</p>
             <p className="text-sm text-muted-foreground">{plano.periodo}</p>
             <p className="mt-1 text-sm font-bold text-primary">Equivale a {plano.equivalente}</p>
+            {plano.parcelas ? (
+              <p className="mt-1 text-xs text-muted-foreground">{plano.parcelas}</p>
+            ) : null}
 
             <ul className="mt-5 flex-1 space-y-2">
               {plano.inclui.map((item) => (

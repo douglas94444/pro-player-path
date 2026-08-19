@@ -2,6 +2,15 @@ import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
 import { cn } from "@/lib/utils";
 
+export type AppShellProps = {
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  wide?: boolean;
+  hideNav?: boolean;
+};
+
 export function AppShell({
   title,
   subtitle,
@@ -9,16 +18,7 @@ export function AppShell({
   children,
   wide = false,
   hideNav = false,
-}: {
-  title: string;
-  subtitle?: string;
-  action?: ReactNode;
-  children: ReactNode;
-  /** Conteúdo mais largo no desktop (biblioteca, plano). */
-  wide?: boolean;
-  /** Oculta a navegação inferior/lateral (útil para landing pages). */
-  hideNav?: boolean;
-}) {
+}: AppShellProps) {
   return (
     <div className="relative min-h-screen bg-background">
       <a

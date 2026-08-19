@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { urlVideoSegura, MENSAGEM_URL_INVALIDA } from "@/lib/video-url";
 
@@ -28,7 +30,7 @@ const uploadSchema = alvoSchema.extend({
   titulo: z.string().trim().max(200).nullable().optional(),
 });
 
-async function garantirAdmin(supabase: any) {
+async function garantirAdmin(supabase: SupabaseClient<Database>) {
   const { data } = await supabase.rpc("is_admin");
   if (!data) throw new Error("Apenas administradores podem gerenciar vídeos");
 }

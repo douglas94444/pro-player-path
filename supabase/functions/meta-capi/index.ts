@@ -1,12 +1,25 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createUserClient } from "../_shared/auth.ts";
+import { hashIdentifier } from "../_shared/capi.ts";
 
-/** Só os domínios do projeto podem disparar eventos de conversão. */
 const ORIGENS_PERMITIDAS = [
+  /^https:\/\/(www\.)?jogadorprosystem\.com$/,
   /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
   /^https:\/\/[a-z0-9-]+\.lovable\.dev$/,
   /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/,
   /^http:\/\/localhost(:\d+)?$/,
 ];
+
+const EVENTOS_PERMITIDOS = new Set([
+  "PageView",
+  "ViewContent",
+  "Lead",
+  "InitiateCheckout",
+  "AddToCart",
+  "Purchase",
+  "Subscribe",
+  "CompleteRegistration",
+]);
 
 function corsFor(req: Request): Record<string, string> {
   const origin = req.headers.get("origin") ?? "";
@@ -18,7 +31,19 @@ function corsFor(req: Request): Record<string, string> {
   };
 }
 
-/** Meta Conversions API — envia Purchase/Subscribe server-side. */
+async function authorizeCaller(req: Request): Promise<boolean> {
+  const shared = Deno.env.get("META_CAPI_APP_SECRET") ?? "";
+  const auth = req.headers.get("Authorization") ?? "";
+  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  if (shared && token === shared) return true;
+  if (!token) return false;
+  const supabase = createUserClient(auth);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return Boolean(user);
+}
+
 Deno.serve(async (req) => {
   const cors = corsFor(req);
   const json = (body: unknown, status = 200) =>
@@ -31,6 +56,9 @@ Deno.serve(async (req) => {
   if (cors["Access-Control-Allow-Origin"] === "null") {
     return json({ ok: false, error: "origem não permitida" }, 403);
   }
+  if (!(await authorizeCaller(req))) {
+    return json({ ok: false, error: "Unauthorized" }, 401);
+  }
 
   try {
     const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
@@ -41,28 +69,25 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const eventName = String(body.event_name ?? "Purchase");
+    if (!EVENTOS_PERMITIDOS.has(eventName)) {
+      return json({ ok: false, error: "invalid_event" }, 400);
+    }
     const eventId = String(body.event_id ?? crypto.randomUUID());
     const email = typeof body.email === "string" ? body.email.toLowerCase().trim() : undefined;
     const value = Number(body.value ?? 0);
     const currency = String(body.currency ?? "BRL");
     const customData = (body.custom_data ?? {}) as Record<string, unknown>;
 
-    const sha256 = async (valor: string) => {
-      const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(valor));
-      return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
-    };
-
     const userData: Record<string, unknown> = {};
-    if (email) userData.em = [await sha256(email)];
+    if (email) userData.em = [await hashIdentifier(email)];
 
     const phoneRaw = typeof body.phone === "string" ? body.phone.replace(/\D/g, "") : "";
-    if (phoneRaw) userData.ph = [await sha256(phoneRaw)];
+    if (phoneRaw) userData.ph = [await hashIdentifier(phoneRaw)];
 
-    // external_id: aceita valor já hasheado (64 hex) ou em texto puro.
     const externalId = typeof body.external_id === "string" ? body.external_id.trim() : "";
     if (externalId) {
       userData.external_id = [
-        /^[a-f0-9]{64}$/i.test(externalId) ? externalId.toLowerCase() : await sha256(externalId),
+        /^[a-f0-9]{64}$/i.test(externalId) ? externalId.toLowerCase() : await hashIdentifier(externalId),
       ];
     }
 
@@ -74,8 +99,6 @@ Deno.serve(async (req) => {
     if (body.fbp) userData.fbp = body.fbp;
     if (body.fbc) userData.fbc = body.fbc;
 
-    // O Meta rejeita eventos sem identificador de cliente (erro 2804050).
-    // Nesses casos o pixel do navegador já contabilizou o evento.
     const temIdentificador = Boolean(
       userData.em || userData.ph || userData.external_id || userData.fbp || userData.fbc,
     );
@@ -83,9 +106,8 @@ Deno.serve(async (req) => {
       return json({ ok: false, skipped: "no user_data identifiers" });
     }
 
-    const testEventCode = Deno.env.get("META_TEST_EVENT_CODE") ?? body.test_event_code;
+    const testEventCode = Deno.env.get("META_TEST_EVENT_CODE");
 
-    // event_time: aceita o horário real da ação; a Meta rejeita futuro ou >7 dias.
     const agora = Math.floor(Date.now() / 1000);
     const normalizarTempo = (v: unknown, fallback: number) => {
       const n = Number(v);
@@ -108,6 +130,7 @@ Deno.serve(async (req) => {
     }
 
     const payload = {
+      access_token: accessToken,
       data: [
         {
           event_name: eventName,
@@ -117,7 +140,6 @@ Deno.serve(async (req) => {
           event_source_url: body.event_source_url ?? undefined,
           referrer_url: body.referrer_url ?? undefined,
           ...(body.opt_out === true ? { opt_out: true } : {}),
-          // Público brasileiro: LDU não se aplica — array vazio é explícito.
           data_processing_options: [],
           ...(originalEventData ? { original_event_data: originalEventData } : {}),
           user_data: userData,
@@ -132,18 +154,14 @@ Deno.serve(async (req) => {
       ...(testEventCode ? { test_event_code: String(testEventCode) } : {}),
     };
 
-
-
-    const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${accessToken}`;
-    const res = await fetch(url, {
+    const res = await fetch(`https://graph.facebook.com/v21.0/${pixelId}/events`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     const meta = await res.json();
     if (!res.ok) console.error("meta-capi rejected", JSON.stringify(meta));
-    // Sempre 200: falha de tracking nunca deve virar erro de runtime no cliente.
-    return json({ ok: res.ok, meta });
+    return json({ ok: res.ok });
   } catch (error) {
     console.error(error);
     return json({ ok: false, error: error instanceof Error ? error.message : "error" });

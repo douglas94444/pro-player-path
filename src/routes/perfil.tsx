@@ -167,6 +167,11 @@ function PerfilPage() {
         <p className="mt-2 text-lg font-extrabold text-foreground">
           {state.assinante ? `Assinatura ${state.plano}` : "Sem assinatura ativa"}
         </p>
+        {state.assinante && state.assinanteUntil ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Acesso até {new Date(state.assinanteUntil).toLocaleDateString("pt-BR")}
+          </p>
+        ) : null}
         {isPaused && pauseLabel ? (
           <div className="mt-3 rounded-xl border border-primary/30 bg-primary/10 p-3">
             <p className="text-sm font-bold text-foreground">Modo pausa até {pauseLabel}</p>
@@ -190,7 +195,7 @@ function PerfilPage() {
         {state.affiliateCode ? (
           <p className="mt-2 text-xs text-muted-foreground">
             Seu link de indicação:{" "}
-            <span className="font-semibold text-foreground">/planos?ref={state.affiliateCode}</span>
+            <span className="font-semibold text-foreground">/?ref={state.affiliateCode}</span>
             {" · "}cupom afiliado: use o código no checkout (desconto + atribuição).
           </p>
         ) : null}
@@ -268,7 +273,7 @@ function PerfilPage() {
           )
         ) : (
           <Button asChild className="mt-4 h-12 w-full font-extrabold">
-            <Link to="/planos" search={{ from: "perfil" }}>
+            <Link to="/checkout" search={{ from: "perfil" }}>
               Liberar acesso completo
             </Link>
           </Button>

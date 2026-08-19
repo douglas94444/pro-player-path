@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Flame, Clock, Dumbbell, Lock, Trophy, Play } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -50,27 +51,33 @@ function ProgressoPage() {
     progressoSemana,
     logado,
   } = usePlayer();
+  const queryClient = useQueryClient();
 
-  const [scores, setScores] = useState<Score[]>([]);
+  const { data: scores = [] } = useQuery({
+    queryKey: ["weekly-scores"],
+    enabled: logado,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return [] as Score[];
+      const { data: rows, error } = await supabase
+        .from("weekly_scores")
+        .select("week_start, explosao, controle, resistencia, jogou")
+        .eq("user_id", auth.user.id)
+        .order("week_start", { ascending: true })
+        .limit(12);
+      if (error) {
+        toast.error("Não deu para carregar os scores da semana");
+        throw error;
+      }
+      return (rows ?? []) as Score[];
+    },
+  });
   const [explosao, setExplosao] = useState(3);
   const [controle, setControle] = useState(3);
   const [resistencia, setResistencia] = useState(3);
   const [jogou, setJogou] = useState(false);
   const [salvando, setSalvando] = useState(false);
-
-  useEffect(() => {
-    if (!logado) return;
-    void supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: rows } = await supabase
-        .from("weekly_scores")
-        .select("week_start, explosao, controle, resistencia, jogou")
-        .eq("user_id", data.user.id)
-        .order("week_start", { ascending: true })
-        .limit(12);
-      setScores((rows as Score[]) ?? []);
-    });
-  }, [logado]);
 
   const valorDe = (tipo: "treinos" | "streak" | "plano") =>
     tipo === "treinos" ? totalTreinos : tipo === "streak" ? streak : planoConcluidos.length;
@@ -100,12 +107,7 @@ function ProgressoPage() {
         { table: "weekly_scores", op: "upsert", payload, onConflict: "user_id,week_start" },
       );
       if (!ok) return;
-      setScores((prev) => {
-        const rest = prev.filter((s) => s.week_start !== week_start);
-        return [...rest, { week_start, explosao, controle, resistencia, jogou }].sort((a, b) =>
-          a.week_start.localeCompare(b.week_start),
-        );
-      });
+      await queryClient.invalidateQueries({ queryKey: ["weekly-scores"] });
       toast.success("Score da semana salvo");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao salvar");
@@ -124,7 +126,7 @@ function ProgressoPage() {
             Streak, scores no campo e conquistas liberam após assinar.
           </p>
           <Button asChild size="lg" className="mt-6 h-12 w-full font-extrabold">
-            <Link to="/planos" search={{ from: "progresso" }}>
+            <Link to="/" search={{ from: "progresso" }} hash="oferta">
               Ver planos
             </Link>
           </Button>
@@ -135,7 +137,15 @@ function ProgressoPage() {
 
   if (totalTreinos === 0) {
     return (
-      <AppShell title="Sua evolução" subtitle={`Jogador ${nivel}`}>
+      <AppShell
+      title="Sua evolução"
+      subtitle={`Jogador ${nivel}`}
+      action={
+        <Button asChild variant="outline" className="h-10 rounded-full text-xs font-bold">
+          <Link to="/ranking">Ranking</Link>
+        </Button>
+      }
+    >
         <div className="rounded-[1.75rem] border border-dashed border-border bg-card p-8 text-center shadow-soft">
           <Trophy className="mx-auto h-10 w-10 text-primary" />
           <h2 className="mt-4 text-xl font-extrabold text-foreground">Seu placar começa hoje</h2>
@@ -159,7 +169,16 @@ function ProgressoPage() {
   }
 
   return (
-    <AppShell wide title="Sua evolução" subtitle={`Jogador ${nivel}`}>
+    <AppShell
+      wide
+      title="Sua evolução"
+      subtitle={`Jogador ${nivel}`}
+      action={
+        <Button asChild variant="outline" className="h-10 rounded-full text-xs font-bold">
+          <Link to="/ranking">Ranking</Link>
+        </Button>
+      }
+    >
       <section className="rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-soft sm:p-8">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
           <ProgressRing value={progressoSemana} size={140} stroke={12} label="semana" />

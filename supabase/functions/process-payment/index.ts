@@ -1,72 +1,38 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const PLANOS: Record<string, { nome: string; amount: number }> = {
-  mensal: { nome: "Mensal", amount: 47 },
-  semestral: { nome: "Semestral", amount: 147 },
-  anual: { nome: "Anual", amount: 197 },
-};
+import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
+import { createAdminClient, requireUser } from "../_shared/auth.ts";
+import { extenderAcesso } from "../_shared/acesso.ts";
+import { sendCapi, hashIdentifier } from "../_shared/capi.ts";
+import {
+  PLANOS,
+  pickMpPaymentFields,
+  buildIdempotencyKey,
+  paymentBelongsToUser,
+} from "../_shared/mp.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method === "OPTIONS") return optionsResponse();
 
   try {
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     if (!accessToken) {
-      return new Response(JSON.stringify({ error: "MERCADOPAGO_ACCESS_TOKEN not configured" }), {
-        status: 500,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "MERCADOPAGO_ACCESS_TOKEN not configured" }, 500);
     }
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
-    }
+    const auth = await requireUser(req);
+    if (auth instanceof Response) return auth;
+    const { user } = auth;
 
     const body = await req.json();
     const plano = String(body.plano ?? "semestral");
     const cfg = PLANOS[plano];
-    if (!cfg) {
-      return new Response(JSON.stringify({ error: "invalid_plano" }), {
-        status: 400,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
-    }
+    if (!cfg) return jsonResponse({ error: "invalid_plano" }, 400);
 
     const utm = (body.utm ?? {}) as Record<string, string | undefined>;
     let affiliateRef = typeof body.affiliate_ref === "string" ? body.affiliate_ref : null;
     const couponRaw = typeof body.coupon_code === "string" ? body.coupon_code.trim().toUpperCase() : "";
 
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const admin = createAdminClient();
 
     let discountPercent = 0;
     let couponCode: string | null = null;
@@ -76,45 +42,31 @@ Deno.serve(async (req) => {
         .select("code, discount_percent, affiliate_code, active, max_redemptions, redemptions")
         .eq("code", couponRaw)
         .maybeSingle();
-      if (!coupon || !coupon.active) {
-        return new Response(JSON.stringify({ error: "invalid_coupon" }), {
-          status: 400,
-          headers: { ...cors, "Content-Type": "application/json" },
-        });
-      }
+      if (!coupon || !coupon.active) return jsonResponse({ error: "invalid_coupon" }, 400);
       if (coupon.max_redemptions != null && coupon.redemptions >= coupon.max_redemptions) {
-        return new Response(JSON.stringify({ error: "coupon_exhausted" }), {
-          status: 400,
-          headers: { ...cors, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ error: "coupon_exhausted" }, 400);
       }
       discountPercent = coupon.discount_percent;
       couponCode = coupon.code;
       if (!affiliateRef && coupon.affiliate_code) affiliateRef = coupon.affiliate_code;
     }
 
-    const amount = Math.max(
-      1,
-      Math.round(cfg.amount * (1 - discountPercent / 100) * 100) / 100,
-    );
+    const amount = Math.max(1, Math.round(cfg.amount * (1 - discountPercent / 100) * 100) / 100);
 
-    const formData = { ...(body.formData ?? body) };
-    delete formData.plano;
-    delete formData.utm;
-    delete formData.affiliate_ref;
-    delete formData.coupon_code;
-    delete formData.meta;
+    const rawForm =
+      body.formData && typeof body.formData === "object"
+        ? (body.formData as Record<string, unknown>)
+        : (body as Record<string, unknown>);
+    const formData = pickMpPaymentFields(rawForm);
 
-    // Dados de atribuição do Meta (fbp/fbc/user agent/URL) para a CAPI.
     const metaAttr = (body.meta ?? {}) as Record<string, string | undefined>;
     const clientUa = metaAttr.client_user_agent ?? req.headers.get("user-agent") ?? undefined;
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
     const checkoutTime = Number(metaAttr.checkout_time) || Math.floor(Date.now() / 1000);
 
-    // Primeira compra x renovação — vira customer_segmentation na CAPI.
     const { data: perfilAntes } = await admin
       .from("profiles")
-      .select("assinante")
+      .select("assinante, assinante_until, cpf, phone")
       .eq("id", user.id)
       .maybeSingle();
     const segmentation = perfilAntes?.assinante
@@ -122,7 +74,16 @@ Deno.serve(async (req) => {
       : "new_customer_to_business";
 
     const notificationUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/mercadopago-webhook`;
-    const paymentBody = {
+    const isPix = String(formData.payment_method_id ?? "").toLowerCase() === "pix";
+    const payer = (formData.payer ?? {}) as Record<string, unknown>;
+    if (!payer.email) payer.email = user.email;
+    const ident = (payer.identification ?? {}) as Record<string, unknown>;
+    const cpfFromBrick = typeof ident.number === "string" ? ident.number : "";
+    const cpf = cpfFromBrick.length === 11 ? cpfFromBrick : perfilAntes?.cpf ?? null;
+    if (cpf) payer.identification = { type: "CPF", number: cpf };
+    formData.payer = payer;
+
+    const paymentBody: Record<string, unknown> = {
       ...formData,
       transaction_amount: amount,
       description: `Jogador PRO — ${cfg.nome}${couponCode ? ` (${couponCode})` : ""}`,
@@ -142,16 +103,21 @@ Deno.serve(async (req) => {
         meta_checkout_time: checkoutTime,
         meta_segmentation: segmentation,
       },
-
       notification_url: notificationUrl,
-      payer: {
-        ...(formData.payer ?? {}),
-        email: formData.payer?.email ?? user.email,
-      },
+      payer,
     };
+    if (isPix) {
+      paymentBody.date_of_expiration = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    }
 
+    const clientKey = typeof body.idempotency_key === "string" ? body.idempotency_key : "";
+    const janela = Math.floor(Date.now() / 120_000);
+    const idempotencyKey = await buildIdempotencyKey(
+      user.id,
+      clientKey,
+      `${plano}|${amount}|${couponCode ?? ""}|${janela}`,
+    );
 
-    const idempotencyKey = crypto.randomUUID();
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
@@ -165,10 +131,12 @@ Deno.serve(async (req) => {
     const payment = await mpRes.json();
     if (!mpRes.ok) {
       console.error("MP payment error", payment);
-      return new Response(JSON.stringify({ error: payment.message ?? "payment_failed", details: payment }), {
-        status: 400,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: payment.message ?? "payment_failed" }, 400);
+    }
+
+    if (!paymentBelongsToUser(payment as Record<string, unknown>, user.id)) {
+      console.error("MP payment user mismatch", payment.id, payment.external_reference);
+      return jsonResponse({ error: "payment_mismatch" }, 403);
     }
 
     await admin.from("payment_events").upsert(
@@ -196,91 +164,80 @@ Deno.serve(async (req) => {
         .update({
           assinante: true,
           plano,
+          assinante_until: extenderAcesso(perfilAntes?.assinante_until, plano),
           mp_payment_id: String(payment.id),
           mp_payer_id: payment.payer?.id ? String(payment.payer.id) : null,
           referred_by: affiliateRef,
           paused_until: null,
           pause_reason: null,
+          pause_used_at: null,
+          cancelled_at: null,
+          cancel_reason: null,
         })
         .eq("id", user.id);
 
+      await admin
+        .from("checkout_intents")
+        .update({ purchased_at: new Date().toISOString(), plano })
+        .eq("user_id", user.id);
+
       if (couponCode) {
-        const { data: c } = await admin.from("coupons").select("redemptions").eq("code", couponCode).maybeSingle();
-        await admin
-          .from("coupons")
-          .update({ redemptions: (c?.redemptions ?? 0) + 1 })
-          .eq("code", couponCode);
+        const { data: redeemed } = await admin.rpc("redeem_coupon", { p_code: couponCode });
+        if (redeemed === false) console.error("coupon race", couponCode);
       }
 
-      const capiToken = Deno.env.get("META_CAPI_ACCESS_TOKEN");
-      if (capiToken) {
-        const pixelId = Deno.env.get("META_PIXEL_ID") ?? "3161156880941929";
-        const sha256 = async (v: string) => {
-          const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
-          return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
-        };
-        const email = (user.email ?? "").toLowerCase().trim();
-        const userData: Record<string, unknown> = {
-          external_id: [await sha256(user.id)],
-        };
-        if (email) userData.em = [await sha256(email)];
-        if (metaAttr.fbp) userData.fbp = metaAttr.fbp;
-        if (metaAttr.fbc) userData.fbc = metaAttr.fbc;
-        if (clientUa) userData.client_user_agent = clientUa;
-        if (clientIp) userData.client_ip_address = clientIp;
-        const testEventCode = Deno.env.get("META_TEST_EVENT_CODE");
-
-        void fetch(`https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${capiToken}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: [
-              {
-                event_name: "Purchase",
-                event_time: Math.floor(
-                  new Date(payment.date_approved ?? Date.now()).getTime() / 1000,
-                ),
-                event_id: `mp-${payment.id}`,
-                action_source: "website",
-                event_source_url: metaAttr.event_source_url ?? undefined,
-                data_processing_options: [],
-                user_data: userData,
-                custom_data: {
-                  currency: "BRL",
-                  value: amount,
-                  content_name: plano,
-                  utm_source: utm.utm_source,
-                  utm_campaign: utm.utm_campaign,
-                  coupon: couponCode,
-                  customer_segmentation: segmentation,
-                },
-              },
-
-            ],
-            ...(testEventCode ? { test_event_code: testEventCode } : {}),
-          }),
-        }).catch(console.error);
+      const email = (user.email ?? "").toLowerCase().trim();
+      const userData: Record<string, unknown> = {
+        external_id: [await hashIdentifier(user.id)],
+      };
+      if (email) userData.em = [await hashIdentifier(email)];
+      const phoneRaw = (perfilAntes?.phone ?? "").replace(/\D/g, "");
+      if (phoneRaw) {
+        const ph = phoneRaw.startsWith("55") ? phoneRaw : `55${phoneRaw}`;
+        userData.ph = [await hashIdentifier(ph)];
       }
+      if (metaAttr.fbp) userData.fbp = metaAttr.fbp;
+      if (metaAttr.fbc) userData.fbc = metaAttr.fbc;
+      if (clientUa) userData.client_user_agent = clientUa;
+      if (clientIp) userData.client_ip_address = clientIp;
 
+      void sendCapi({
+        eventName: "Purchase",
+        eventId: `mp-${payment.id}`,
+        eventTime: Math.floor(new Date(payment.date_approved ?? Date.now()).getTime() / 1000),
+        eventSourceUrl: metaAttr.event_source_url,
+        userData,
+        customData: {
+          currency: "BRL",
+          value: amount,
+          content_name: plano,
+          utm_source: utm.utm_source,
+          utm_campaign: utm.utm_campaign,
+          coupon: couponCode,
+          customer_segmentation: segmentation,
+        },
+      });
     }
 
-    return new Response(
-      JSON.stringify({
-        id: payment.id,
-        status: payment.status,
-        status_detail: payment.status_detail,
-        plano,
-        amount,
-        coupon_code: couponCode,
-        discount_percent: discountPercent || null,
-      }),
-      { headers: { ...cors, "Content-Type": "application/json" } },
-    );
+    const tx = payment.point_of_interaction?.transaction_data as
+      | { qr_code?: string; qr_code_base64?: string; ticket_url?: string }
+      | undefined;
+
+    return jsonResponse({
+      id: payment.id,
+      status: payment.status,
+      status_detail: payment.status_detail,
+      plano,
+      amount,
+      coupon_code: couponCode,
+      discount_percent: discountPercent || null,
+      payment_method_id: payment.payment_method_id ?? formData.payment_method_id ?? null,
+      qr_code: tx?.qr_code ?? null,
+      qr_code_base64: tx?.qr_code_base64 ?? null,
+      ticket_url: tx?.ticket_url ?? null,
+    });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "error" }), {
-      status: 500,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: error instanceof Error ? error.message : "error" }, 500);
   }
 });

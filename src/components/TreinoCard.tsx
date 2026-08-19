@@ -1,15 +1,18 @@
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { Lock, Timer, Zap } from "lucide-react";
 import type { Categoria, Treino } from "@/data/training";
+import { CAMPANHA } from "@/data/campanha-copy";
 import { intensidadeDe, xpDoTreino } from "@/lib/gamificacao";
 import { cn } from "@/lib/utils";
-import casa from "@/assets/cat-casa.jpg";
-import campo from "@/assets/cat-campo.jpg";
-import forca from "@/assets/cat-forca.jpg";
-import explosao from "@/assets/cat-explosao.jpg";
-import core from "@/assets/cat-core.jpg";
 
-const THUMBS: Record<Categoria, string> = { casa, campo, forca, explosao, core };
+const THUMBS: Record<Categoria, string> = {
+  casa: CAMPANHA.preview.imagens[0]!,
+  campo: CAMPANHA.preview.imagens[1]!,
+  forca: CAMPANHA.preview.imagens[2]!,
+  explosao: CAMPANHA.preview.imagens[3]!,
+  core: CAMPANHA.preview.imagens[2]!,
+};
 
 export function thumbDoTreino(treino: Treino) {
   const prioridade: Categoria[] = ["explosao", "campo", "forca", "core", "casa"];
@@ -17,22 +20,23 @@ export function thumbDoTreino(treino: Treino) {
   return THUMBS[cat];
 }
 
-export function TreinoCard({
+export type TreinoCardProps = {
+  treino: Treino;
+  to?: string;
+  planoKey?: string;
+  bloqueado?: boolean;
+  legenda?: string;
+  className?: string;
+};
+
+export const TreinoCard = memo(function TreinoCard({
   treino,
   to,
   planoKey,
   bloqueado = false,
   legenda,
   className,
-}: {
-  treino: Treino;
-  /** Destino alternativo (ex.: paywall). Padrão: a rota do treino. */
-  to?: string;
-  planoKey?: string;
-  bloqueado?: boolean;
-  legenda?: string;
-  className?: string;
-}) {
+}: TreinoCardProps) {
   const intensidade = intensidadeDe(treino);
 
   const conteudo = (
@@ -48,8 +52,8 @@ export function TreinoCard({
           alt=""
           loading="lazy"
           decoding="async"
-          width={768}
-          height={512}
+          width={600}
+          height={338}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/25 to-transparent" />
@@ -103,4 +107,4 @@ export function TreinoCard({
       {conteudo}
     </Link>
   );
-}
+});

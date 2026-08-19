@@ -1,20 +1,14 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import {
-  CalendarDays,
-  Check,
-  Clock,
-  MonitorSmartphone,
-  X,
-  Zap,
-} from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { CalendarDays, Check, Clock, MonitorSmartphone, PlayCircle, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CAMPANHA, type ProofSlot } from "@/data/campanha-copy";
-import { PLANOS_ASSINATURA } from "@/data/training";
+import { CAMPANHA } from "@/data/campanha-copy";
 import { captureUtmFromSearch } from "@/lib/utm";
+import { searchCheckout, validateLandingSearch, type LandingSearch } from "@/lib/checkout";
 import { trackMetaCustom, trackMetaDedup } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/lib/player-store";
-import { CheckoutOferta, dispararCheckout, rolarParaOferta, CHECKOUT_EVENT } from "@/components/CheckoutOferta";
+import { rolarParaOferta, CHECKOUT_EVENT } from "@/components/CheckoutOferta";
 import { TopBar } from "@/components/landing/TopBar";
 import { GarantiaBadge } from "@/components/landing/GarantiaBadge";
 import { FaqSection } from "@/components/landing/FaqSection";
@@ -29,50 +23,15 @@ import { AvaliacoesWidget } from "@/components/landing/AvaliacoesWidget";
 import { SelosConfianca } from "@/components/landing/SelosConfianca";
 
 
-export type LandingSearch = {
-  from?: string;
-  checkout?: string;
-  plano?: string;
-  teaser?: string;
-  ref?: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-  utm_content?: string;
-  utm_term?: string;
-};
-
-export function validateLandingSearch(search: Record<string, unknown>): LandingSearch {
-  const out: LandingSearch = {};
-  if (typeof search["from"] === "string") out.from = search["from"];
-  if (typeof search["checkout"] === "string") out.checkout = search["checkout"];
-  if (typeof search["teaser"] === "string") out.teaser = search["teaser"];
-  if (typeof search["ref"] === "string") out.ref = search["ref"];
-  if (typeof search["utm_source"] === "string") out.utm_source = search["utm_source"];
-  if (typeof search["utm_medium"] === "string") out.utm_medium = search["utm_medium"];
-  if (typeof search["utm_campaign"] === "string") out.utm_campaign = search["utm_campaign"];
-  if (typeof search["utm_content"] === "string") out.utm_content = search["utm_content"];
-  if (typeof search["utm_term"] === "string") out.utm_term = search["utm_term"];
-  if (typeof search["plano"] === "string") {
-    const ids = new Set(PLANOS_ASSINATURA.map((p) => p.id));
-    if (ids.has(search["plano"])) out.plano = search["plano"];
-  }
-  return out;
-}
-
-function ProofMedia({ slot }: { slot: ProofSlot }) {
-  if (slot.type === "video") {
-    return <video src={slot.src} controls playsInline preload="none" className="h-full w-full object-cover" title={slot.title} />;
-  }
-  if (slot.type === "image") {
-    return <img src={slot.src} alt={slot.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />;
-  }
-  return <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{slot.title}</p>;
-}
+export type { LandingSearch };
+export { validateLandingSearch };
 
 export function LandingPage({ search }: { search: LandingSearch }) {
-  const { logado, state } = usePlayer();
+  const { logado } = usePlayer();
+  const navigate = useNavigate();
   const [planoAtivo, setPlanoAtivo] = useState<string | undefined>(search.plano ?? CAMPANHA.heroCtaPlano);
+  const precoHero =
+    CAMPANHA.planos.itens.find((p) => p.id === CAMPANHA.heroCtaPlano)?.preco ?? "R$147";
 
   useEffect(() => {
     captureUtmFromSearch(search);
@@ -114,18 +73,26 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     return () => window.removeEventListener(CHECKOUT_EVENT, handler);
   }, []);
 
-  // CTAs rolam até a oferta; quem já está logado (e ainda não é PRO) vai direto para o checkout.
-  const irParaOferta = useCallback(
+  const irParaCheckout = useCallback(
     (plano?: string) => {
-      rolarParaOferta();
-      if (plano) setPlanoAtivo(plano);
-      if (logado && !state.assinante) {
-        window.setTimeout(() => dispararCheckout(plano, true), 350);
-      } else if (plano) {
-        dispararCheckout(plano, true);
-      }
+      const alvo = plano ?? CAMPANHA.heroCtaPlano;
+      setPlanoAtivo(alvo);
+      void navigate({
+        to: "/checkout",
+        search: searchCheckout({
+          from: "landing",
+          plano: alvo,
+          ref: search.ref,
+          teaser: search.teaser,
+          utm_source: search.utm_source,
+          utm_medium: search.utm_medium,
+          utm_campaign: search.utm_campaign,
+          utm_content: search.utm_content,
+          utm_term: search.utm_term,
+        }),
+      });
     },
-    [logado, state.assinante],
+    [navigate, search],
   );
 
 
@@ -134,7 +101,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     <main className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-foreground md:pb-0">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_70%_at_50%_-10%,_oklch(0.78_0.2_141_/_0.18),_transparent_55%)]" />
 
-      <TopBar logado={logado} onAssinar={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+      <TopBar logado={logado} onAssinar={() => irParaCheckout(CAMPANHA.heroCtaPlano)} />
 
       {/* Urgência + social proof strip */}
       <div className="relative mt-14">
@@ -147,7 +114,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
       </div>
 
       {/* Hero */}
-      <section className="relative mx-auto flex w-full max-w-6xl flex-col justify-center px-5 pb-12 pt-12 sm:px-8 md:pb-16 md:pt-16">
+      <section className="relative mx-auto flex w-full max-w-6xl flex-col justify-center px-5 pb-12 pt-12 sm:px-8 md:pb-16 md:pt-16 lg:min-h-[22rem] lg:pr-[26rem]">
         <div className="animate-in fade-in slide-in-from-bottom-4 max-w-3xl duration-700">
           <p className="text-sm font-black uppercase tracking-[0.22em] text-primary sm:text-base">
             {CAMPANHA.brand}
@@ -161,7 +128,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             <Button
               size="lg"
               className="h-14 w-full px-8 text-base font-extrabold sm:w-auto sm:min-w-[240px]"
-              onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+              onClick={() => irParaCheckout(CAMPANHA.heroCtaPlano)}
             >
               {CAMPANHA.heroCta}
             </Button>
@@ -169,7 +136,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
               size="lg"
               variant="outline"
               className="h-14 w-full px-8 text-base font-extrabold sm:w-auto sm:min-w-[240px]"
-              onClick={() => irParaOferta("semestral")}
+              onClick={() => rolarParaOferta()}
             >
               {CAMPANHA.heroCtaSecundario}
             </Button>
@@ -184,8 +151,34 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <div className="mt-4">
             <SelosConfianca />
           </div>
-
         </div>
+
+        <aside className="mt-10 max-w-xl overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft lg:absolute lg:right-8 lg:top-16 lg:mt-0">
+          <video
+            className="aspect-video w-full object-cover"
+            src={CAMPANHA.teaserTreino.videoSrc}
+            poster=""
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            width={640}
+            height={360}
+          />
+          <div className="flex items-start gap-3 p-4">
+            <PlayCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                {CAMPANHA.teaserTreino.titulo}
+              </p>
+              <p className="mt-1 text-sm font-extrabold text-foreground">
+                {CAMPANHA.teaserTreino.nome} · {CAMPANHA.teaserTreino.duracao}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{CAMPANHA.teaserTreino.descricao}</p>
+            </div>
+          </div>
+        </aside>
       </section>
 
       {/* Benefícios em ícones */}
@@ -199,7 +192,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <Button
             size="lg"
             className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[260px]"
-            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+            onClick={() => irParaCheckout(CAMPANHA.heroCtaPlano)}
           >
             {CAMPANHA.heroCta}
           </Button>
@@ -307,12 +300,12 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <Eyebrow>{CAMPANHA.preview.eyebrow}</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.preview.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.preview.body}</p>
-        <PreviewTreinos onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+        <PreviewTreinos onCta={() => irParaCheckout(CAMPANHA.heroCtaPlano)} />
       </Section>
 
       {/* Modo Rápido */}
       <Section tone="card">
-        <ModoRapidoCard onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+        <ModoRapidoCard onCta={() => irParaCheckout(CAMPANHA.heroCtaPlano)} />
       </Section>
 
 
@@ -348,30 +341,13 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         </ul>
       </Section>
 
-      {/* Prova */}
-      <Section tone="card">
-        <Eyebrow>Prova</Eyebrow>
-        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.prova.title}</h2>
-        <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.prova.body}</p>
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          {CAMPANHA.prova.slots.map((slot) => (
-            <div
-              key={slot.title}
-              className="flex aspect-video items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-background/40 px-4 text-center"
-            >
-              <ProofMedia slot={slot} />
-            </div>
-          ))}
-        </div>
-      </Section>
-
       {/* Depoimentos */}
       <Section>
         <Eyebrow>{CAMPANHA.depoimentos.eyebrow}</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.depoimentos.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.depoimentos.body}</p>
         <AvaliacoesWidget />
-        <DepoimentosSection onCta={() => irParaOferta(CAMPANHA.heroCtaPlano)} />
+        <DepoimentosSection onCta={() => irParaCheckout(CAMPANHA.heroCtaPlano)} />
       </Section>
 
       {/* Tudo incluso */}
@@ -410,11 +386,26 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <GarantiaBadge />
         </div>
 
-        <CheckoutOferta
-          planoInicial={search.plano ?? CAMPANHA.heroCtaPlano}
-          refCode={search.ref}
-          abrirAoMontar={search.checkout === "1"}
-        />
+        <Button asChild size="lg" className="mt-8 h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[280px]">
+          <Link
+            to="/checkout"
+            search={searchCheckout({
+              from: "landing",
+              plano: planoAtivo ?? CAMPANHA.heroCtaPlano,
+              ref: search.ref,
+              teaser: search.teaser,
+              utm_source: search.utm_source,
+              utm_medium: search.utm_medium,
+              utm_campaign: search.utm_campaign,
+              utm_content: search.utm_content,
+              utm_term: search.utm_term,
+            })}
+          >
+            Pagar no Mercado Pago —{" "}
+            {CAMPANHA.planos.itens.find((p) => p.id === (planoAtivo ?? CAMPANHA.heroCtaPlano))?.preco ?? precoHero}
+          </Link>
+        </Button>
+        <p className="mt-2 text-sm text-muted-foreground">{CAMPANHA.garantia.curta}</p>
 
         <div className="mt-6">
           <SelosConfianca />
@@ -429,7 +420,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <Button
             size="lg"
             className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[240px]"
-            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+            onClick={() => irParaCheckout(CAMPANHA.heroCtaPlano)}
           >
             {CAMPANHA.urgencia.cta}
           </Button>
@@ -437,7 +428,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             size="lg"
             variant="outline"
             className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[200px]"
-            onClick={() => irParaOferta("semestral")}
+            onClick={() => rolarParaOferta()}
           >
             {CAMPANHA.heroCtaSecundario}
           </Button>
@@ -449,7 +440,12 @@ export function LandingPage({ search }: { search: LandingSearch }) {
 
 
       <footer className="relative border-t border-border px-5 py-8 text-center text-xs text-muted-foreground">
-        {CAMPANHA.brand} — treinos guiados para evoluir no jogo
+        <p>{CAMPANHA.brand} — treinos guiados para evoluir no jogo</p>
+        <p className="mt-2">
+          <Link to="/escolinhas" className="font-semibold text-primary underline-offset-4 hover:underline">
+            Treina uma escolinha? Fale com a gente
+          </Link>
+        </p>
       </footer>
 
       {/* Sticky mobile CTA */}
@@ -458,9 +454,9 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <Button
             size="lg"
             className="h-12 w-full text-sm font-extrabold"
-            onClick={() => irParaOferta(CAMPANHA.heroCtaPlano)}
+            onClick={() => irParaCheckout(CAMPANHA.heroCtaPlano)}
           >
-            {CAMPANHA.heroCta} · R$47
+            {CAMPANHA.heroCta} · {precoHero}
           </Button>
           <p className="mt-2 text-center text-[11px] text-muted-foreground">{CAMPANHA.garantia.curta}</p>
         </div>

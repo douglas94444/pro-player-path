@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CreditCard, Dumbbell, Users, Crown, TrendingUp } from "lucide-react";
 import { AdminShell } from "@/components/AdminShell";
-import { fetchAdminStats } from "@/lib/admin";
+import { fetchAdminStats, exportFunilCsv } from "@/lib/admin";
 import { PRODUCT } from "@/lib/product-config";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
@@ -101,8 +101,22 @@ function AdminDashboard() {
       </section>
 
       <section className="mt-6 rounded-2xl border border-border bg-card p-5">
-        <h2 className="text-sm font-bold text-foreground">Funil por UTM (30d)</h2>
-        <p className="mt-1 text-xs text-muted-foreground">checkout → aprovado → D0 → D7</p>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Funil por UTM (30d)</h2>
+            <p className="mt-1 text-xs text-muted-foreground">checkout → aprovado → D0 → D7</p>
+          </div>
+          <button
+            type="button"
+            className="text-xs font-bold text-primary underline-offset-4 hover:underline"
+            onClick={() => {
+              if (stats?.funilPorUtm?.length) exportFunilCsv(stats.funilPorUtm);
+            }}
+            disabled={!stats?.funilPorUtm?.length}
+          >
+            Exportar CSV
+          </button>
+        </div>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[480px] text-left text-sm">
             <thead className="text-xs text-muted-foreground">
@@ -173,7 +187,7 @@ function AdminDashboard() {
               /ranking
             </Link>
           </li>
-          <li>Indicação: /planos?ref=CODIGO · cupons PRO10 / AMIGO15</li>
+          <li>Indicação: /?ref=CODIGO · cupons PRO10 / AMIGO15</li>
           <li>Ops secrets/crons: supabase/OPS.md</li>
         </ul>
       </section>

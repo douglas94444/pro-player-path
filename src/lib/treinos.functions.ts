@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getTreino, PLANO_FLAT } from "@/data/training";
+import { acessoProAtivo } from "@/lib/acesso";
 
 type ConcluirInput = { treinoId: string; planoKey?: string | null };
 
@@ -40,15 +41,17 @@ export const concluirTreinoServer = createServerFn({ method: "POST" })
 
     const { data: perfil, error: perfilErr } = await supabase
       .from("profiles")
-      .select("assinante, paused_until")
+      .select("assinante, paused_until, assinante_until")
       .eq("id", userId)
       .maybeSingle();
     if (perfilErr) throw new Error(perfilErr.message);
 
-    const pausado = Boolean(
-      perfil?.paused_until && new Date(perfil.paused_until).getTime() > Date.now(),
+    const acessoAtivo = acessoProAtivo(
+      Boolean(perfil?.assinante),
+      perfil?.assinante_until,
+      perfil?.paused_until,
     );
-    if (!perfil?.assinante || pausado) {
+    if (!acessoAtivo) {
       throw new Error("Assinatura ativa necessária para registrar treinos");
     }
 

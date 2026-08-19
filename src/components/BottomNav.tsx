@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Home, CalendarDays, Dumbbell, TrendingUp, User } from "lucide-react";
-import { usePlayer } from "@/lib/player-store";
+import { usePlayerNav } from "@/lib/player-store";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -13,8 +13,8 @@ const items = [
 
 
 function NavLinks({ orientation }: { orientation: "horizontal" | "vertical" }) {
-  const { logado, state } = usePlayer();
-  const showPerfilBadge = !logado || !state.assinante;
+  const { logado, assinante } = usePlayerNav();
+  const showPerfilBadge = !logado || !assinante;
   const vertical = orientation === "vertical";
 
   return (

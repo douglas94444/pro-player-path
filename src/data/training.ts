@@ -481,7 +481,7 @@ export const TOTAL_SEMANAS_PLANO = PLANO.length;
 export const TOTAL_MESES_PLANO = MESES_PLANO.length;
 
 
-/** Ciclo de manutenção após as 4 semanas (repete com chaves m-N). */
+/** Ciclo de manutenção após a jornada guiada (repete com chaves m-N). */
 export const PLANO_MANUTENCAO: DiaPlano[] = [
   { dia: 1, treinoId: "base-mobilidade" },
   { dia: 2, treinoId: "controle-bola" },
@@ -538,7 +538,7 @@ export const PLANOS_ASSINATURA = [
 ];
 
 export const BENEFICIOS_PRO = [
-  "Plano guiado completo (4 semanas)",
+  "Jornada guiada completa de 12 meses",
   "Biblioteca + pré-partida e pós-jogo",
   "Ciclos temáticos pós-plano (explosão / pré-pelada)",
   "Comunidade PRO + histórico na nuvem",
@@ -553,7 +553,7 @@ export const POSICOES = [
   { id: "goleiro", label: "Goleiro" },
 ] as const;
 
-/** Ciclos temáticos após as 4 semanas (além da manutenção base). */
+/** Ciclos temáticos após a jornada guiada (além da manutenção base). */
 export const CICLOS_TEMATICOS: { id: string; titulo: string; foco: string; treinoIds: string[] }[] = [
   {
     id: "explosao",

@@ -11,7 +11,6 @@ import {
   getTreino,
   type SemanaPlano,
 } from "@/data/training";
-import { isSemanaPremium } from "@/lib/access";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
@@ -168,7 +167,6 @@ function PlanoPage() {
               {expandido ? (
                 <div className="grid gap-4 border-t border-border/50 p-5 lg:grid-cols-2 lg:gap-5 sm:p-6">
                   {mes.semanas.map((semana) => {
-                    const semanaPremium = Boolean(semana.premium) || isSemanaPremium(semana.semana);
                     const feitos = semana.dias.filter((d) =>
                       planoConcluidos.includes(`${semana.semana}-${d.dia}`),
                     ).length;
@@ -195,11 +193,6 @@ function PlanoPage() {
                                   feitos
                                 </p>
                               </div>
-                              {semanaPremium ? (
-                                <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-primary">
-                                  PRO
-                                </span>
-                              ) : null}
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">{semana.foco}</p>
                           </div>
@@ -234,7 +227,7 @@ function PlanoPage() {
                             const treino = getTreino(dia.treinoId)!;
                             const concluido = planoConcluidos.includes(key);
                             const atual = proximoPlano?.key === key;
-                            const precisaAssinatura = semanaPremium && !state.assinante;
+                            const precisaAssinatura = !state.assinante;
                             const bloqueadoOrdem = !concluido && !atual && !precisaAssinatura;
 
                             const statusLabel = concluido
@@ -313,7 +306,7 @@ function PlanoPage() {
                                     onClick={() => {
                                       trackMetaCustom("PaywallHit", { from: "plano", semana: semana.semana });
                                       void navigate({
-                                        to: "/planos",
+                                        to: "/checkout",
                                         search: {
                                           from: "plano",
                                           teaser: `${semana.titulo}: ${treino.nome} — ${semana.foco}`,

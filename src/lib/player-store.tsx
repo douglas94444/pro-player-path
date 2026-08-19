@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import {
   PLANO_FLAT,
   PLANO_MANUTENCAO,
@@ -14,6 +15,7 @@ import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
 import { hojeBR } from "@/lib/date";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 import { concluirTreinoServer } from "@/lib/treinos.functions";
+import { acessoProAtivo, asPlanoAssinatura, type PlanoAssinatura } from "@/lib/acesso";
 import { safeWrite } from "@/lib/supabase-write";
 
 const STORAGE_KEY = "jogador-pro-state-v2";
@@ -26,7 +28,7 @@ export type Sessao = { treinoId: string; data: string; minutos: number; planoKey
 export type PlayerState = {
   nome: string;
   assinante: boolean;
-  plano: string | null;
+  plano: PlanoAssinatura | null;
   role: "user" | "admin";
   sessoes: Sessao[];
   ultimoTreinoId: string | null;
@@ -36,6 +38,7 @@ export type PlayerState = {
   posicao: string | null;
   affiliateCode: string | null;
   pausedUntil: string | null;
+  assinanteUntil: string | null;
 };
 
 const initialState: PlayerState = {
@@ -51,6 +54,7 @@ const initialState: PlayerState = {
   posicao: null,
   affiliateCode: null,
   pausedUntil: null,
+  assinanteUntil: null,
 };
 
 function hoje() {
@@ -144,7 +148,6 @@ type Ctx = {
     posicao?: string;
   }) => void;
   markAuthPromptSeen: () => void;
-  shouldPromptAuth: boolean;
   /** True para visitante que ainda não dispensou o prompt de conta. */
   canPromptAuth: boolean;
   refreshEntitlement: () => Promise<void>;
@@ -158,6 +161,9 @@ type Ctx = {
 };
 
 const PlayerContext = createContext<Ctx | null>(null);
+
+type NavSnap = { logado: boolean; assinante: boolean; isAdmin: boolean };
+const PlayerNavContext = createContext<NavSnap>({ logado: false, assinante: false, isAdmin: false });
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -196,7 +202,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         supabase
           .from("profiles")
           .select(
-            "nome, assinante, plano, role, objetivo, disponibilidade, posicao, affiliate_code, referred_by, paused_until",
+            "nome, assinante, assinante_until, onboarding_done, plano, role, objetivo, disponibilidade, posicao, affiliate_code, referred_by, paused_until",
           )
           .eq("id", user.id)
           .maybeSingle(),
@@ -261,12 +267,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
       setState({
         nome: nomeFinal,
-        assinante: perfil?.assinante ?? false,
-        plano: perfil?.plano ?? null,
+        assinante: acessoProAtivo(
+          perfil?.assinante ?? false,
+          perfil?.assinante_until,
+          perfil?.paused_until,
+        ),
+        assinanteUntil: perfil?.assinante_until ?? null,
+        plano: asPlanoAssinatura(perfil?.plano),
         role: perfil?.role === "admin" ? "admin" : "user",
         sessoes: merged,
         ultimoTreinoId: merged.length ? merged[merged.length - 1]!.treinoId : null,
-        onboardingDone: true,
+        onboardingDone: Boolean(perfil?.onboarding_done),
         objetivo: perfil?.objetivo ?? local.objetivo,
         disponibilidade: perfil?.disponibilidade ?? local.disponibilidade,
         posicao: perfil?.posicao ?? local.posicao,
@@ -274,7 +285,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         pausedUntil: perfil?.paused_until ?? null,
       });
       try {
-        localStorage.setItem(ONBOARDING_KEY, "1");
+        if (perfil?.onboarding_done) localStorage.setItem(ONBOARDING_KEY, "1");
         localStorage.removeItem(LEGACY_KEY);
       } catch {
         /* ignore */
@@ -285,8 +296,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setHydrated(false);
     void carregar().catch(() => {
       if (cancelado) return;
-      const local = lerLocal();
-      setState({ ...local, assinante: false, plano: null, role: "user" });
+      toast.error("Não deu para sincronizar seu perfil", {
+        description: "Mostrando o que já estava neste aparelho. Tente recarregar.",
+      });
       setHydrated(true);
     });
     return () => {
@@ -327,14 +339,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const { data: perfil } = await supabase
       .from("profiles")
-      .select("assinante, plano, nome, role, paused_until")
+      .select("assinante, assinante_until, plano, nome, role, paused_until")
       .eq("id", user.id)
       .maybeSingle();
     if (!perfil) return;
     setState((s) => ({
       ...s,
-      assinante: perfil.assinante,
-      plano: perfil.plano,
+      assinante: acessoProAtivo(perfil.assinante, perfil.assinante_until, perfil.paused_until),
+      assinanteUntil: perfil.assinante_until ?? null,
+      plano: asPlanoAssinatura(perfil.plano),
       nome: perfil.nome || s.nome,
       role: perfil.role === "admin" ? "admin" : "user",
       pausedUntil: perfil.paused_until ?? null,
@@ -371,14 +384,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const cancelar = useCallback(
     async (motivo?: string) => {
       if (!user) {
-        setState((s) => ({ ...s, assinante: false, plano: null, pausedUntil: null }));
+        setState((s) => ({ ...s, assinante: false, plano: null, pausedUntil: null, assinanteUntil: null }));
         return {};
       }
       const res = await supabase.functions.invoke("cancel-subscription", {
         body: { action: "cancel", motivo: motivo ?? null },
       });
       if (res.error) return { error: res.error.message };
-      setState((s) => ({ ...s, assinante: false, plano: null, pausedUntil: null }));
+      setState((s) => ({ ...s, assinante: false, plano: null, pausedUntil: null, assinanteUntil: null }));
       return {};
     },
     [user],
@@ -542,6 +555,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             objetivo,
             disponibilidade,
             posicao: posicao ?? "qualquer",
+            onboarding_done: true,
           };
           void safeWrite(
             "seu perfil",
@@ -558,11 +572,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           /* ignore */
         }
       },
-      shouldPromptAuth: !logado && !authPromptSeen && totalTreinos >= 1,
       canPromptAuth: !logado && !authPromptSeen,
       reset: () => {
         setState((s) => ({ ...s, sessoes: [], ultimoTreinoId: null }));
-        if (user) void supabase.from("sessoes").delete().eq("user_id", user.id);
+        if (user) {
+          void safeWrite("reset de sessões", () => supabase.from("sessoes").delete().eq("user_id", user.id));
+        }
       },
       sair: async () => {
         await supabase.auth.signOut();
@@ -585,11 +600,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     authPromptSeen,
   ]);
 
-  return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
+  const navValue = useMemo<NavSnap>(
+    () => ({ logado, assinante: state.assinante, isAdmin: state.role === "admin" }),
+    [logado, state.assinante, state.role],
+  );
+
+  return (
+    <PlayerNavContext.Provider value={navValue}>
+      <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
+    </PlayerNavContext.Provider>
+  );
 }
 
 export function usePlayer() {
   const ctx = useContext(PlayerContext);
   if (!ctx) throw new Error("usePlayer deve ser usado dentro de PlayerProvider");
   return ctx;
+}
+
+export function usePlayerNav() {
+  return useContext(PlayerNavContext);
 }

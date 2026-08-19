@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Pare de treinar sem resultado — Jogador PRO System" },
       {
         property: "og:description",
-        content: "Plano guiado de 4 semanas. Comece agora por R$47.",
+        content: "Jornada guiada de 12 meses. Semestral R$147 no Pix ou cartão.",
       },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "https://ballstar-trainer.lovable.app/og-cover.jpg" },
@@ -32,15 +32,23 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const search = Route.useSearch();
-  const { logado, state } = usePlayer();
+  const { logado, state, hydrated } = usePlayer();
   const navigate = useNavigate();
 
-  // Usuários logados e PRO vão direto para o app; landing fica pública para visitantes.
   useEffect(() => {
+    if (!hydrated) return;
     if (logado && state.assinante) {
       void navigate({ to: "/app", replace: true });
+      return;
     }
-  }, [logado, state.assinante, navigate]);
+    if (logado && !state.assinante) {
+      void navigate({ to: "/checkout", search: { from: "home", ...search }, replace: true });
+      return;
+    }
+    if (search.checkout === "1") {
+      void navigate({ to: "/checkout", search, replace: true });
+    }
+  }, [hydrated, logado, state.assinante, search, navigate]);
 
   return <LandingPage search={search} />;
 }

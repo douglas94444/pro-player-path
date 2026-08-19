@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/lib/player-store";
 import { canAccessTreino } from "@/lib/access";
 import { captureUtmFromLocation } from "@/lib/utm";
+import { diaBROffset } from "@/lib/date";
 import { MESES_PLANO, PLANO, TOTAL_MESES_PLANO } from "@/data/training";
 
 import { labelObjetivo, prefereModoRapido, treinoRapido } from "@/lib/recommendations";
@@ -49,6 +50,7 @@ function Home() {
     hydrated,
     planoCompleto,
     isPaused,
+    totalTreinos,
   } = usePlayer();
   const navigate = useNavigate();
   const semanaPlanoAtual = PLANO.find((s) => s.semana === semanaAtual);
@@ -63,14 +65,14 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    if (hydrated && !state.onboardingDone) {
+    if (hydrated && state.assinante && !state.onboardingDone) {
       void navigate({ to: "/onboarding" });
     }
-  }, [hydrated, state.onboardingDone, navigate]);
+  }, [hydrated, state.assinante, state.onboardingDone, navigate]);
 
   const modoRapido = () => {
     if (!state.assinante) {
-      void navigate({ to: "/planos", search: { from: "home", teaser: "Modo rápido disponível no PRO" } });
+      void navigate({ to: "/checkout", search: { from: "home", teaser: "Modo rápido disponível no PRO" } });
       return;
     }
     const escolhido = treinoRapido(state.objetivo, state.posicao, state.ultimoTreinoId);
@@ -85,7 +87,7 @@ function Home() {
 
 
 
-  if (!hydrated || !state.onboardingDone) {
+  if (!hydrated || (state.assinante && !state.onboardingDone)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">Carregando…</p>
@@ -110,14 +112,14 @@ function Home() {
     >
       {precisaAssinar ? (
         <Link
-          to="/planos"
+          to="/checkout"
           search={{ from: "home", teaser: "Assine para liberar o treino do dia e o plano completo" }}
           className="mb-4 flex items-center justify-between gap-3 rounded-[1.25rem] border border-primary/30 bg-primary/10 px-4 py-3 shadow-soft"
         >
           <span>
             <span className="block text-sm font-extrabold text-foreground">Assine para treinar</span>
             <span className="block text-xs text-muted-foreground">
-              Acesso completo ao plano de 4 semanas + biblioteca
+              Acesso completo à jornada de 12 meses + biblioteca
             </span>
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
@@ -138,6 +140,15 @@ function Home() {
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Link>
+      ) : null}
+
+      {state.assinante && totalTreinos > 0 && !state.sessoes.some((s) => s.data === diaBROffset(-1)) ? (
+        <div className="mb-4 rounded-[1.25rem] border border-border/60 bg-card px-4 py-3 shadow-soft">
+          <p className="text-sm font-extrabold text-foreground">Treino de ontem em aberto</p>
+          <p className="text-xs text-muted-foreground">
+            Uma sessão rápida hoje recupera o ritmo. Abre o treino do dia e fecha em 10–20 min.
+          </p>
+        </div>
       ) : null}
 
       <DashboardStats />
@@ -172,7 +183,7 @@ function Home() {
             treinoBloqueado ? (
               <Button asChild size="lg" className="mt-7 h-14 w-full text-base font-extrabold sm:max-w-xs">
                 <Link
-                  to="/planos"
+                  to="/checkout"
                   search={{
                     from: "home",
                     teaser: `${treinoDeHoje.nome} — ${treinoDeHoje.descricao}`,

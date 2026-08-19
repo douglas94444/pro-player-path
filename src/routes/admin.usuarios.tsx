@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
 import { fetchAdminUsers, updateAdminUser, type AdminUserRow } from "@/lib/admin";
+import { useAdminTable } from "@/hooks/use-admin-table";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
@@ -14,20 +15,8 @@ export const Route = createFileRoute("/admin/usuarios")({
 });
 
 function AdminUsuarios() {
-  const [rows, setRows] = useState<AdminUserRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const reload = () => {
-    setLoading(true);
-    void fetchAdminUsers()
-      .then(setRows)
-      .catch((e) => toast.error(e instanceof Error ? e.message : "Erro ao listar"))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    reload();
-  }, []);
+  const loader = useCallback(() => fetchAdminUsers(), []);
+  const { rows, loading, reload } = useAdminTable(loader);
 
   const toggleAssinante = async (row: AdminUserRow) => {
     try {

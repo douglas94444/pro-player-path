@@ -1,34 +1,48 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { requireCronSecret, createAdminClient } from "../_shared/auth.ts";
+import { jsonResponse } from "../_shared/cors.ts";
+import { sendResendEmail, appUrl, escapeHtml } from "../_shared/email.ts";
 
 /**
  * Lembrete offline de streak via e-mail (Resend).
- * Secrets: RESEND_API_KEY, RESEND_FROM (ex: Jogador PRO <onboarding@...>).
- * Agende no Dashboard (cron) ou chame manualmente com service role.
+ * Auth: Authorization Bearer CRON_SECRET
  */
 Deno.serve(async (req) => {
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  const denied = await requireCronSecret(req);
+  if (denied) return denied;
 
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  const from = Deno.env.get("RESEND_FROM") ?? "Jogador PRO <onboarding@resend.dev>";
-  if (!resendKey) {
-    return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), { status: 500 });
+  const admin = createAdminClient();
+  if (!Deno.env.get("RESEND_API_KEY")) {
+    return jsonResponse({ error: "RESEND_API_KEY not configured" }, 500);
   }
 
   const today = new Date().toISOString().slice(0, 10);
   const { data: assinantes } = await admin
     .from("profiles")
     .select("id, nome, reminder_hour")
-    .eq("assinante", true);
+    .eq("assinante", true)
+    .or("paused_until.is.null,paused_until.lte." + new Date().toISOString());
 
-  const hour = new Date().getUTCHours() - 3; // approx BRT
-  const targets = (assinantes ?? []).filter((p) => (p.reminder_hour ?? 20) === ((hour + 24) % 24));
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Sao_Paulo",
+      hour: "numeric",
+      hour12: false,
+    }).format(new Date()),
+  );
+  const targets = (assinantes ?? []).filter((p) => (p.reminder_hour ?? 20) === hour);
 
   let sent = 0;
   for (const p of targets) {
+    const { data: already } = await admin
+      .from("lifecycle_emails")
+      .select("id")
+      .eq("user_id", p.id)
+      .eq("kind", "streak")
+      .eq("sent_on", today)
+      .maybeSingle();
+    if (already) continue;
+
     const { data: sessaoHoje } = await admin
       .from("sessoes")
       .select("id")
@@ -42,26 +56,19 @@ Deno.serve(async (req) => {
     const email = authUser.user?.email;
     if (!email) continue;
 
-    const nome = p.nome || "Jogador";
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [email],
-        subject: `${nome}, seu streak está em risco`,
-        html: `<p>Fala, <strong>${nome}</strong>!</p>
+    const nome = escapeHtml(p.nome || "Jogador");
+    const ok = await sendResendEmail({
+      to: email,
+      subject: `${p.nome || "Jogador"}, seu streak está em risco`,
+      html: `<p>Fala, <strong>${nome}</strong>!</p>
 <p>Ainda dá tempo de treinar hoje e manter a sequência no Jogador PRO.</p>
-<p><a href="${Deno.env.get("APP_URL") ?? "https://jogadorprosystem.com"}">Abrir treino do dia</a></p>`,
-      }),
+<p><a href="${appUrl()}">Abrir treino do dia</a></p>`,
     });
+    if (!ok) continue;
+
+    await admin.from("lifecycle_emails").insert({ user_id: p.id, kind: "streak", sent_on: today });
     sent++;
   }
 
-  return new Response(JSON.stringify({ ok: true, sent, checked: targets.length }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return jsonResponse({ ok: true, sent, checked: targets.length });
 });

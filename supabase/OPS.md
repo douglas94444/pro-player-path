@@ -7,14 +7,24 @@ Checklist para fechar o gap de operação (secrets + crons).
 | Secret | Obrigatório | Uso |
 |--------|-------------|-----|
 | `MERCADOPAGO_ACCESS_TOKEN` | sim | `process-payment`, `mercadopago-webhook` |
+| `MERCADOPAGO_WEBHOOK_SECRET` | sim | HMAC `x-signature` do webhook MP |
+| `CRON_SECRET` | sim | `send-winback`, `send-streak-reminder`, `send-checkout-recovery` |
 | `ADMIN_EMAILS` | sim | `ensure-admin-role` (lista separada por vírgula) |
 | `META_CAPI_ACCESS_TOKEN` | sim (ads) | CAPI em `process-payment` / `meta-capi` |
 | `META_PIXEL_ID` | opcional | default `3161156880941929` |
-| `RESEND_API_KEY` | sim (retenção) | `send-streak-reminder`, `send-winback` |
+| `RESEND_API_KEY` | sim (retenção) | e-mails de retenção |
 | `RESEND_FROM` | sim | ex. `Jogador PRO <onboarding@seudominio.com>` |
 | `APP_URL` | sim | links nos e-mails |
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` já são injetados.
+
+O mesmo valor de `CRON_SECRET` precisa existir no Vault (os crons `pg_net` leem de lá):
+
+```sql
+select vault.create_secret('COLE_O_MESMO_CRON_SECRET', 'cron_secret');
+```
+
+Webhook Mercado Pago: em Your integrations → Webhooks, copie o secret e grave em `MERCADOPAGO_WEBHOOK_SECRET`. Sem isso o webhook responde 401.
 
 ## Frontend (.env)
 
@@ -24,27 +34,16 @@ VITE_TELEGRAM_PRO_URL=https://t.me/seu_grupo_pro
 VITE_WHATSAPP_SUPPORT=https://wa.me/55...
 ```
 
-## Crons (Dashboard → Edge Functions → Schedules)
+## Crons (pg_cron + pg_net)
 
-`pg_cron` e `pg_net` já estão habilitados no projeto.
+`pg_cron` e `pg_net` já estão habilitados. A migration `20260819120000_p0_auth_rls_crons` agenda:
 
-Agende diário (BRT ~20h = 23:00 UTC) no Dashboard **ou** via SQL com a service role no header:
+1. `send-checkout-recovery-hourly` — `5 * * * *` (45 min–24 h)
+2. `send-streak-reminder-daily` — `0 23 * * *` (BRT ~20h)
+3. `send-winback-daily` — `10 23 * * *`
+4. `expire-pro-access-hourly` — SQL já existente
 
-1. `send-streak-reminder` — lembrete de streak
-2. `send-winback` — D3/D7 pós-cancel
-
-```sql
--- Exemplo (troque YOUR_SERVICE_ROLE_KEY):
-select cron.schedule(
-  'send-streak-reminder-daily',
-  '0 23 * * *',
-  $$select net.http_post(
-    url := 'https://zuqjyxcjftrtrhqxuvfq.supabase.co/functions/v1/send-streak-reminder',
-    headers := '{"Authorization":"Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb,
-    body := '{}'::jsonb
-  );$$
-);
-```
+Header: `Authorization: Bearer <cron_secret do Vault>`. Sem o secret no Vault os jobs HTTP não sobem (NOTICE na migration).
 
 ## Webhook Mercado Pago
 
@@ -54,8 +53,6 @@ select cron.schedule(
 
 - `PRO10` → 10%
 - `AMIGO15` → 15%
-
-Criar mais em SQL:
 
 ```sql
 insert into coupons (code, discount_percent, affiliate_code)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { Clock, Dumbbell, Flame, Play, Sparkles, Star } from "lucide-react";
 import { usePlayer } from "@/lib/player-store";
@@ -23,7 +24,7 @@ function lerRetomada(): { treinoId: string; idx: number } | null {
   }
 }
 
-export function DashboardStats() {
+export const DashboardStats = memo(function DashboardStats() {
   const { state, streak, totalTreinos, totalMinutos, planoConcluidos } = usePlayer();
   const [retomar, setRetomar] = useState<{ treinoId: string; idx: number } | null>(null);
 
@@ -156,4 +157,4 @@ export function DashboardStats() {
       </div>
     </div>
   );
-}
+});

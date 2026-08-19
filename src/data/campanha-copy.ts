@@ -1,9 +1,4 @@
-import { DEMO_VIDEOS, PROVA_SLOTS, TEASER_TREINO_VIDEO } from "@/data/media";
-
-export type ProofSlot =
-  | { type: "video"; src: string; title: string }
-  | { type: "image"; src: string; title: string }
-  | { type: "placeholder"; title: string };
+import { DEMO_VIDEOS, TEASER_TREINO_VIDEO } from "@/data/media";
 
 export const CAMPANHA = {
   socialProof: "Sistema diário para quem treina sozinho e quer evoluir no jogo",
@@ -12,10 +7,10 @@ export const CAMPANHA = {
   headlineLead: "Siga um plano pronto e evolua como jogador em poucas semanas.",
   subheadline: "Mesmo treinando sozinho e com pouco tempo por dia.",
   heroCta: "Quero ser Jogador PRO",
-  heroCtaPlano: "mensal" as const,
+  heroCtaPlano: "semestral" as const,
   heroCtaSecundario: "Ver planos",
   heroCtaHint: "Acesso completo à jornada de 12 meses — sem freemium",
-  precoAncora: "A partir de R$16,41/mês no plano anual · Mensal R$47, sem fidelidade",
+  precoAncora: "Semestral R$147 · equivale a R$24,50/mês · Pix ou cartão",
   precoComparativo: "Menos que uma mensalidade de escolinha — e você treina todo dia.",
 
   teaserTreino: {
@@ -96,12 +91,6 @@ export const CAMPANHA = {
     botao: "Tenho 10 minutos hoje",
   },
 
-  prova: {
-    title: "O método em ação",
-    body: "Prova visual do tipo de treino e do ritmo do sistema — sem números inventados nem depoimentos fabricados. Cases filmados dos assinantes entram aqui conforme forem gravados.",
-    slots: PROVA_SLOTS as ProofSlot[],
-  },
-
   depoimentos: {
     eyebrow: "Quem já treina",
     title: "O que os alunos mandam depois dos treinos",
@@ -174,7 +163,7 @@ export const CAMPANHA = {
     body: "Testou e não é pra você? Peça o reembolso em até 14 dias e devolvemos tudo. Assinatura sem fidelidade: você cancela quando quiser, sem multa.",
   },
 
-  pagamento: "Pix · Cartão · Pagamento seguro via Mercado Pago",
+  pagamento: "Pix · Cartão em até 12x · Pagamento seguro via Mercado Pago",
 
   faq: [
     {
@@ -199,7 +188,8 @@ export const CAMPANHA = {
     },
     {
       pergunta: "Quais são as formas de pagamento?",
-      resposta: "Pix e cartão, processados com segurança pelo Mercado Pago.",
+      resposta:
+        "Pix (libera na hora da confirmação) e cartão de crédito ou débito pelo Mercado Pago. Semestral e anual podem ser parcelados em até 6x e 12x no cartão, conforme a operadora.",
     },
     {
       pergunta: "Como faço para cancelar?",
@@ -212,9 +202,9 @@ export const CAMPANHA = {
         "Sim. O app funciona no navegador do celular, tablet e computador, com o mesmo progresso sincronizado na nuvem.",
     },
     {
-      pergunta: "O que acontece depois das 4 semanas?",
+      pergunta: "O que acontece depois dos 12 meses?",
       resposta:
-        "Você entra em novos ciclos com carga progressiva, além da biblioteca completa e dos modos pré-partida e pós-jogo.",
+        "A jornada guiada entra em ciclos de manutenção com carga progressiva, além da biblioteca completa e dos modos pré-partida e pós-jogo. Renove o plano anual para continuar com acesso PRO.",
     },
   ],
 
@@ -328,6 +318,7 @@ export const CAMPANHA = {
         de: "",
         badge: "",
         equivalente: "R$47/mês",
+        parcelas: "",
         cta: "Começar mensal",
         inclui: ["Acesso completo ao sistema", "Cancele quando quiser", "Garantia de 14 dias"],
       },
@@ -339,6 +330,7 @@ export const CAMPANHA = {
         de: "De R$282 no mensal",
         badge: "Mais escolhido",
         equivalente: "R$24,50/mês",
+        parcelas: "ou em até 6x no cartão",
         cta: "Quero o semestral",
         inclui: [
           "Acesso completo ao sistema",
@@ -355,6 +347,7 @@ export const CAMPANHA = {
         de: "De R$564 no mensal",
         badge: "Melhor valor",
         equivalente: "R$16,41/mês",
+        parcelas: "ou em até 12x no cartão",
         cta: "Quero o anual",
         inclui: [
           "Acesso completo ao sistema",

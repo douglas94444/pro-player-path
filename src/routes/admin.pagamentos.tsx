@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminShell } from "@/components/AdminShell";
-import { fetchAdminPayments, type AdminPaymentRow } from "@/lib/admin";
-import { toast } from "sonner";
+import { fetchAdminPayments } from "@/lib/admin";
+import { useAdminTable } from "@/hooks/use-admin-table";
 import { cn } from "@/lib/utils";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 
@@ -13,15 +13,8 @@ export const Route = createFileRoute("/admin/pagamentos")({
 });
 
 function AdminPagamentos() {
-  const [rows, setRows] = useState<AdminPaymentRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    void fetchAdminPayments()
-      .then(setRows)
-      .catch((e) => toast.error(e instanceof Error ? e.message : "Erro ao listar"))
-      .finally(() => setLoading(false));
-  }, []);
+  const loader = useCallback(() => fetchAdminPayments(), []);
+  const { rows, loading } = useAdminTable(loader);
 
   return (
     <AdminShell title="Pagamentos" subtitle="Eventos Mercado Pago / webhooks">

@@ -54,10 +54,12 @@ function BemVindoProPage() {
           {state.nome !== "Jogador" ? `${state.nome}, você é PRO` : "Você é PRO"}
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Plano completo liberado. Faça o treino do Dia 1 hoje — ativação é o que gera resultado.
+          {state.onboardingDone
+            ? "Plano completo liberado. Faça o treino do Dia 1 hoje — ativação é o que gera resultado."
+            : "Plano liberado. Em 1 minuto personalizamos o treino do seu Dia 1."}
         </p>
 
-        {treino && primeiro ? (
+        {state.onboardingDone && treino && primeiro ? (
           <div className="mt-6 rounded-2xl border border-primary/25 bg-primary/10 p-4 text-left">
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -75,7 +77,13 @@ function BemVindoProPage() {
               </Link>
             </Button>
           </div>
-        ) : null}
+        ) : (
+          <Button asChild size="lg" className="mt-6 h-12 w-full font-extrabold">
+            <Link to="/onboarding">
+              <Play className="h-4 w-4" /> Personalizar e começar
+            </Link>
+          </Button>
+        )}
 
         <Button type="button" variant="outline" className="mt-3 h-12 w-full font-extrabold" onClick={entrarTelegram}>
           <MessageCircle className="h-4 w-4" /> Entrar na comunidade PRO (Telegram)
