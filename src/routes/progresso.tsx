@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Flame, Clock, Dumbbell, Lock, Trophy, Play } from "lucide-react";
+import { Flame, Dumbbell, Lock, Trophy, Play } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ProgressRing } from "@/components/ProgressRing";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 import { safeWrite } from "@/lib/supabase-write";
+import { patenteDe, xpTotal } from "@/lib/gamificacao";
+import { RankingLista, type RankingRow } from "@/components/RankingLista";
 
 export const Route = createFileRoute("/progresso")({
   errorComponent: RouteError,
@@ -42,7 +44,6 @@ function ProgressoPage() {
   const {
     streak,
     totalTreinos,
-    totalMinutos,
     nivel,
     planoConcluidos,
     state,
@@ -73,6 +74,30 @@ function ProgressoPage() {
       return (rows ?? []) as Score[];
     },
   });
+  const { data: rankingRows = [] } = useQuery({
+    queryKey: ["ranking-semanal", weekStartIso()],
+    enabled: state.assinante,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ranking_semanal")
+        .select("nome, treinos, minutos, streak_peak, posicao")
+        .eq("week_start", weekStartIso())
+        .order("posicao", { ascending: true })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        nome: r.nome ?? "Jogador",
+        treinos: r.treinos ?? 0,
+        minutos: r.minutos ?? 0,
+        streak_peak: r.streak_peak ?? 0,
+        posicao: r.posicao ?? 0,
+      })) satisfies RankingRow[];
+    },
+  });
+  const xp = xpTotal(state.sessoes);
+  const patente = patenteDe(xp);
+  const minhaPosicao = rankingRows.find((r) => r.nome === state.nome)?.posicao;
   const [explosao, setExplosao] = useState(3);
   const [controle, setControle] = useState(3);
   const [resistencia, setResistencia] = useState(3);
@@ -126,7 +151,7 @@ function ProgressoPage() {
             Streak, scores no campo e conquistas liberam após assinar.
           </p>
           <Button asChild size="lg" className="mt-6 h-12 w-full font-extrabold">
-            <Link to="/" search={{ from: "progresso" }} hash="oferta">
+            <Link to="/checkout" search={{ from: "progresso", teaser: "Streak, scores e conquistas liberam no PRO" }}>
               Ver planos
             </Link>
           </Button>
@@ -209,9 +234,46 @@ function ProgressoPage() {
       </section>
 
       <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
-        <h2 className="text-sm font-bold text-foreground">Score semanal no campo</h2>
+        <h2 className="text-sm font-bold text-foreground">
+          Patente {patente.atual.emoji} {patente.atual.nome}
+        </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Autoavaliação 1–5. Isso alimenta sua evolução e personalização.
+          {xp.toLocaleString("pt-BR")} XP
+          {patente.proxima ? ` · faltam ${patente.faltam.toLocaleString("pt-BR")} para ${patente.proxima.nome}` : " · patente máxima"}
+        </p>
+      </section>
+
+      <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-foreground">
+            {minhaPosicao ? `Liga da semana · você #${minhaPosicao}` : "Liga da semana"}
+          </h2>
+          <Link to="/ranking" className="text-xs font-bold text-primary underline underline-offset-4">
+            Ver ranking
+          </Link>
+        </div>
+        <div className="mt-3">
+          <RankingLista
+            rows={rankingRows.slice(0, 5)}
+            meuNome={state.nome}
+            emptyCta={
+              treinoDeHoje
+                ? {
+                    to: "/treino/$treinoId",
+                    params: { treinoId: treinoDeHoje.id },
+                    search: { plano: proximoPlano?.key ?? "" },
+                    label: "Fazer o treino de hoje",
+                  }
+                : null
+            }
+          />
+        </div>
+      </section>
+
+      <details className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
+        <summary className="cursor-pointer text-sm font-bold text-foreground">Score semanal no campo</summary>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Autoavaliação 1–5. Registro pessoal — não altera o treino do dia.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {[
@@ -254,21 +316,7 @@ function ProgressoPage() {
             ))}
           </div>
         ) : null}
-      </section>
-
-      <div className="mt-4 grid grid-cols-3 gap-3 md:gap-4">
-        {[
-          { icon: Flame, valor: streak, label: "dias seguidos" },
-          { icon: Dumbbell, valor: totalTreinos, label: "treinos feitos" },
-          { icon: Clock, valor: `${totalMinutos}`, label: "min treinados" },
-        ].map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border/60 bg-card p-4 text-center shadow-soft">
-            <s.icon className="mx-auto h-5 w-5 text-primary" />
-            <p className="mt-2 text-2xl font-black text-foreground">{s.valor}</p>
-            <p className="text-[11px] text-muted-foreground">{s.label}</p>
-          </div>
-        ))}
-      </div>
+      </details>
 
       <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
         <h2 className="text-sm font-bold text-foreground">Últimos 7 dias</h2>

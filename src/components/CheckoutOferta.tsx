@@ -133,7 +133,9 @@ export function CheckoutOferta({
     } catch {
       /* ignore */
     }
-    void supabase.from("affiliate_clicks").insert({ code: refCode });
+    void import("@/lib/leads.functions").then(({ registrarAffiliateClick }) =>
+      registrarAffiliateClick({ data: { code: refCode } }).catch(() => {}),
+    );
     void buscarCupomAtivo(refCode).then((achado) => {
       if (achado) setCupomAplicado({ code: achado.code, discount: achado.discount_percent });
     });

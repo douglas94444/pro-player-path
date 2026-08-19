@@ -21,6 +21,7 @@ import { InclusoStack } from "@/components/landing/InclusoStack";
 import { PlanosTable } from "@/components/landing/PlanosTable";
 import { AvaliacoesWidget } from "@/components/landing/AvaliacoesWidget";
 import { SelosConfianca } from "@/components/landing/SelosConfianca";
+import { whatsappSupportHref } from "@/lib/product-config";
 
 
 export type { LandingSearch };
@@ -31,7 +32,9 @@ export function LandingPage({ search }: { search: LandingSearch }) {
   const navigate = useNavigate();
   const [planoAtivo, setPlanoAtivo] = useState<string | undefined>(search.plano ?? CAMPANHA.heroCtaPlano);
   const precoHero =
-    CAMPANHA.planos.itens.find((p) => p.id === CAMPANHA.heroCtaPlano)?.preco ?? "R$147";
+    CAMPANHA.planos.itens.find((p) => p.id === (planoAtivo ?? CAMPANHA.heroCtaPlano))?.preco ?? "R$147";
+  const planoCheckout = planoAtivo ?? CAMPANHA.heroCtaPlano;
+  const zap = whatsappSupportHref("Oi! Quero tirar uma dúvida sobre o Jogador PRO.");
 
   useEffect(() => {
     captureUtmFromSearch(search);
@@ -75,8 +78,13 @@ export function LandingPage({ search }: { search: LandingSearch }) {
 
   const irParaCheckout = useCallback(
     (plano?: string) => {
-      const alvo = plano ?? CAMPANHA.heroCtaPlano;
+      const alvo = plano ?? planoAtivo ?? CAMPANHA.heroCtaPlano;
       setPlanoAtivo(alvo);
+      trackMetaDedup("InitiateCheckout", {
+        content_name: alvo,
+        currency: "BRL",
+        num_items: 1,
+      });
       void navigate({
         to: "/checkout",
         search: searchCheckout({
@@ -92,7 +100,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         }),
       });
     },
-    [navigate, search],
+    [navigate, search, planoAtivo],
   );
 
 
@@ -101,7 +109,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
     <main className="relative min-h-screen overflow-x-hidden bg-background pb-24 text-foreground md:pb-0">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_70%_at_50%_-10%,_oklch(0.78_0.2_141_/_0.18),_transparent_55%)]" />
 
-      <TopBar logado={logado} onAssinar={() => irParaCheckout(CAMPANHA.heroCtaPlano)} />
+      <TopBar logado={logado} onAssinar={() => irParaCheckout(planoCheckout)} />
 
       {/* Urgência + social proof strip */}
       <div className="relative mt-14">
@@ -128,7 +136,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             <Button
               size="lg"
               className="h-14 w-full px-8 text-base font-extrabold sm:w-auto sm:min-w-[240px]"
-              onClick={() => irParaCheckout(CAMPANHA.heroCtaPlano)}
+              onClick={() => irParaCheckout(planoCheckout)}
             >
               {CAMPANHA.heroCta}
             </Button>
@@ -148,12 +156,19 @@ export function LandingPage({ search }: { search: LandingSearch }) {
             <GarantiaBadge compact />
             <p className="text-xs text-muted-foreground">{CAMPANHA.heroCtaHint}</p>
           </div>
+          <p className="mt-3 max-w-xl text-xs text-muted-foreground">
+            A partir de 14 anos. Abaixo disso, com acompanhamento de um responsável. Cancele quando quiser —
+            garantia de 14 dias.
+          </p>
           <div className="mt-4">
             <SelosConfianca />
           </div>
         </div>
 
-        <aside className="mt-10 max-w-xl overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft lg:absolute lg:right-8 lg:top-16 lg:mt-0">
+        <aside
+          id="teaser-treino"
+          className="mt-10 max-w-xl scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft lg:absolute lg:right-8 lg:top-16 lg:mt-0"
+        >
           <video
             className="aspect-video w-full object-cover"
             src={CAMPANHA.teaserTreino.videoSrc}
@@ -192,7 +207,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <Button
             size="lg"
             className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[260px]"
-            onClick={() => irParaCheckout(CAMPANHA.heroCtaPlano)}
+            onClick={() => irParaCheckout(planoCheckout)}
           >
             {CAMPANHA.heroCta}
           </Button>
@@ -300,12 +315,12 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <Eyebrow>{CAMPANHA.preview.eyebrow}</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.preview.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.preview.body}</p>
-        <PreviewTreinos onCta={() => irParaCheckout(CAMPANHA.heroCtaPlano)} />
+        <PreviewTreinos onCta={() => irParaCheckout(planoCheckout)} />
       </Section>
 
       {/* Modo Rápido */}
       <Section tone="card">
-        <ModoRapidoCard onCta={() => irParaCheckout(CAMPANHA.heroCtaPlano)} />
+        <ModoRapidoCard onCta={() => irParaCheckout(planoCheckout)} />
       </Section>
 
 
@@ -347,7 +362,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.depoimentos.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.depoimentos.body}</p>
         <AvaliacoesWidget />
-        <DepoimentosSection onCta={() => irParaCheckout(CAMPANHA.heroCtaPlano)} />
+        <DepoimentosSection onCta={() => irParaCheckout(planoCheckout)} />
       </Section>
 
       {/* Tudo incluso */}
@@ -356,13 +371,6 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.incluso.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.incluso.body}</p>
         <InclusoStack />
-      </Section>
-
-      {/* FAQ */}
-      <Section>
-        <Eyebrow>Dúvidas</Eyebrow>
-        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Antes de assinar</h2>
-        <FaqSection />
       </Section>
 
       {/* Planos + Oferta */}
@@ -412,6 +420,13 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         </div>
       </Section>
 
+      {/* FAQ */}
+      <Section>
+        <Eyebrow>Dúvidas</Eyebrow>
+        <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">Antes de assinar</h2>
+        <FaqSection />
+      </Section>
+
       {/* Urgência */}
       <Section>
         <h2 className="max-w-2xl text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.urgencia.title}</h2>
@@ -420,7 +435,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <Button
             size="lg"
             className="h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[240px]"
-            onClick={() => irParaCheckout(CAMPANHA.heroCtaPlano)}
+            onClick={() => irParaCheckout(planoCheckout)}
           >
             {CAMPANHA.urgencia.cta}
           </Button>
@@ -445,16 +460,24 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <Link to="/escolinhas" className="font-semibold text-primary underline-offset-4 hover:underline">
             Treina uma escolinha? Fale com a gente
           </Link>
+          {zap ? (
+            <>
+              {" · "}
+              <a href={zap} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline-offset-4 hover:underline">
+                WhatsApp
+              </a>
+            </>
+          ) : null}
         </p>
       </footer>
 
       {/* Sticky mobile CTA */}
-      <div className="animate-in slide-in-from-bottom-4 fixed inset-x-0 bottom-0 z-50 p-3 duration-500 md:hidden">
+      <div className="animate-in slide-in-from-bottom-4 fixed inset-x-0 bottom-0 z-50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] duration-500 md:hidden">
         <div className="rounded-[1.5rem] border border-border/60 bg-card/95 p-3 shadow-soft-lg backdrop-blur">
           <Button
             size="lg"
             className="h-12 w-full text-sm font-extrabold"
-            onClick={() => irParaCheckout(CAMPANHA.heroCtaPlano)}
+            onClick={() => irParaCheckout(planoCheckout)}
           >
             {CAMPANHA.heroCta} · {precoHero}
           </Button>

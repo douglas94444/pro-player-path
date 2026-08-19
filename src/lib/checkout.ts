@@ -76,6 +76,20 @@ export function searchCheckout(
   return out;
 }
 
+/** Tenta abrir a sessão logo após o signUp — evita travar o Pix na confirmação de e-mail. */
+export async function garantirSessaoAposCadastro(email: string, senha: string) {
+  const { data: atual } = await supabase.auth.getSession();
+  if (atual.session) return { session: atual.session, precisaConfirmarEmail: false as const };
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+  if (data.session) return { session: data.session, precisaConfirmarEmail: false as const };
+  const msg = (error?.message ?? "").toLowerCase();
+  return {
+    session: null,
+    precisaConfirmarEmail: msg.includes("email not confirmed"),
+    erro: error?.message,
+  };
+}
+
 export async function registrarCheckoutIntent(plano: string) {
   const { data } = await supabase.auth.getUser();
   const userId = data.user?.id;

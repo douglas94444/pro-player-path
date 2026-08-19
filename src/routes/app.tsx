@@ -15,8 +15,6 @@ import { labelObjetivo, prefereModoRapido, treinoRapido } from "@/lib/recommenda
 import { cn } from "@/lib/utils";
 import { DashboardStats } from "@/components/DashboardStats";
 
-
-
 export const Route = createFileRoute("/app")({
   errorComponent: RouteError,
   notFoundComponent: RouteNotFound,
@@ -51,6 +49,7 @@ function Home() {
     planoCompleto,
     isPaused,
     totalTreinos,
+    retomarAssinatura,
   } = usePlayer();
   const navigate = useNavigate();
   const semanaPlanoAtual = PLANO.find((s) => s.semana === semanaAtual);
@@ -83,34 +82,90 @@ function Home() {
     treinoDeHoje && !canAccessTreino(state.assinante, treinoDeHoje.id, proximoPlano?.key);
   const focoLabel = labelObjetivo(state.objetivo);
   const querRapido = prefereModoRapido(state.disponibilidade);
-  const precisaAssinar = !state.assinante;
-
-
+  const precisaAssinar = !state.assinante && !isPaused;
+  const treinouHoje = state.sessoes.some((s) => s.data === diaBROffset(0));
+  const treinouOntem = state.sessoes.some((s) => s.data === diaBROffset(-1));
+  const streakEmRisco = state.assinante && totalTreinos > 0 && !treinouHoje && !treinouOntem;
 
   if (!hydrated || (state.assinante && !state.onboardingDone)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        <p className="text-sm text-muted-foreground">
+          {state.assinante && !state.onboardingDone ? "Personalizando seu plano…" : "Carregando…"}
+        </p>
       </div>
     );
   }
+
+  const ctaPrincipal = treinoDeHoje ? (
+    treinoBloqueado ? (
+      <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
+        <Link
+          to="/checkout"
+          search={{
+            from: "home",
+            teaser: `${treinoDeHoje.nome} — ${treinoDeHoje.descricao}`,
+          }}
+        >
+          Destravar treino PRO
+        </Link>
+      </Button>
+    ) : (
+      <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
+        <Link
+          to="/treino/$treinoId"
+          params={{ treinoId: treinoDeHoje.id }}
+          search={{ plano: proximoPlano?.key ?? "" }}
+        >
+          <Play className="h-5 w-5" /> Começar agora
+        </Link>
+      </Button>
+    )
+  ) : null;
 
   return (
     <AppShell
       title={`Fala, ${state.nome}`}
       subtitle={
-        focoLabel
-          ? `Jogador ${nivel} · foco em ${focoLabel}`
-          : `Jogador ${nivel} · seu treino de hoje`
+        treinoDeHoje
+          ? `Hoje · ${treinoDeHoje.duracaoMin} min · streak ${streak}`
+          : focoLabel
+            ? `Jogador ${nivel} · foco em ${focoLabel}`
+            : `Jogador ${nivel} · seu treino de hoje`
       }
       action={
-        <div className="flex items-center gap-1.5 rounded-full bg-card px-3.5 py-2 text-sm font-bold text-foreground shadow-soft">
+        <Link
+          to="/ranking"
+          className="flex items-center gap-1.5 rounded-full bg-card px-3.5 py-2 text-sm font-bold text-foreground shadow-soft"
+        >
           <Flame className="h-4 w-4 text-primary" />
           {streak}
-        </div>
+        </Link>
       }
     >
-      {precisaAssinar ? (
+      {isPaused && state.pausedUntil ? (
+        <div className="mb-4 rounded-[1.25rem] border border-border/60 bg-secondary/50 px-4 py-3 shadow-soft">
+          <p className="text-sm font-extrabold text-foreground">Modo pausa ativo</p>
+          <p className="text-xs text-muted-foreground">
+            Até {new Date(state.pausedUntil).toLocaleDateString("pt-BR")} · acesso PRO segue liberado · sem cobrança
+            extra
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button
+              size="sm"
+              className="font-extrabold"
+              onClick={() => {
+                void retomarAssinatura();
+              }}
+            >
+              Encerrar pausa
+            </Button>
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/perfil">Gerenciar</Link>
+            </Button>
+          </div>
+        </div>
+      ) : precisaAssinar ? (
         <Link
           to="/checkout"
           search={{ from: "home", teaser: "Assine para liberar o treino do dia e o plano completo" }}
@@ -126,34 +181,29 @@ function Home() {
         </Link>
       ) : null}
 
-      {isPaused && state.pausedUntil ? (
-        <Link
-          to="/perfil"
-          className="mb-4 flex items-center justify-between gap-3 rounded-[1.25rem] border border-border/60 bg-secondary/50 px-4 py-3 shadow-soft"
-        >
-          <span>
-            <span className="block text-sm font-extrabold text-foreground">Modo pausa ativo</span>
-            <span className="block text-xs text-muted-foreground">
-              Até {new Date(state.pausedUntil).toLocaleDateString("pt-BR")} · acesso PRO liberado · gerenciar no
-              perfil
-            </span>
-          </span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </Link>
-      ) : null}
-
-      {state.assinante && totalTreinos > 0 && !state.sessoes.some((s) => s.data === diaBROffset(-1)) ? (
-        <div className="mb-4 rounded-[1.25rem] border border-border/60 bg-card px-4 py-3 shadow-soft">
-          <p className="text-sm font-extrabold text-foreground">Treino de ontem em aberto</p>
+      {streakEmRisco ? (
+        <div className="mb-4 rounded-[1.25rem] border border-primary/25 bg-primary/10 px-4 py-3 shadow-soft">
+          <p className="text-sm font-extrabold text-foreground">Streak em risco</p>
           <p className="text-xs text-muted-foreground">
-            Uma sessão rápida hoje recupera o ritmo. Abre o treino do dia e fecha em 10–20 min.
+            Você não treinou ontem. Uma sessão de 10–20 min hoje recupera o ritmo.
           </p>
+          {treinoDeHoje && !treinoBloqueado ? (
+            <Button asChild size="sm" className="mt-3 font-extrabold">
+              <Link
+                to="/treino/$treinoId"
+                params={{ treinoId: treinoDeHoje.id }}
+                search={{ plano: proximoPlano?.key ?? "" }}
+              >
+                Treinar agora
+              </Link>
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
-      <DashboardStats />
+      <DashboardStats compact />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1.35fr_1fr] lg:gap-5">
+      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr] lg:gap-5">
         <section className="rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-soft sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
             {planoCompleto
@@ -179,31 +229,7 @@ function Home() {
                 : `Mês ${mesAtual} · Semana ${semanaNoMes} · Dia ${proximoPlano?.dia ?? 5}`}
             </span>
           </div>
-          {treinoDeHoje ? (
-            treinoBloqueado ? (
-              <Button asChild size="lg" className="mt-7 h-14 w-full text-base font-extrabold sm:max-w-xs">
-                <Link
-                  to="/checkout"
-                  search={{
-                    from: "home",
-                    teaser: `${treinoDeHoje.nome} — ${treinoDeHoje.descricao}`,
-                  }}
-                >
-                  Destravar treino PRO
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild size="lg" className="mt-7 h-14 w-full text-base font-extrabold sm:max-w-xs">
-                <Link
-                  to="/treino/$treinoId"
-                  params={{ treinoId: treinoDeHoje.id }}
-                  search={{ plano: proximoPlano?.key ?? "" }}
-                >
-                  <Play className="h-5 w-5" /> Começar agora
-                </Link>
-              </Button>
-            )
-          ) : null}
+          <div className="mt-7 hidden sm:max-w-xs md:block">{ctaPrincipal}</div>
         </section>
 
         <div className="flex flex-col gap-4">
@@ -217,30 +243,35 @@ function Home() {
             <ProgressRing value={progressoSemana} size={104} stroke={9} label="semana" />
           </section>
 
-          <button
-            onClick={modoRapido}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-[1.5rem] border p-4 text-left shadow-soft transition-colors sm:p-5",
-              querRapido
-                ? "border-primary/40 bg-primary/10 hover:border-primary/60"
-                : "border-border/60 bg-card hover:border-primary/40",
-            )}
-          >
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-              <Zap className="h-5 w-5" />
-            </span>
-            <span className="flex-1">
-              <span className="block text-sm font-bold text-foreground">
-                {querRapido ? "Seu modo: 10 minutos" : "Tenho 10 minutos hoje"}
+          {querRapido ? (
+            <button
+              onClick={modoRapido}
+              className="flex w-full items-center gap-3 rounded-[1.5rem] border border-primary/40 bg-primary/10 p-4 text-left shadow-soft transition-colors hover:border-primary/60 sm:p-5"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                <Zap className="h-5 w-5" />
               </span>
-              <span className="block text-xs text-muted-foreground">
-                {querRapido
-                  ? "Baseado no tempo que você escolheu no onboarding"
-                  : "Geramos um treino rápido pra você"}
+              <span className="flex-1">
+                <span className="block text-sm font-bold text-foreground">Seu modo: 10 minutos</span>
+                <span className="block text-xs text-muted-foreground">
+                  Baseado no tempo que você escolheu no onboarding
+                </span>
               </span>
-            </span>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </button>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          ) : (
+            <details className="rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-soft sm:p-5">
+              <summary className="cursor-pointer text-sm font-bold text-foreground">Tenho só 10 minutos hoje</summary>
+              <button
+                type="button"
+                onClick={modoRapido}
+                className="mt-3 flex w-full items-center justify-between text-left text-xs text-muted-foreground"
+              >
+                Geramos um treino rápido pra você
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </details>
+          )}
         </div>
       </div>
 
@@ -260,7 +291,12 @@ function Home() {
           </Link>
         ))}
       </section>
+
+      {ctaPrincipal ? (
+        <div className="fixed inset-x-0 z-30 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden bottom-[4.75rem]">
+          {ctaPrincipal}
+        </div>
+      ) : null}
     </AppShell>
   );
 }
-

@@ -7,7 +7,7 @@ import { TreinoCard } from "@/components/TreinoCard";
 
 import { CATEGORIAS, POSICOES, TREINOS, type Categoria } from "@/data/training";
 import { usePlayer } from "@/lib/player-store";
-import { categoriaPorObjetivo, labelObjetivo } from "@/lib/recommendations";
+import { categoriaPorObjetivo, labelObjetivo, scoreRecomendacao } from "@/lib/recommendations";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +50,7 @@ function Biblioteca() {
   const [usouSugestao, setUsouSugestao] = useState(false);
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState<Ordem>("relevancia");
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
   useEffect(() => {
     if (!usouSugestao && sugerida) {
@@ -82,7 +83,7 @@ function Biblioteca() {
     if (ordem === "duracao") return a.duracaoMin - b.duracaoMin;
     if (ordem === "intensidade") return (PESO_NIVEL[b.nivel] ?? 0) - (PESO_NIVEL[a.nivel] ?? 0);
     if (ordem === "feitos") return (feitosPorTreino[b.id] ?? 0) - (feitosPorTreino[a.id] ?? 0);
-    return 0;
+    return scoreRecomendacao(b, state.objetivo, state.posicao) - scoreRecomendacao(a, state.objetivo, state.posicao);
   });
   const foco = labelObjetivo(state.objetivo);
 
@@ -105,6 +106,44 @@ function Biblioteca() {
           />
         </div>
       </div>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Treinos extras não substituem o dia do plano. Use para volume além da jornada.
+      </p>
+      <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+        <button
+          onClick={() => setFiltro(null)}
+          className={cn(
+            "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-soft transition-colors",
+            filtro === null
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border/60 bg-card text-muted-foreground",
+          )}
+        >
+          Todos
+        </button>
+        {sugerida ? (
+          <button
+            onClick={() => setFiltro(sugerida)}
+            className={cn(
+              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-soft transition-colors",
+              filtro === sugerida
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-primary/40 bg-primary/10 text-primary",
+            )}
+          >
+            Pra você
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setFiltrosAbertos((v) => !v)}
+          className="shrink-0 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-semibold text-muted-foreground shadow-soft"
+        >
+          {filtrosAbertos ? "Fechar filtros" : "Filtros"}
+        </button>
+      </div>
+      {filtrosAbertos ? (
+        <>
       <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
         {ORDENS.map(([id, label]) => (
           <button
@@ -164,30 +203,6 @@ function Biblioteca() {
         ))}
       </div>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-        <button
-          onClick={() => setFiltro(null)}
-          className={cn(
-            "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-soft transition-colors",
-            filtro === null
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border/60 bg-card text-muted-foreground",
-          )}
-        >
-          Todos
-        </button>
-        {sugerida ? (
-          <button
-            onClick={() => setFiltro(sugerida)}
-            className={cn(
-              "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold shadow-soft transition-colors",
-              filtro === sugerida
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-primary/40 bg-primary/10 text-primary",
-            )}
-          >
-            Pra você
-          </button>
-        ) : null}
         {CATEGORIAS.map((c) => (
           <button
             key={c.id}
@@ -203,6 +218,8 @@ function Biblioteca() {
           </button>
         ))}
       </div>
+        </>
+      ) : null}
 
       {lista.length === 0 ? (
         <div className="mt-10 rounded-[1.5rem] border border-dashed border-border bg-card p-8 text-center shadow-soft">

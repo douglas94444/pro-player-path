@@ -199,14 +199,10 @@ export async function fetchAdminStats() {
   };
 }
 
-export async function fetchAdminUsers() {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, nome, assinante, plano, role, created_at, mp_payment_id")
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (error) throw error;
-  return (data ?? []) as AdminUserRow[];
+export async function fetchAdminUsers(q = "") {
+  const { searchAdminUsers } = await import("@/lib/admin.functions");
+  const rows = await searchAdminUsers({ data: { q } });
+  return (rows ?? []) as AdminUserRow[];
 }
 
 export async function fetchAdminSessoes() {
@@ -247,7 +243,7 @@ export function exportFunilCsv(rows: FunilUtmRow[]) {
 
 export async function updateAdminUser(
   id: string,
-  patch: { assinante?: boolean; plano?: string | null; role?: "user" | "admin"; nome?: string },
+  patch: { assinante?: boolean; plano?: string | null; nome?: string },
 ) {
   const { error } = await supabase.from("profiles").update(patch).eq("id", id);
   if (error) throw error;

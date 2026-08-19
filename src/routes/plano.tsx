@@ -63,6 +63,23 @@ function PlanoPage() {
       title="Meu plano"
       subtitle={planoCompleto ? "Ciclo de manutenção ativo" : "Sua jornada guiada de 12 meses"}
     >
+      {proximoPlano && !planoCompleto ? (
+        <div className="mb-5 rounded-[1.5rem] border border-primary/30 bg-primary/10 p-5 shadow-soft">
+          <p className="text-xs font-bold uppercase tracking-wide text-primary">Hoje — próximo passo</p>
+          <p className="mt-1 text-base font-extrabold text-foreground">
+            {getTreino(proximoPlano.treinoId)?.nome ?? "Treino do dia"}
+          </p>
+          <Link
+            to="/treino/$treinoId"
+            params={{ treinoId: proximoPlano.treinoId }}
+            search={{ plano: proximoPlano.key }}
+            className="mt-3 inline-flex h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-extrabold text-primary-foreground"
+          >
+            Começar agora
+          </Link>
+        </div>
+      ) : null}
+
       {planoCompleto ? (
         <div className="mb-6 rounded-[1.5rem] border border-primary/25 bg-primary/10 p-5 shadow-soft">
           <p className="text-sm font-bold text-foreground">Jornada de 12 meses concluída</p>
@@ -272,7 +289,7 @@ function PlanoPage() {
                                     Dia {dia.dia} · {treino.nome}
                                     {atual ? (
                                       <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
-                                        Next
+                                        Hoje
                                       </span>
                                     ) : null}
                                   </span>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acessoProAtivo, asPlanoAssinatura } from "./acesso";
+import { acessoProAtivo, asPlanoAssinatura, estaPausado } from "./acesso";
 
 describe("acessoProAtivo", () => {
   it("bloqueia não-assinante", () => {
@@ -10,16 +10,24 @@ describe("acessoProAtivo", () => {
     expect(acessoProAtivo(true, new Date(Date.now() - 1000).toISOString())).toBe(false);
   });
 
-  it("bloqueia durante paused_until futuro", () => {
+  it("mantém acesso durante pausa (alívio de ritmo, não lockout)", () => {
     expect(
       acessoProAtivo(true, new Date(Date.now() + 86400000).toISOString(), new Date(Date.now() + 3600000).toISOString()),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("libera se pausa já venceu", () => {
     expect(
       acessoProAtivo(true, new Date(Date.now() + 86400000).toISOString(), new Date(Date.now() - 1000).toISOString()),
     ).toBe(true);
+  });
+});
+
+describe("estaPausado", () => {
+  it("é true só com paused_until no futuro", () => {
+    expect(estaPausado(new Date(Date.now() + 3600000).toISOString())).toBe(true);
+    expect(estaPausado(new Date(Date.now() - 1000).toISOString())).toBe(false);
+    expect(estaPausado(null)).toBe(false);
   });
 });
 

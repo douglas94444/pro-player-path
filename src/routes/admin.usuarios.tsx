@@ -1,8 +1,10 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminShell } from "@/components/AdminShell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { fetchAdminUsers, updateAdminUser, type AdminUserRow } from "@/lib/admin";
+import { setAdminRole } from "@/lib/admin.functions";
 import { useAdminTable } from "@/hooks/use-admin-table";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -15,7 +17,9 @@ export const Route = createFileRoute("/admin/usuarios")({
 });
 
 function AdminUsuarios() {
-  const loader = useCallback(() => fetchAdminUsers(), []);
+  const [q, setQ] = useState("");
+  const [busca, setBusca] = useState("");
+  const loader = useCallback(() => fetchAdminUsers(busca), [busca]);
   const { rows, loading, reload } = useAdminTable(loader);
 
   const toggleAssinante = async (row: AdminUserRow) => {
@@ -33,7 +37,7 @@ function AdminUsuarios() {
 
   const toggleRole = async (row: AdminUserRow) => {
     try {
-      await updateAdminUser(row.id, { role: row.role === "admin" ? "user" : "admin" });
+      await setAdminRole({ data: { userId: row.id, role: row.role === "admin" ? "user" : "admin" } });
       toast.success(row.role === "admin" ? "Admin removido" : "Admin concedido");
       reload();
     } catch (e) {
@@ -43,6 +47,24 @@ function AdminUsuarios() {
 
   return (
     <AdminShell title="Usuários" subtitle="Perfis, assinatura e papéis">
+      <form
+        className="mb-4 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setBusca(q.trim());
+        }}
+      >
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar por e-mail, nome ou id"
+          className="max-w-sm"
+        />
+        <Button type="submit" variant="outline" className="rounded-lg">
+          Buscar
+        </Button>
+      </form>
+
       {loading ? <p className="text-sm text-muted-foreground">Carregando…</p> : null}
 
       <div className="overflow-x-auto rounded-2xl border border-border">
@@ -61,7 +83,7 @@ function AdminUsuarios() {
               <tr key={row.id} className="border-t border-border">
                 <td className="px-4 py-3">
                   <p className="font-semibold text-foreground">{row.nome}</p>
-                  <p className="text-[11px] text-muted-foreground">{row.id.slice(0, 8)}…</p>
+                  <p className="text-[11px] text-muted-foreground">{row.email ?? `${row.id.slice(0, 8)}…`}</p>
                 </td>
                 <td className="px-4 py-3">
                   <span

@@ -17,6 +17,19 @@ export function categoriaPorObjetivo(objetivo: string | null | undefined): Categ
   return OBJETIVO_CATEGORIA[objetivo] ?? null;
 }
 
+export function scoreRecomendacao(
+  t: Treino,
+  objetivo: string | null | undefined,
+  posicao?: string | null,
+): number {
+  const cat = categoriaPorObjetivo(objetivo);
+  let s = 0;
+  if (cat && t.categorias.includes(cat)) s += 4;
+  if (posicao && posicao !== "qualquer" && t.posicoes?.includes(posicao)) s += 2;
+  if (!t.posicoes?.length || t.posicoes.includes("qualquer")) s += 1;
+  return s - t.duracaoMin / 100;
+}
+
 export function labelObjetivo(objetivo: string | null | undefined): string | null {
   const map: Record<string, string> = {
     base: "base física",

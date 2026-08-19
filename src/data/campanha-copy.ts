@@ -230,8 +230,8 @@ export const CAMPANHA = {
   },
 
   urgenciaBar: {
-    prefixo: "Condição promocional de hoje termina em",
-    sufixo: "Depois disso, o preço volta ao normal.",
+    prefixo: "14 dias de garantia",
+    sufixo: "Acesso na aprovação do Pix ou cartão. Cancele quando quiser.",
   },
 
   beneficiosIcones: {

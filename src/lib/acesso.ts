@@ -25,16 +25,19 @@ export function extenderAcesso(atual: string | null | undefined, plano: string, 
   return next.toISOString();
 }
 
+/** Pausa é alívio de ritmo / cobrança — o acesso PRO permanece ativo. */
+export function estaPausado(pausedUntil?: string | null) {
+  if (!pausedUntil) return false;
+  const paused = new Date(pausedUntil).getTime();
+  return Number.isFinite(paused) && paused > Date.now();
+}
+
 export function acessoProAtivo(
   assinante: boolean,
   until?: string | null,
-  pausedUntil?: string | null,
+  _pausedUntil?: string | null,
 ) {
   if (!assinante) return false;
-  if (pausedUntil) {
-    const paused = new Date(pausedUntil).getTime();
-    if (Number.isFinite(paused) && paused > Date.now()) return false;
-  }
   if (!until) return true;
   const t = new Date(until).getTime();
   return Number.isFinite(t) && t > Date.now();

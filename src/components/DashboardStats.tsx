@@ -24,7 +24,7 @@ function lerRetomada(): { treinoId: string; idx: number } | null {
   }
 }
 
-export const DashboardStats = memo(function DashboardStats() {
+export const DashboardStats = memo(function DashboardStats({ compact = false }: { compact?: boolean }) {
   const { state, streak, totalTreinos, totalMinutos, planoConcluidos } = usePlayer();
   const [retomar, setRetomar] = useState<{ treinoId: string; idx: number } | null>(null);
 
@@ -56,8 +56,10 @@ export const DashboardStats = memo(function DashboardStats() {
     { icon: Sparkles, valor: xp.toLocaleString("pt-BR"), label: "XP total" },
   ];
 
+  if (compact && !treinoRetomar) return null;
+
   return (
-    <div className="mt-5 space-y-6">
+    <div className={cn(compact ? "mb-4" : "mt-5 space-y-6")}>
       {treinoRetomar ? (
         <Link
           to="/treino/$treinoId"
@@ -76,6 +78,7 @@ export const DashboardStats = memo(function DashboardStats() {
         </Link>
       ) : null}
 
+      {compact ? null : (
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {cards.map((c) => (
           <div
@@ -88,7 +91,9 @@ export const DashboardStats = memo(function DashboardStats() {
           </div>
         ))}
       </div>
+      )}
 
+      {compact ? null : (
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-[1.5rem] border border-border/60 bg-card p-6 shadow-soft">
           <div className="flex items-center justify-between">
@@ -155,6 +160,7 @@ export const DashboardStats = memo(function DashboardStats() {
           </Link>
         </section>
       </div>
+      )}
     </div>
   );
 });

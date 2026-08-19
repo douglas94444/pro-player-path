@@ -89,6 +89,22 @@ describe("mercadopago-webhook signature", () => {
       }),
     ).toBe(false);
   });
+
+  it("HMAC válido é o contrato 200 skip (topic != payment)", async () => {
+    const secret = "qa-webhook-secret";
+    const ts = String(Date.now());
+    const dataId = "";
+    const requestId = "qa-req";
+    const v1 = await hmacSha256Hex(secret, buildMpManifest(dataId, requestId, ts));
+    expect(
+      await verifyMpWebhookSignature({
+        xSignature: `ts=${ts},v1=${v1}`,
+        xRequestId: requestId,
+        dataId,
+        secret,
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("escapeHtml", () => {

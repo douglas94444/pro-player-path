@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { checkoutEmailRedirect, traduzErroAuth } from "@/lib/checkout";
+import { checkoutEmailRedirect, garantirSessaoAposCadastro, traduzErroAuth } from "@/lib/checkout";
 import { forcaSenha } from "@/lib/auth-ui";
 import { cpfValido, maskCpf, maskPhone, phoneValido, soDigitos } from "@/lib/br-docs";
 import { trackMetaDedup } from "@/lib/meta-pixel";
@@ -109,11 +109,21 @@ export function CheckoutAuth({
           return;
         }
         trackMetaDedup("CompleteRegistration", { content_name: "checkout_signup", status: true });
-        if (!data.session || !data.user) {
-          setMsg("Conta criada. Confirme o e-mail — o link volta direto para este pagamento.");
-          return;
+        let userId = data.session && data.user ? data.user.id : null;
+        if (!userId) {
+          const extra = await garantirSessaoAposCadastro(email, senha);
+          userId = extra.session?.user.id ?? null;
+          if (!userId) {
+            setMsg(
+              extra.precisaConfirmarEmail
+                ? "Conta criada. Abra o e-mail de confirmação (o link volta para este pagamento) e toque em Já confirmei."
+                : "Conta criada. Entre com o mesmo e-mail para abrir o pagamento.",
+            );
+            setModo("login");
+            return;
+          }
         }
-        await concluirComDocs(data.user.id, nome, cpfDigits, phoneDigits);
+        await concluirComDocs(userId, nome, cpfDigits, phoneDigits);
         return;
       }
 

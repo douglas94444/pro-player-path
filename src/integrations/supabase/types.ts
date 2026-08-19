@@ -468,6 +468,20 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       acesso_pro_ativo: { Args: never; Returns: boolean }
       redeem_coupon: { Args: { p_code: string }; Returns: boolean }
+      vault_secret: { Args: { p_name: string }; Returns: string | null }
+      admin_search_users: {
+        Args: { p_q?: string }
+        Returns: {
+          id: string
+          nome: string
+          assinante: boolean
+          plano: string | null
+          role: string
+          created_at: string
+          email: string | null
+          mp_payment_id: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

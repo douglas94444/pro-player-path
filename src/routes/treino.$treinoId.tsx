@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, Flame, Lock, Pause, Play, SkipBack, SkipForward, Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -94,7 +94,7 @@ function TreinoPage() {
 
   const [idx, setIdx] = useState(0);
   const [restante, setRestante] = useState(treino?.exercicios[0]?.duracaoSeg ?? 0);
-  const [rodando, setRodando] = useState(true);
+  const [rodando, setRodando] = useState(false);
   const [fim, setFim] = useState(false);
   const [salvandoConclusao, setSalvandoConclusao] = useState(false);
   const [concluido, setConcluido] = useState(false);
@@ -105,6 +105,8 @@ function TreinoPage() {
   const [novasConquistas, setNovasConquistas] = useState<{ titulo: string; desc: string }[]>([]);
   const [semanaDesbloqueada, setSemanaDesbloqueada] = useState<number | null>(null);
   const [mesConcluido, setMesConcluido] = useState<number | null>(null);
+  const autoSaveRef = useRef(false);
+  const concluirRef = useRef<() => Promise<void>>(async () => {});
 
 
   // Retoma o treino em andamento após refresh/queda de conexão.
@@ -165,6 +167,12 @@ function TreinoPage() {
     }
   }, [restante, idx, fim, treino]);
 
+  useEffect(() => {
+    if (!fim || concluido || bloqueado || !treino || autoSaveRef.current) return;
+    autoSaveRef.current = true;
+    void concluirRef.current();
+  }, [fim, concluido, bloqueado, treino]);
+
   if (!treino) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6 text-center">
@@ -216,11 +224,6 @@ function TreinoPage() {
           >
             Assinar e desbloquear
           </Button>
-          <Button asChild variant="ghost" className="mt-2 w-full">
-            <Link to="/" search={{ from: `treino:${treino.id}` }} hash="oferta">
-              Ver planos
-            </Link>
-          </Button>
         </div>
       </div>
     );
@@ -245,6 +248,7 @@ function TreinoPage() {
       setSalvandoConclusao(false);
     }
   };
+  concluirRef.current = concluir;
 
   const registrarConclusao = async () => {
     const antes = {
@@ -255,6 +259,7 @@ function TreinoPage() {
     try {
       await concluirTreino(treino.id, plano || undefined);
     } catch (e) {
+      autoSaveRef.current = false;
       toast.error("Não foi possível registrar o treino", {
         description: e instanceof Error ? e.message : "Tente novamente.",
       });
@@ -322,21 +327,24 @@ function TreinoPage() {
           <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-primary/15">
             <Trophy className="h-12 w-12 text-primary" />
           </div>
-          <h1 className="mt-6 text-3xl font-extrabold text-foreground">Treino concluído</h1>
+          <h1 className="mt-6 text-3xl font-extrabold text-foreground">
+            {salvandoConclusao ? "Salvando seu treino…" : "Registrando conclusão"}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {treino.nome} · {treino.duracaoMin} min. Você ficou mais perto do próximo nível.
+            {treino.nome} · {treino.duracaoMin} min. XP e streak entram na hora.
           </p>
-          <Button
-            onClick={() => void concluir()}
-            disabled={salvandoConclusao}
-            size="lg"
-            className="mt-8 h-14 w-full text-base font-extrabold"
-          >
-            <Check className="h-5 w-5" /> {salvandoConclusao ? "Salvando…" : "Marcar como concluído"}
-          </Button>
-          <Button asChild variant="ghost" className="mt-2 w-full">
-            <Link to="/app">Voltar depois</Link>
-          </Button>
+          {salvandoConclusao ? null : (
+            <Button
+              onClick={() => {
+                autoSaveRef.current = true;
+                void concluir();
+              }}
+              size="lg"
+              className="mt-8 h-14 w-full text-base font-extrabold"
+            >
+              <Check className="h-5 w-5" /> Tentar de novo
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -650,9 +658,14 @@ function TreinoPage() {
           <Button
             variant="outline"
             className="h-12 w-full font-bold sm:mx-auto sm:max-w-sm"
-            onClick={() => setFim(true)}
+            onClick={() => {
+              const faltam = idx < treino.exercicios.length - 1;
+              if (faltam && !window.confirm("Ainda faltam exercícios. Concluir o treino mesmo assim?")) return;
+              setRodando(false);
+              setFim(true);
+            }}
           >
-            Finalizar treino
+            Concluir agora
           </Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createAdminClient } from "../_shared/auth.ts";
+import { createAdminClient, resolveSecret } from "../_shared/auth.ts";
 import { extenderAcesso } from "../_shared/acesso.ts";
 import { sendCapi, hashIdentifier } from "../_shared/capi.ts";
 import { verifyMpWebhookSignature } from "../_shared/mp.ts";
@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
   const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
   if (!accessToken) return new Response("Mercado Pago not configured", { status: 500 });
 
-  const secret = Deno.env.get("MERCADOPAGO_WEBHOOK_SECRET") ?? "";
+  const secret = await resolveSecret("MERCADOPAGO_WEBHOOK_SECRET", "mercadopago_webhook_secret");
   const url = new URL(req.url);
   let paymentId = url.searchParams.get("data.id") ?? url.searchParams.get("id");
 

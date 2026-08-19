@@ -9,6 +9,7 @@ import { usePlayer } from "@/lib/player-store";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { diaBROffset } from "@/lib/date";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
 import {
   enviarSugestaoAnonima,
@@ -54,6 +55,8 @@ function PerfilPage() {
     sair,
     streak,
     isAdmin,
+    treinoDeHoje,
+    proximoPlano,
   } = usePlayer();
   const [mostrarCancel, setMostrarCancel] = useState(false);
   const [motivo, setMotivo] = useState<string | null>(null);
@@ -120,8 +123,23 @@ function PerfilPage() {
     ? new Date(state.pausedUntil).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
     : null;
 
+  const treinouHoje = state.sessoes.some((s) => s.data === diaBROffset(0));
+
   return (
     <AppShell title="Perfil" subtitle={`Jogador ${nivel} · ${totalTreinos} treinos`}>
+      {state.assinante && !treinouHoje && treinoDeHoje ? (
+        <Link
+          to="/treino/$treinoId"
+          params={{ treinoId: treinoDeHoje.id }}
+          search={{ plano: proximoPlano?.key ?? "" }}
+          className="mb-4 flex items-center justify-between rounded-[1.25rem] border border-primary/30 bg-primary/10 px-4 py-3 shadow-soft"
+        >
+          <span>
+            <span className="block text-sm font-extrabold text-foreground">Treino de hoje ainda aberto</span>
+            <span className="block text-xs text-muted-foreground">{treinoDeHoje.nome}</span>
+          </span>
+        </Link>
+      ) : null}
       <section className="rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Conta</p>
         {logado ? (
@@ -172,6 +190,10 @@ function PerfilPage() {
             Acesso até {new Date(state.assinanteUntil).toLocaleDateString("pt-BR")}
           </p>
         ) : null}
+        <p className="mt-2 text-xs text-muted-foreground">
+          Garantia de 14 dias: peça o reembolso pelo e-mail da conta ou pelo suporte. Cancelamento sem multa — o
+          acesso vale até o fim do período pago.
+        </p>
         {isPaused && pauseLabel ? (
           <div className="mt-3 rounded-xl border border-primary/30 bg-primary/10 p-3">
             <p className="text-sm font-bold text-foreground">Modo pausa até {pauseLabel}</p>
@@ -283,7 +305,8 @@ function PerfilPage() {
       <section className="mt-4 rounded-[1.5rem] border border-border/60 bg-card p-5 shadow-soft">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Lembrete de streak</p>
         <p className="mt-2 text-xs text-muted-foreground">
-          Ative notificações locais para avisar quando o streak estiver em risco.
+          Avisamos neste aparelho por volta das 20h se o app estiver aberto. O e-mail de streak também sai no horário
+          do lembrete, mesmo com o app fechado.
         </p>
         <Button
           variant="outline"
@@ -292,11 +315,13 @@ function PerfilPage() {
             void requestStreakReminderPermission().then((perm) => {
               if (perm === "granted") {
                 scheduleStreakReminder(state.nome, streak);
-                toast.success("Lembrete ativado", { description: "Avisaremos por volta das 20h." });
+                toast.success("Lembrete neste aparelho ativado", {
+                  description: "Avisamos por volta das 20h se o app estiver aberto.",
+                });
               } else if (perm === "denied") {
                 toast.error("Notificações bloqueadas no navegador");
               } else {
-                toast.message("Notificações não suportadas neste dispositivo");
+                toast.message("Neste aparelho não há notificação local — o e-mail de streak continua valendo.");
               }
             });
           }}

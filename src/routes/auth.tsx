@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageFrame } from "@/components/PageFrame";
 import { trackMetaDedup } from "@/lib/meta-pixel";
-import { checkoutEmailRedirect, isCheckoutAuthFrom, traduzErroAuth } from "@/lib/checkout";
+import { checkoutEmailRedirect, garantirSessaoAposCadastro, isCheckoutAuthFrom, traduzErroAuth } from "@/lib/checkout";
 import { acessoProAtivo } from "@/lib/acesso";
 import { forcaSenha } from "@/lib/auth-ui";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
@@ -120,12 +120,18 @@ function AuthPage() {
         }
         trackMetaDedup("CompleteRegistration", { content_name: "email_signup", status: true });
         if (!data.session) {
-          setMsg(
-            isCheckoutAuthFrom(from)
-              ? "Conta criada. Confirme o e-mail — o link volta direto para o pagamento."
-              : "Conta criada! Confirme o e-mail que enviamos para começar a treinar.",
-          );
-          return;
+          const extra = await garantirSessaoAposCadastro(email, senha);
+          if (!extra.session) {
+            setMsg(
+              isCheckoutAuthFrom(from)
+                ? extra.precisaConfirmarEmail
+                  ? "Conta criada. Abra o e-mail de confirmação — o link volta para o pagamento. Depois entre de novo."
+                  : "Conta criada. Entre com o mesmo e-mail para abrir o pagamento."
+                : "Conta criada. Se pedirmos confirmação, abra o e-mail e entre de novo para treinar.",
+            );
+            if (isCheckoutAuthFrom(from) || extra.precisaConfirmarEmail) setModo("login");
+            return;
+          }
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: senha });

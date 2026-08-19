@@ -54,7 +54,7 @@ function OnboardingPage() {
   useEffect(() => {
     if (!hydrated) return;
     if (!state.assinante) {
-      void navigate({ to: "/", search: { from: "onboarding" }, hash: "oferta" });
+      void navigate({ to: "/checkout", search: { from: "onboarding", teaser: "Personalize o plano depois de assinar" } });
       return;
     }
     if (state.onboardingDone) {
@@ -171,19 +171,29 @@ function OnboardingPage() {
                   <Timer className="h-3.5 w-3.5 text-primary" />
                   {primeiroTreino.duracaoMin} min · já incluso no seu PRO
                 </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  O Dia 1 é o mesmo para todo mundo. Seu foco muda as sugestões da biblioteca e o modo rápido.
+                </p>
               </div>
             </>
           ) : null}
         </div>
 
-        <Button
-          size="lg"
-          className="mt-8 h-14 w-full text-base font-extrabold"
-          disabled={step === 0 && nome.trim().length < 2}
-          onClick={next}
-        >
-          {step === 3 ? "Começar meu 1º treino" : "Continuar"}
-        </Button>
+        <div className="mt-8 flex gap-2">
+          {step > 0 ? (
+            <Button type="button" variant="outline" size="lg" className="h-14 px-5 font-extrabold" onClick={() => setStep((s) => s - 1)}>
+              Voltar
+            </Button>
+          ) : null}
+          <Button
+            size="lg"
+            className="h-14 flex-1 text-base font-extrabold"
+            disabled={step === 0 && nome.trim().length < 2}
+            onClick={next}
+          >
+            {step === 3 ? "Começar meu 1º treino" : "Continuar"}
+          </Button>
+        </div>
       </div>
     </PageFrame>
   );
