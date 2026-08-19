@@ -79,6 +79,9 @@ Deno.serve(async (req) => {
     if (!EVENTOS_PERMITIDOS.has(eventName)) {
       return json({ ok: false, error: "invalid_event" }, 400);
     }
+    if (EVENTOS_SENSIVEIS.has(eventName) && confianca !== "auth") {
+      return json({ ok: false, error: "Unauthorized" }, 401);
+    }
     const eventId = String(body.event_id ?? crypto.randomUUID());
     const email = typeof body.email === "string" ? body.email.toLowerCase().trim() : undefined;
     const value = Number(body.value ?? 0);
