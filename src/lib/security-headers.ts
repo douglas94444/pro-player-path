@@ -22,9 +22,11 @@ function csp(host?: string | null) {
   const ancestors = preview
     ? "'self' https://*.lovable.app https://*.lovable.dev https://lovable.dev https://*.lovableproject.com"
     : "'self'";
+  // Script do editor Lovable só é liberado nos hosts de preview.
+  const editorScript = preview ? " https://cdn.gpteng.co" : "";
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://sdk.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com https://http2.mlstatic.com https://*.mlstatic.com",
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://sdk.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com https://http2.mlstatic.com https://*.mlstatic.com${editorScript}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
