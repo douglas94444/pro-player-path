@@ -3,11 +3,8 @@ import { Crown, Play, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageFrame } from "@/components/PageFrame";
 import { PLANO, getTreino } from "@/data/training";
-import { PRODUCT } from "@/lib/product-config";
 import { usePlayer } from "@/lib/player-store";
-import { supabase } from "@/integrations/supabase/client";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
-import { safeWrite } from "@/lib/supabase-write";
 
 export const Route = createFileRoute("/bem-vindo-pro")({
   errorComponent: RouteError,
