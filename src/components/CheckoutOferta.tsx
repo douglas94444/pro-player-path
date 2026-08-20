@@ -77,7 +77,7 @@ export function CheckoutOferta({
   onCupomChange,
   children,
 }: Props) {
-  const { refreshEntitlement, logado, state, email, authReady } = usePlayer();
+  const { refreshEntitlement, logado, state, email, authReady, hydrated } = usePlayer();
   const navigate = useNavigate();
   const page = true;
   const [escolhido, setEscolhido] = useState(planoInicial ?? PLANO_PADRAO);
@@ -114,13 +114,18 @@ export function CheckoutOferta({
       return;
     }
     let cancel = false;
-    void supabase.auth.getUser().then(async ({ data }) => {
-      const id = data.user?.id;
-      if (!id) return;
-      const { data: perfil } = await supabase.from("profiles").select("cpf, phone").eq("id", id).maybeSingle();
-      if (cancel) return;
-      setDocs({ cpf: perfil?.cpf ?? null, phone: perfil?.phone ?? null });
-    });
+    void supabase.auth
+      .getUser()
+      .then(async ({ data }) => {
+        const id = data.user?.id;
+        if (!id) return { cpf: null, phone: null };
+        const { data: perfil } = await supabase.from("profiles").select("cpf, phone").eq("id", id).maybeSingle();
+        return { cpf: perfil?.cpf ?? null, phone: perfil?.phone ?? null };
+      })
+      .catch(() => ({ cpf: null, phone: null }))
+      .then((perfilDocs) => {
+        if (!cancel) setDocs(perfilDocs);
+      });
     return () => {
       cancel = true;
     };
@@ -244,12 +249,21 @@ export function CheckoutOferta({
 
   const autoRef = useRef(false);
   useEffect(() => {
-    if (abrirAoMontar && authReady && logado && !state.assinante && docsProntos && !precisaDocs && !autoRef.current) {
+    if (
+      (abrirAoMontar || logado) &&
+      authReady &&
+      hydrated &&
+      logado &&
+      !state.assinante &&
+      docsProntos &&
+      !precisaDocs &&
+      !autoRef.current
+    ) {
       autoRef.current = true;
       abrirBrick(escolhido);
       rolarParaOferta();
     }
-  }, [abrirAoMontar, authReady, logado, state.assinante, docsProntos, precisaDocs, abrirBrick, escolhido]);
+  }, [abrirAoMontar, authReady, hydrated, logado, state.assinante, docsProntos, precisaDocs, abrirBrick, escolhido]);
 
   useEffect(() => {
     if (!pendingPix || !logado || state.assinante) return;
@@ -388,8 +402,8 @@ export function CheckoutOferta({
       />
     </>
   ) : (
-    <p className="text-sm text-muted-foreground">
-      Pix à vista ou cartão em até 12x. O Mercado Pago abre ao finalizar o pedido.
+    <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" /> Preparando Pix e cartão…
     </p>
   );
 

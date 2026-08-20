@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Check, Copy, Loader2 } from "lucide-react";
 import { PLANOS_ASSINATURA } from "@/data/training";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { getFbc, trackMeta, trackMetaDedup } from "@/lib/meta-pixel";
 import { getStoredUtm } from "@/lib/utm";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { getMercadoPagoPublicKey } from "@/lib/mercadopago.functions";
 
 const PIX_QR_KEY = "jogador-pro-pix-qr";
 
@@ -64,7 +66,11 @@ export function MercadoPagoCheckout({
   onApproved,
   onPending,
 }: Props) {
-  const publicKey = import.meta.env["VITE_MERCADOPAGO_PUBLIC_KEY"] as string | undefined;
+  const fetchPublicKey = useServerFn(getMercadoPagoPublicKey);
+  const [publicKey, setPublicKey] = useState<string | null>(
+    (import.meta.env["VITE_MERCADOPAGO_PUBLIC_KEY"] as string | undefined) ?? null,
+  );
+  const [carregandoChave, setCarregandoChave] = useState(!publicKey);
   const [noCliente, setNoCliente] = useState(false);
   const [Brick, setBrick] = useState<ComponentType<PaymentBrickProps> | null>(null);
   const [brickId, setBrickId] = useState(novoId);
@@ -87,10 +93,30 @@ export function MercadoPagoCheckout({
     Math.round(baseAmount * (1 - Math.min(50, Math.max(0, discountPercent)) / 100) * 100) / 100,
   );
 
+  const carregarChave = useCallback(async () => {
+    if (publicKey) return;
+    setCarregandoChave(true);
+    try {
+      const config = await fetchPublicKey();
+      if (!config.publicKey) throw new Error("Pagamento temporariamente indisponível.");
+      setPublicKey(config.publicKey);
+      setErroBrick(null);
+    } catch {
+      setErroBrick("Não foi possível conectar ao Mercado Pago agora. Tente novamente em instantes.");
+    } finally {
+      setCarregandoChave(false);
+    }
+  }, [fetchPublicKey, publicKey]);
+
   useEffect(() => {
     setNoCliente(true);
     setPixQr(lerPixQr());
   }, []);
+
+  useEffect(() => {
+    if (!noCliente || publicKey) return;
+    void carregarChave();
+  }, [noCliente, publicKey, carregarChave]);
 
   useEffect(() => {
     if (!noCliente || !publicKey || pixQr) return;
@@ -263,14 +289,14 @@ export function MercadoPagoCheckout({
     setPronto(false);
     setBrick(null);
     setBrickId(novoId());
+    if (!publicKey) void carregarChave();
   };
 
-  if (!publicKey) {
+  if (!publicKey && carregandoChave && !erroBrick) {
     return (
-      <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-foreground">
-        Configure <code className="text-xs">VITE_MERCADOPAGO_PUBLIC_KEY</code> no ambiente e{" "}
-        <code className="text-xs">MERCADOPAGO_ACCESS_TOKEN</code> nas Edge Functions do Supabase.
-      </div>
+      <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Carregando Pix e cartão…
+      </p>
     );
   }
 
@@ -278,11 +304,13 @@ export function MercadoPagoCheckout({
     return <p className="text-sm text-muted-foreground">Carregando checkout…</p>;
   }
 
-  if (erroBrick) {
+  if (erroBrick || !publicKey) {
     return (
       <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
         <p className="font-extrabold text-foreground">Não foi possível abrir o pagamento</p>
-        <p className="mt-1 text-xs text-muted-foreground">{erroBrick}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {erroBrick ?? "Não foi possível conectar ao Mercado Pago agora. Tente novamente em instantes."}
+        </p>
         <Button type="button" className="mt-3" onClick={tentarDeNovo}>
           Tentar de novo
         </Button>
