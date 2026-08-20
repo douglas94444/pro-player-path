@@ -86,6 +86,15 @@ function TreinoPage() {
   const videosCadastrados = useTreinoVideos(treinoId);
 
   const bloqueado = treino ? !canAccessTreino(state.assinante, treino.id, plano) : false;
+  const liberadoPorData = !plano || planoKeyLiberada(plano, state.sessoes);
+
+  useEffect(() => {
+    if (!treino || bloqueado || liberadoPorData) return;
+    toast.info("Este dia ainda não foi liberado", {
+      description: "Você faz um treino do plano por dia. O próximo libera à meia-noite.",
+    });
+    void navigate({ to: "/plano" });
+  }, [treino, bloqueado, liberadoPorData, navigate]);
 
   useEffect(() => {
     if (!treino || !bloqueado) return;
