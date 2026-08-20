@@ -384,11 +384,13 @@ export function CheckoutOferta({
       </p>
     );
 
+  const podePagar = logado && !precisaDocs && docsProntos;
+
   const pagamento: ReactNode = state.assinante ? (
     <Button asChild size="lg" className="h-12 w-full font-extrabold">
       <Link to="/app">Ir para o app</Link>
     </Button>
-  ) : mostrarBrick || pendingPix ? (
+  ) : mostrarBrick || pendingPix || podePagar ? (
     <>
       {pixBanner}
       <MercadoPagoCheckout
@@ -406,11 +408,17 @@ export function CheckoutOferta({
         }}
       />
     </>
-  ) : (
+  ) : !authReady ? (
     <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
       <Loader2 className="h-4 w-4 animate-spin" /> Preparando Pix e cartão…
     </p>
+  ) : (
+    <p className="text-sm text-muted-foreground">
+      Preencha seus dados e clique em <span className="font-semibold text-foreground">Finalizar pedido</span> para
+      liberar Pix e cartão.
+    </p>
   );
+
 
   const cta: ReactNode = state.assinante ? (
     <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
@@ -474,7 +482,7 @@ export function CheckoutOferta({
           </Button>
         ) : !logado || precisaDocs ? (
           authBlock
-        ) : mostrarBrick || pendingPix ? (
+        ) : mostrarBrick || pendingPix || podePagar ? (
           <>
             {pixBanner}
             <MercadoPagoCheckout
