@@ -110,6 +110,10 @@ function Home() {
           Destravar treino PRO
         </Link>
       </Button>
+    ) : !proximoLiberado ? (
+      <Button asChild size="lg" variant="secondary" className="h-14 w-full text-base font-extrabold">
+        <Link to="/biblioteca">Treino de hoje concluído · libera em {espera}</Link>
+      </Button>
     ) : (
       <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
         <Link
