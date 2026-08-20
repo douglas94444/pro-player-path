@@ -9,6 +9,7 @@ import { canAccessTreino } from "@/lib/access";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { hojeBR } from "@/lib/date";
+import { planoKeyLiberada } from "@/lib/liberacao";
 import { toast } from "sonner";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { shareProgress } from "@/lib/share-progress";
