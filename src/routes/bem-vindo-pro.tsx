@@ -85,9 +85,8 @@ function BemVindoProPage() {
           </Button>
         )}
 
-        <Button type="button" variant="ghost" className="mt-3 h-12 w-full font-extrabold" onClick={entrarTelegram}>
-          <MessageCircle className="h-4 w-4" /> Entrar na comunidade PRO (Telegram)
-        </Button>
+
+
 
         <Button asChild variant="ghost" className="mt-1 w-full text-muted-foreground">
           <Link to="/app">Ir para a home</Link>

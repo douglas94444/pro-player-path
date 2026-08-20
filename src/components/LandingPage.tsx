@@ -165,35 +165,6 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           </div>
         </div>
 
-        <aside
-          id="teaser-treino"
-          className="mt-10 max-w-xl scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-border/60 bg-card shadow-soft lg:absolute lg:right-8 lg:top-16 lg:mt-0"
-        >
-          <video
-            className="aspect-video w-full object-cover"
-            src={CAMPANHA.teaserTreino.videoSrc}
-            poster=""
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            width={640}
-            height={360}
-          />
-          <div className="flex items-start gap-3 p-4">
-            <PlayCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-                {CAMPANHA.teaserTreino.titulo}
-              </p>
-              <p className="mt-1 text-sm font-extrabold text-foreground">
-                {CAMPANHA.teaserTreino.nome} · {CAMPANHA.teaserTreino.duracao}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">{CAMPANHA.teaserTreino.descricao}</p>
-            </div>
-          </div>
-        </aside>
       </section>
 
       {/* Benefícios em ícones */}
