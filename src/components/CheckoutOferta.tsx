@@ -81,6 +81,8 @@ export function CheckoutOferta({
 }: Props) {
   const { refreshEntitlement, logado, state, email, authReady } = usePlayer();
   const navigate = useNavigate();
+  const sincronizarMp = useServerFn(sincronizarPagamento);
+  const [verificando, setVerificando] = useState(false);
   const page = true;
   const [escolhido, setEscolhido] = useState(planoInicial ?? PLANO_PADRAO);
   const [mostrarBrick, setMostrarBrick] = useState(false);
