@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
 import { hojeBR } from "@/lib/date";
+import { indiceLiberado, planoKeyLiberada, treinouPlanoHoje } from "@/lib/liberacao";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 import { concluirTreinoServer } from "@/lib/treinos.functions";
 import { acessoProAtivo, asPlanoAssinatura, type PlanoAssinatura } from "@/lib/acesso";
