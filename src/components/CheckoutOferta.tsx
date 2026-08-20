@@ -77,7 +77,7 @@ export function CheckoutOferta({
   onCupomChange,
   children,
 }: Props) {
-  const { refreshEntitlement, logado, state, email, authReady, hydrated } = usePlayer();
+  const { refreshEntitlement, logado, state, email, authReady } = usePlayer();
   const navigate = useNavigate();
   const page = true;
   const [escolhido, setEscolhido] = useState(planoInicial ?? PLANO_PADRAO);
@@ -114,18 +114,24 @@ export function CheckoutOferta({
       return;
     }
     let cancel = false;
-    void supabase.auth
-      .getUser()
-      .then(async ({ data }) => {
-        const id = data.user?.id;
-        if (!id) return { cpf: null, phone: null };
-        const { data: perfil } = await supabase.from("profiles").select("cpf, phone").eq("id", id).maybeSingle();
-        return { cpf: perfil?.cpf ?? null, phone: perfil?.phone ?? null };
-      })
-      .catch(() => ({ cpf: null, phone: null }))
-      .then((perfilDocs) => {
+    const carregarDocs = async () => {
+      try {
+        const consulta = supabase.auth.getUser().then(async ({ data }) => {
+          const id = data.user?.id;
+          if (!id) return { cpf: null, phone: null };
+          const { data: perfil } = await supabase.from("profiles").select("cpf, phone").eq("id", id).maybeSingle();
+          return { cpf: perfil?.cpf ?? null, phone: perfil?.phone ?? null };
+        });
+        const limite = new Promise<{ cpf: null; phone: null }>((resolve) => {
+          window.setTimeout(() => resolve({ cpf: null, phone: null }), 8000);
+        });
+        const perfilDocs = await Promise.race([consulta, limite]);
         if (!cancel) setDocs(perfilDocs);
-      });
+      } catch {
+        if (!cancel) setDocs({ cpf: null, phone: null });
+      }
+    };
+    void carregarDocs();
     return () => {
       cancel = true;
     };
@@ -252,7 +258,6 @@ export function CheckoutOferta({
     if (
       (abrirAoMontar || logado) &&
       authReady &&
-      hydrated &&
       logado &&
       !state.assinante &&
       docsProntos &&
@@ -263,7 +268,7 @@ export function CheckoutOferta({
       abrirBrick(escolhido);
       rolarParaOferta();
     }
-  }, [abrirAoMontar, authReady, hydrated, logado, state.assinante, docsProntos, precisaDocs, abrirBrick, escolhido]);
+  }, [abrirAoMontar, authReady, logado, state.assinante, docsProntos, precisaDocs, abrirBrick, escolhido]);
 
   useEffect(() => {
     if (!pendingPix || !logado || state.assinante) return;
