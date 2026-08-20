@@ -15,6 +15,8 @@ import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import { useEsperaLiberacao } from "@/hooks/use-liberacao";
+import { posicaoPlano } from "@/lib/liberacao";
 
 export const Route = createFileRoute("/plano")({
   errorComponent: RouteError,
@@ -42,7 +44,8 @@ const CORES_FASE: Record<string, { chip: string; barra: string }> = {
 };
 
 function PlanoPage() {
-  const { planoConcluidos, proximoPlano, state, planoCompleto } = usePlayer();
+  const { planoConcluidos, proximoPlano, state, planoCompleto, proximoLiberado } = usePlayer();
+  const espera = useEsperaLiberacao();
   const navigate = useNavigate();
 
   const semanaFeita = (s: SemanaPlano) =>
@@ -65,20 +68,29 @@ function PlanoPage() {
     >
       {proximoPlano && !planoCompleto ? (
         <div className="mb-5 rounded-[1.5rem] border border-primary/30 bg-primary/10 p-5 shadow-soft">
-          <p className="text-xs font-bold uppercase tracking-wide text-primary">Hoje — próximo passo</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-primary">
+            {proximoLiberado ? "Hoje — próximo passo" : "Treino de hoje concluído"}
+          </p>
           <p className="mt-1 text-base font-extrabold text-foreground">
             {getTreino(proximoPlano.treinoId)?.nome ?? "Treino do dia"}
           </p>
-          <Link
-            to="/treino/$treinoId"
-            params={{ treinoId: proximoPlano.treinoId }}
-            search={{ plano: proximoPlano.key }}
-            className="mt-3 inline-flex h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-extrabold text-primary-foreground"
-          >
-            Começar agora
-          </Link>
+          {proximoLiberado ? (
+            <Link
+              to="/treino/$treinoId"
+              params={{ treinoId: proximoPlano.treinoId }}
+              search={{ plano: proximoPlano.key }}
+              className="mt-3 inline-flex h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-extrabold text-primary-foreground"
+            >
+              Começar agora
+            </Link>
+          ) : (
+            <p className="mt-2 text-xs font-semibold text-muted-foreground">
+              Libera em {espera} · um treino do plano por dia
+            </p>
+          )}
         </div>
       ) : null}
+
 
       {planoCompleto ? (
         <div className="mb-6 rounded-[1.5rem] border border-primary/25 bg-primary/10 p-5 shadow-soft">
@@ -243,9 +255,12 @@ function PlanoPage() {
                             const key = `${semana.semana}-${dia.dia}`;
                             const treino = getTreino(dia.treinoId)!;
                             const concluido = planoConcluidos.includes(key);
-                            const atual = proximoPlano?.key === key;
+                            const proximoDoPlano = proximoPlano?.key === key;
+                            const atual = proximoDoPlano && proximoLiberado;
                             const precisaAssinatura = !state.assinante;
-                            const bloqueadoOrdem = !concluido && !atual && !precisaAssinatura;
+                            const bloqueadoData = proximoDoPlano && !proximoLiberado;
+                            const bloqueadoOrdem =
+                              !concluido && !atual && !precisaAssinatura;
 
                             const statusLabel = concluido
                               ? "Concluído"
@@ -253,7 +268,9 @@ function PlanoPage() {
                                 ? "Hoje — próximo passo"
                                 : precisaAssinatura
                                   ? `Preview PRO · ${semana.pilar}`
-                                  : `Preview · libera depois do dia atual`;
+                                  : bloqueadoData
+                                    ? `Libera em ${espera}`
+                                    : `Libera no dia ${posicaoPlano(key)} da sua jornada`;
 
                             const inner = (
                               <div

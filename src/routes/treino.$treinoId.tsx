@@ -9,6 +9,7 @@ import { canAccessTreino } from "@/lib/access";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { hojeBR } from "@/lib/date";
+import { planoKeyLiberada } from "@/lib/liberacao";
 import { toast } from "sonner";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { shareProgress } from "@/lib/share-progress";
@@ -86,6 +87,15 @@ function TreinoPage() {
   const videosCadastrados = useTreinoVideos(treinoId);
 
   const bloqueado = treino ? !canAccessTreino(state.assinante, treino.id, plano) : false;
+  const liberadoPorData = !plano || planoKeyLiberada(plano, state.sessoes);
+
+  useEffect(() => {
+    if (!treino || bloqueado || liberadoPorData) return;
+    toast.info("Este dia ainda não foi liberado", {
+      description: "Você faz um treino do plano por dia. O próximo libera à meia-noite.",
+    });
+    void navigate({ to: "/plano" });
+  }, [treino, bloqueado, liberadoPorData, navigate]);
 
   useEffect(() => {
     if (!treino || !bloqueado) return;

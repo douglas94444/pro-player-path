@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
 import { hojeBR } from "@/lib/date";
+import { indiceLiberado, planoKeyLiberada, treinouPlanoHoje } from "@/lib/liberacao";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 import { concluirTreinoServer } from "@/lib/treinos.functions";
 import { acessoProAtivo, asPlanoAssinatura, type PlanoAssinatura } from "@/lib/acesso";
@@ -130,6 +131,12 @@ type Ctx = {
   totalMinutos: number;
   planoConcluidos: string[];
   proximoPlano: ProximoPlano | null;
+  /** O próximo dia do plano já está liberado hoje? */
+  proximoLiberado: boolean;
+  /** Último dia do plano guiado liberado pela data (1-based). */
+  diasLiberados: number;
+  /** Já concluiu o treino guiado de hoje? */
+  treinouHojePlano: boolean;
   treinoDeHoje: ReturnType<typeof getTreino>;
   semanaAtual: number;
   progressoSemana: number;
@@ -504,6 +511,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       ? PLANO_MANUTENCAO.length
       : PLANO_FLAT.filter((p) => p.semana === semanaAtual).length || 1;
     const isPaused = Boolean(state.pausedUntil && new Date(state.pausedUntil).getTime() > Date.now());
+    const diasLiberados = indiceLiberado(state.sessoes);
+    const treinouHojePlano = treinouPlanoHoje(state.sessoes);
+    const proximoLiberado = proximo ? planoKeyLiberada(proximo.key, state.sessoes) : false;
 
     return {
       state,
@@ -518,6 +528,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       totalMinutos: state.sessoes.reduce((acc, s) => acc + s.minutos, 0),
       planoConcluidos: unicos,
       proximoPlano: proximo,
+      proximoLiberado,
+      diasLiberados,
+      treinouHojePlano,
       treinoDeHoje: getTreino(proximo?.treinoId ?? TREINOS[0]!.id),
       semanaAtual,
       progressoSemana: Math.round((feitosNaSemana / totalSemana) * 100),
