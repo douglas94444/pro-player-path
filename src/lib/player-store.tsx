@@ -130,6 +130,12 @@ type Ctx = {
   totalMinutos: number;
   planoConcluidos: string[];
   proximoPlano: ProximoPlano | null;
+  /** O próximo dia do plano já está liberado hoje? */
+  proximoLiberado: boolean;
+  /** Último dia do plano guiado liberado pela data (1-based). */
+  diasLiberados: number;
+  /** Já concluiu o treino guiado de hoje? */
+  treinouHojePlano: boolean;
   treinoDeHoje: ReturnType<typeof getTreino>;
   semanaAtual: number;
   progressoSemana: number;
