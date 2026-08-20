@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CalendarDays, Check, Clock, MonitorSmartphone, PlayCircle, X, Zap } from "lucide-react";
+import { CalendarDays, Check, Clock, MonitorSmartphone, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CAMPANHA } from "@/data/campanha-copy";
 import { captureUtmFromSearch } from "@/lib/utm";
