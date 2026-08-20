@@ -482,7 +482,7 @@ export function CheckoutOferta({
           </Button>
         ) : !logado || precisaDocs ? (
           authBlock
-        ) : mostrarBrick || pendingPix ? (
+        ) : mostrarBrick || pendingPix || podePagar ? (
           <>
             {pixBanner}
             <MercadoPagoCheckout
