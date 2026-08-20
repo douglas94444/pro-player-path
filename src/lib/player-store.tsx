@@ -510,6 +510,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       ? PLANO_MANUTENCAO.length
       : PLANO_FLAT.filter((p) => p.semana === semanaAtual).length || 1;
     const isPaused = Boolean(state.pausedUntil && new Date(state.pausedUntil).getTime() > Date.now());
+    const diasLiberados = indiceLiberado(state.sessoes);
+    const treinouHojePlano = treinouPlanoHoje(state.sessoes);
+    const proximoLiberado = proximo ? planoKeyLiberada(proximo.key, state.sessoes) : false;
 
     return {
       state,
@@ -524,6 +527,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       totalMinutos: state.sessoes.reduce((acc, s) => acc + s.minutos, 0),
       planoConcluidos: unicos,
       proximoPlano: proximo,
+      proximoLiberado,
+      diasLiberados,
+      treinouHojePlano,
       treinoDeHoje: getTreino(proximo?.treinoId ?? TREINOS[0]!.id),
       semanaAtual,
       progressoSemana: Math.round((feitosNaSemana / totalSemana) * 100),
