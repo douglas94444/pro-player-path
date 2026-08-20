@@ -172,6 +172,39 @@ export function CheckoutOferta({
     void navigate({ to: "/bem-vindo-pro", replace: true });
   }, [marcarPixPendente, navigate]);
 
+  /** Consulta o Mercado Pago e libera o acesso se o pagamento já estiver aprovado. */
+  const verificarPagamento = useCallback(
+    async (manual = false) => {
+      if (manual) setVerificando(true);
+      try {
+        const res = await sincronizarMp({ data: undefined }).catch(() => null);
+        await refreshEntitlement();
+        if (res?.assinante) {
+          irParaPro();
+          return true;
+        }
+        if (manual) {
+          const st = res?.status;
+          if (st === "pending" || st === "in_process" || st === "not_found" || !st) {
+            toast.message("Pagamento ainda não confirmado", {
+              description: "Se você já pagou, aguarde alguns segundos — liberamos automaticamente.",
+            });
+          } else if (st === "rejected" || st === "cancelled") {
+            toast.error("Pagamento não aprovado", { description: "Tente novamente com outro método." });
+          } else {
+            toast.message("Status atualizado");
+          }
+        }
+        return false;
+      } finally {
+        if (manual) setVerificando(false);
+      }
+    },
+    [sincronizarMp, refreshEntitlement, irParaPro],
+  );
+
+
+
   const aplicarCupomManual = async () => {
     setCupomErro(null);
     const raw = cupomDraft.trim();
