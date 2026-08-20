@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { sincronizarPagamento } from "@/lib/pagamento.functions";
 import { Clock, Loader2, Shield, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -79,6 +81,8 @@ export function CheckoutOferta({
 }: Props) {
   const { refreshEntitlement, logado, state, email, authReady } = usePlayer();
   const navigate = useNavigate();
+  const sincronizarMp = useServerFn(sincronizarPagamento);
+  const [verificando, setVerificando] = useState(false);
   const page = true;
   const [escolhido, setEscolhido] = useState(planoInicial ?? PLANO_PADRAO);
   const [mostrarBrick, setMostrarBrick] = useState(false);
@@ -167,6 +171,39 @@ export function CheckoutOferta({
     toast.success("Acesso PRO liberado");
     void navigate({ to: "/bem-vindo-pro", replace: true });
   }, [marcarPixPendente, navigate]);
+
+  /** Consulta o Mercado Pago e libera o acesso se o pagamento já estiver aprovado. */
+  const verificarPagamento = useCallback(
+    async (manual = false) => {
+      if (manual) setVerificando(true);
+      try {
+        const res = await sincronizarMp({ data: undefined }).catch(() => null);
+        await refreshEntitlement();
+        if (res?.assinante) {
+          irParaPro();
+          return true;
+        }
+        if (manual) {
+          const st = res?.status;
+          if (st === "pending" || st === "in_process" || st === "not_found" || !st) {
+            toast.message("Pagamento ainda não confirmado", {
+              description: "Se você já pagou, aguarde alguns segundos — liberamos automaticamente.",
+            });
+          } else if (st === "rejected" || st === "cancelled") {
+            toast.error("Pagamento não aprovado", { description: "Tente novamente com outro método." });
+          } else {
+            toast.message("Status atualizado");
+          }
+        }
+        return false;
+      } finally {
+        if (manual) setVerificando(false);
+      }
+    },
+    [sincronizarMp, refreshEntitlement, irParaPro],
+  );
+
+
 
   const aplicarCupomManual = async () => {
     setCupomErro(null);
@@ -275,7 +312,7 @@ export function CheckoutOferta({
     const iniciado = Date.now();
     const poll = () => {
       if (Date.now() - iniciado > PIX_POLL_MAX_MS) return;
-      void refreshEntitlement();
+      void verificarPagamento();
     };
     poll();
     const id = window.setInterval(poll, PIX_POLL_MS);
@@ -287,7 +324,7 @@ export function CheckoutOferta({
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVisivel);
     };
-  }, [pendingPix, logado, state.assinante, refreshEntitlement]);
+  }, [pendingPix, logado, state.assinante, verificarPagamento]);
 
   useEffect(() => {
     if (pendingPix && state.assinante) irParaPro();
@@ -353,11 +390,13 @@ export function CheckoutOferta({
         variant="outline"
         size="sm"
         className="mt-3"
+        disabled={verificando}
         onClick={() => {
-          void refreshEntitlement().then(() => toast.message("Status atualizado"));
+          void verificarPagamento(true);
         }}
       >
-        Já paguei — atualizar agora
+        {verificando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        {verificando ? "Verificando…" : "Já paguei — atualizar agora"}
       </Button>
     </div>
   ) : null;
