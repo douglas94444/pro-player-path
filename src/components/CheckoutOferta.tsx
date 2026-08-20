@@ -390,11 +390,13 @@ export function CheckoutOferta({
         variant="outline"
         size="sm"
         className="mt-3"
+        disabled={verificando}
         onClick={() => {
-          void refreshEntitlement().then(() => toast.message("Status atualizado"));
+          void verificarPagamento(true);
         }}
       >
-        Já paguei — atualizar agora
+        {verificando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        {verificando ? "Verificando…" : "Já paguei — atualizar agora"}
       </Button>
     </div>
   ) : null;
