@@ -42,7 +42,9 @@ const CORES_FASE: Record<string, { chip: string; barra: string }> = {
 };
 
 function PlanoPage() {
-  const { planoConcluidos, proximoPlano, state, planoCompleto } = usePlayer();
+  const { planoConcluidos, proximoPlano, state, planoCompleto, proximoLiberado, diasLiberados } =
+    usePlayer();
+  const espera = useEsperaLiberacao();
   const navigate = useNavigate();
 
   const semanaFeita = (s: SemanaPlano) =>
