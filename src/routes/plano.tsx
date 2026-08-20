@@ -15,6 +15,8 @@ import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { cn } from "@/lib/utils";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
+import { useEsperaLiberacao } from "@/hooks/use-liberacao";
+import { posicaoPlano } from "@/lib/liberacao";
 
 export const Route = createFileRoute("/plano")({
   errorComponent: RouteError,
