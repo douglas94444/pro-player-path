@@ -58,8 +58,23 @@ export const concluirTreinoServer = createServerFn({ method: "POST" })
     const dataHoje = hojeBR();
     const minutos = treino.duracaoMin;
 
-    // O cliente não tem permissão de escrita em sessoes/league_entries:
-    // toda gravação passa pelo service role, depois das validações acima.
+    // Liberação por data: 1 dia do plano por dia de calendário, sem pular a ordem.
+    if (data.planoKey) {
+      const { data: hist, error: histErr } = await supabase
+        .from("sessoes")
+        .select("data, plano_key")
+        .eq("user_id", userId);
+      if (histErr) throw new Error(histErr.message);
+      const sessoes = (hist ?? []).map((s) => ({ data: s.data, planoKey: s.plano_key }));
+      if (!planoKeyLiberada(data.planoKey, sessoes, dataHoje)) {
+        throw new Error(
+          treinouPlanoHoje(sessoes, dataHoje)
+            ? "Você já concluiu o treino do plano hoje. O próximo dia libera à meia-noite."
+            : "Este dia do plano ainda não foi liberado.",
+        );
+      }
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { recalcularLiga } = await import("@/lib/liga.server");
 
