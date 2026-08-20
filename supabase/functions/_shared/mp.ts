@@ -3,9 +3,9 @@ import { hmacSha256Hex, secretsEqual, sha256Hex } from "./crypto.ts";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const PLANOS: Record<string, { nome: string; amount: number }> = {
-  mensal: { nome: "Mensal", amount: 47 },
-  semestral: { nome: "Semestral", amount: 147 },
-  anual: { nome: "Anual", amount: 197 },
+  mensal: { nome: "Mensal", amount: 1 },
+  semestral: { nome: "Semestral", amount: 1 },
+  anual: { nome: "Anual", amount: 1 },
 };
 
 export type PlanoKey = keyof typeof PLANOS;
