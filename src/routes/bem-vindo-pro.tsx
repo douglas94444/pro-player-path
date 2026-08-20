@@ -1,13 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Crown, MessageCircle, Play, Sparkles } from "lucide-react";
+import { Crown, Play, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageFrame } from "@/components/PageFrame";
 import { PLANO, getTreino } from "@/data/training";
-import { PRODUCT } from "@/lib/product-config";
 import { usePlayer } from "@/lib/player-store";
-import { supabase } from "@/integrations/supabase/client";
 import { RouteError, RouteNotFound } from "@/components/RouteBoundary";
-import { safeWrite } from "@/lib/supabase-write";
 
 export const Route = createFileRoute("/bem-vindo-pro")({
   errorComponent: RouteError,
@@ -27,21 +24,6 @@ function BemVindoProPage() {
   const semana1 = PLANO.find((s) => s.semana === 1);
   const primeiro = semana1?.dias[0];
   const treino = primeiro ? getTreino(primeiro.treinoId) : null;
-
-  const entrarTelegram = () => {
-    if (logado) {
-      void supabase.auth.getUser().then(({ data }) => {
-        if (data.user) {
-          void safeWrite(
-            "entrada no Telegram",
-            () => supabase.from("profiles").update({ telegram_joined: true }).eq("id", data.user!.id),
-            { table: "profiles", op: "update", payload: { telegram_joined: true }, match: { id: data.user.id } },
-          );
-        }
-      });
-    }
-    window.open(PRODUCT.telegramProUrl, "_blank", "noopener,noreferrer");
-  };
 
   return (
     <PageFrame max="sm" className="justify-center">
@@ -85,9 +67,8 @@ function BemVindoProPage() {
           </Button>
         )}
 
-        <Button type="button" variant="ghost" className="mt-3 h-12 w-full font-extrabold" onClick={entrarTelegram}>
-          <MessageCircle className="h-4 w-4" /> Entrar na comunidade PRO (Telegram)
-        </Button>
+
+
 
         <Button asChild variant="ghost" className="mt-1 w-full text-muted-foreground">
           <Link to="/app">Ir para a home</Link>
