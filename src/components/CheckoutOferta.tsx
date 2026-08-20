@@ -312,7 +312,7 @@ export function CheckoutOferta({
     const iniciado = Date.now();
     const poll = () => {
       if (Date.now() - iniciado > PIX_POLL_MAX_MS) return;
-      void refreshEntitlement();
+      void verificarPagamento();
     };
     poll();
     const id = window.setInterval(poll, PIX_POLL_MS);
@@ -324,7 +324,7 @@ export function CheckoutOferta({
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVisivel);
     };
-  }, [pendingPix, logado, state.assinante, refreshEntitlement]);
+  }, [pendingPix, logado, state.assinante, verificarPagamento]);
 
   useEffect(() => {
     if (pendingPix && state.assinante) irParaPro();
