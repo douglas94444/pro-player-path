@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getTreino, PLANO_FLAT } from "@/data/training";
 import { acessoProAtivo } from "@/lib/acesso";
+import { planoKeyLiberada, treinouPlanoHoje } from "@/lib/liberacao";
 
 type ConcluirInput = { treinoId: string; planoKey?: string | null };
 
