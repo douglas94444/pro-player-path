@@ -256,9 +256,12 @@ function PlanoPage() {
                             const key = `${semana.semana}-${dia.dia}`;
                             const treino = getTreino(dia.treinoId)!;
                             const concluido = planoConcluidos.includes(key);
-                            const atual = proximoPlano?.key === key;
+                            const proximoDoPlano = proximoPlano?.key === key;
+                            const atual = proximoDoPlano && proximoLiberado;
                             const precisaAssinatura = !state.assinante;
-                            const bloqueadoOrdem = !concluido && !atual && !precisaAssinatura;
+                            const bloqueadoData = proximoDoPlano && !proximoLiberado;
+                            const bloqueadoOrdem =
+                              !concluido && !atual && !precisaAssinatura;
 
                             const statusLabel = concluido
                               ? "Concluído"
@@ -266,7 +269,9 @@ function PlanoPage() {
                                 ? "Hoje — próximo passo"
                                 : precisaAssinatura
                                   ? `Preview PRO · ${semana.pilar}`
-                                  : `Preview · libera depois do dia atual`;
+                                  : bloqueadoData
+                                    ? `Libera em ${espera}`
+                                    : `Libera no dia ${posicaoPlano(key)} da sua jornada`;
 
                             const inner = (
                               <div
