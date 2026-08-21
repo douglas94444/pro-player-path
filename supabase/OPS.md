@@ -28,6 +28,7 @@ Outros secrets só no Dashboard → Edge Functions → Secrets:
 | Secret | Obrigatório | Uso |
 |--------|-------------|-----|
 | `MERCADOPAGO_ACCESS_TOKEN` | sim | `process-payment`, `mercadopago-webhook` |
+| `MERCADOPAGO_PUBLIC_KEY` | sim (Lovable/Vite) | Brick do checkout; **mesmo app e mesmo modo** que o Access Token |
 | `ADMIN_EMAILS` | sim | `ensure-admin-role` |
 | `META_CAPI_ACCESS_TOKEN` | sim (ads) | CAPI |
 | `META_PIXEL_ID` | opcional | default `3161156880941929` |
@@ -36,6 +37,8 @@ Outros secrets só no Dashboard → Edge Functions → Secrets:
 | `APP_URL` | sim | links nos e-mails |
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` já são injetados.
+
+Cartão com erro **Invalid credentials** (MP code 17): Public Key (`VITE_MERCADOPAGO_PUBLIC_KEY` / `MERCADOPAGO_PUBLIC_KEY`) e Access Token não são do mesmo aplicativo ou misturam Teste (`TEST-…`) com Produção (`APP_USR-…`). Copie os dois no [painel do MP](https://www.mercadopago.com.br/developers/panel/app) do mesmo bloco.
 
 ## Crons (pg_cron + pg_net)
 

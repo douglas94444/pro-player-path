@@ -130,6 +130,9 @@ export function traduzErroPagamento(raw: string | null | undefined): string {
   ) {
     return MSG_PAGAMENTO;
   }
+  if (low.includes("invalid credentials")) {
+    return "Pagamento indisponível no momento. Tente Pix ou volte em alguns minutos.";
+  }
   if (low === "invalid_coupon") return "Esse cupom não é válido.";
   if (low === "coupon_exhausted") return "Esse cupom já esgotou.";
   if (low === "invalid_plano") return "Escolha um plano para continuar.";
