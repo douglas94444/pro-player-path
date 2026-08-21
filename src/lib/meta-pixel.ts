@@ -101,7 +101,7 @@ export function getAnonymousExternalId(): string {
 let perfilCache: { userId: string; phone: string | null; nome: string | null } | null = null;
 let matchingKey = "";
 
-async function fetchPerfilMeta(userId: string): Promise<{ phone?: string; nome?: string }> {
+async function fetchPerfilMeta(userId: string): Promise<{ phone?: string | undefined; nome?: string | undefined }> {
   if (perfilCache?.userId === userId) {
     return {
       phone: perfilCache.phone ? phoneE164Br(perfilCache.phone) : undefined,
