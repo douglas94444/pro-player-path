@@ -13,13 +13,13 @@ declare global {
 type MetaPayload = Record<string, string | number | boolean | undefined>;
 
 export type MetaIdentidade = {
-  email?: string;
-  phone?: string;
-  firstName?: string;
-  lastName?: string;
-  externalId?: string;
-  fbp?: string;
-  fbc?: string;
+  email?: string | undefined;
+  phone?: string | undefined;
+  firstName?: string | undefined;
+  lastName?: string | undefined;
+  externalId?: string | undefined;
+  fbp?: string | undefined;
+  fbc?: string | undefined;
 };
 
 /** ID compartilhado cliente↔CAPI para o Meta deduplicar o mesmo evento. */
@@ -101,7 +101,7 @@ export function getAnonymousExternalId(): string {
 let perfilCache: { userId: string; phone: string | null; nome: string | null } | null = null;
 let matchingKey = "";
 
-async function fetchPerfilMeta(userId: string): Promise<{ phone?: string; nome?: string }> {
+async function fetchPerfilMeta(userId: string): Promise<{ phone?: string | undefined; nome?: string | undefined }> {
   if (perfilCache?.userId === userId) {
     return {
       phone: perfilCache.phone ? phoneE164Br(perfilCache.phone) : undefined,
@@ -117,9 +117,9 @@ async function fetchPerfilMeta(userId: string): Promise<{ phone?: string; nome?:
 }
 
 async function resolverIdentidade(overrides?: {
-  email?: string | null;
-  phone?: string | null;
-  nome?: string | null;
+  email?: string | null | undefined;
+  phone?: string | null | undefined;
+  nome?: string | null | undefined;
 }): Promise<MetaIdentidade> {
   captureFbclid();
   const fbp = cookie("_fbp");
@@ -210,16 +210,16 @@ export function trackMetaDedup(
   event: string,
   payload?: MetaPayload,
   options?: {
-    eventId?: string;
-    email?: string | null;
-    phone?: string | null;
-    nome?: string | null;
-    custom?: boolean;
+    eventId?: string | undefined;
+    email?: string | null | undefined;
+    phone?: string | null | undefined;
+    nome?: string | null | undefined;
+    custom?: boolean | undefined;
     /** Unix em segundos — quando a ação ocorreu de fato. */
-    eventTime?: number;
+    eventTime?: number | undefined;
     /** Só atribuição, sem otimização de entrega. */
-    optOut?: boolean;
-    customerSegmentation?: string;
+    optOut?: boolean | undefined;
+    customerSegmentation?: string | undefined;
   },
 ) {
   if (typeof window === "undefined") return;

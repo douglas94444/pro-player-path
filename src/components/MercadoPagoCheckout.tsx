@@ -68,10 +68,10 @@ export function MercadoPagoCheckout({
   onPending,
 }: Props) {
   const fetchPublicKey = useServerFn(getMercadoPagoPublicKey);
-  const [publicKey, setPublicKey] = useState<string | null>(
-    (import.meta.env["VITE_MERCADOPAGO_PUBLIC_KEY"] as string | undefined) ?? null,
-  );
-  const [carregandoChave, setCarregandoChave] = useState(!publicKey);
+  // A chave pública vem SEMPRE do servidor, para garantir que seja do mesmo
+  // aplicativo/modo do MERCADOPAGO_ACCESS_TOKEN (chaves misturadas => "Invalid credentials").
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [carregandoChave, setCarregandoChave] = useState(true);
   const [noCliente, setNoCliente] = useState(false);
   const [Brick, setBrick] = useState<ComponentType<PaymentBrickProps> | null>(null);
   const [brickId, setBrickId] = useState(novoId);

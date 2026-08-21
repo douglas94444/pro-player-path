@@ -155,8 +155,8 @@ export function traduzErroPagamento(raw: string | null | undefined): string {
 function erroDoCorpo(v: unknown): string | null {
   if (!v || typeof v !== "object") return null;
   const rec = v as Record<string, unknown>;
-  if (typeof rec.error === "string" && rec.error) return rec.error;
-  if (typeof rec.message === "string" && rec.message) return rec.message;
+  if (typeof rec["error"] === "string" && rec["error"]) return rec["error"];
+  if (typeof rec["message"] === "string" && rec["message"]) return rec["message"];
   return null;
 }
 
