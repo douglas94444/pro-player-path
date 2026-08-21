@@ -133,6 +133,18 @@ Deno.serve(async (req) => {
     const payment = await mpRes.json();
     if (!mpRes.ok) {
       console.error("MP payment error", payment);
+      // Diagnóstico: credencial inválida (code 17) = token da Edge Function não bate com a Public Key.
+      const meRes = await fetch("https://api.mercadopago.com/users/me", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const me = await meRes.json().catch(() => ({}));
+      console.error("MP token diag", {
+        prefix: accessToken.slice(0, 8),
+        len: accessToken.length,
+        me_status: meRes.status,
+        me_id: me?.id ?? null,
+        token_kind: String(formData.token ?? "").length,
+      });
       return jsonResponse({ error: payment.message ?? "payment_failed" }, 400);
     }
 
