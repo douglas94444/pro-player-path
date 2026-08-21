@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { checkoutEmailRedirect, garantirSessaoAposCadastro, traduzErroAuth } from "@/lib/checkout";
 import { forcaSenha } from "@/lib/auth-ui";
-import { cpfValido, maskCpf, maskPhone, phoneValido, soDigitos } from "@/lib/br-docs";
+import { cpfValido, maskCpf, maskPhone, phoneE164Br, phoneValido, soDigitos } from "@/lib/br-docs";
 import { trackMetaDedup } from "@/lib/meta-pixel";
 
 const LOGIN_EVENT = "jps:checkout-login";
@@ -108,7 +108,11 @@ export function CheckoutAuth({
           setModo("login");
           return;
         }
-        trackMetaDedup("CompleteRegistration", { content_name: "checkout_signup", status: true });
+        trackMetaDedup(
+          "CompleteRegistration",
+          { content_name: "checkout_signup", status: true },
+          { email, phone: phoneE164Br(phoneDigits), nome },
+        );
         let userId = data.session && data.user ? data.user.id : null;
         if (!userId) {
           const extra = await garantirSessaoAposCadastro(email, senha);
@@ -260,25 +264,24 @@ export function CheckoutAuth({
 
         {erro ? <p className="text-sm text-destructive">{erro}</p> : null}
         {msg ? <p className="text-sm text-primary">{msg}</p> : null}
-        {hideSubmit && loading ? (
-          <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Preparando seu pagamento…
-          </p>
-        ) : null}
 
-        {hideSubmit ? null : (
-          <Button type="submit" disabled={loading} className="h-12 w-full font-extrabold">
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : modo === "cadastro" ? (
-              "Criar conta e pagar"
-            ) : modo === "login" ? (
-              "Entrar e pagar"
+        <Button type="submit" disabled={loading} className="h-12 w-full font-extrabold">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : hideSubmit ? (
+            modo === "login" ? (
+              "Entrar e continuar"
             ) : (
-              "Salvar e pagar"
-            )}
-          </Button>
-        )}
+              "Prosseguir"
+            )
+          ) : modo === "cadastro" ? (
+            "Criar conta e pagar"
+          ) : modo === "login" ? (
+            "Entrar e pagar"
+          ) : (
+            "Salvar e pagar"
+          )}
+        </Button>
       </form>
 
       {modo === "completar" ? null : (

@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { jsonResponse, optionsResponse } from "../_shared/cors.ts";
 import { createAdminClient, requireUser } from "../_shared/auth.ts";
 import { extenderAcesso } from "../_shared/acesso.ts";
-import { sendCapi, hashIdentifier } from "../_shared/capi.ts";
+import { sendCapi, hashIdentifier, hashPhoneBr, pickClientIpFromRequest, aplicarNomeUserData, aplicarCountryBr } from "../_shared/capi.ts";
 import {
   PLANOS,
   pickMpPaymentFields,
@@ -61,12 +61,12 @@ Deno.serve(async (req) => {
 
     const metaAttr = (body.meta ?? {}) as Record<string, string | undefined>;
     const clientUa = metaAttr.client_user_agent ?? req.headers.get("user-agent") ?? undefined;
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    const clientIp = pickClientIpFromRequest(req, metaAttr.client_ip);
     const checkoutTime = Number(metaAttr.checkout_time) || Math.floor(Date.now() / 1000);
 
     const { data: perfilAntes } = await admin
       .from("profiles")
-      .select("assinante, assinante_until, cpf, phone")
+      .select("assinante, assinante_until, cpf, phone, nome")
       .eq("id", user.id)
       .maybeSingle();
     const segmentation = perfilAntes?.assinante
@@ -100,6 +100,8 @@ Deno.serve(async (req) => {
         meta_fbc: metaAttr.fbc ?? null,
         meta_event_source_url: metaAttr.event_source_url ?? null,
         meta_client_user_agent: clientUa ?? null,
+        meta_client_ip: clientIp ?? null,
+        meta_referrer_url: metaAttr.referrer_url ?? null,
         meta_checkout_time: checkoutTime,
         meta_segmentation: segmentation,
       },
@@ -189,13 +191,13 @@ Deno.serve(async (req) => {
       const email = (user.email ?? "").toLowerCase().trim();
       const userData: Record<string, unknown> = {
         external_id: [await hashIdentifier(user.id)],
+        subscription_id: String(payment.id),
       };
       if (email) userData.em = [await hashIdentifier(email)];
-      const phoneRaw = (perfilAntes?.phone ?? "").replace(/\D/g, "");
-      if (phoneRaw) {
-        const ph = phoneRaw.startsWith("55") ? phoneRaw : `55${phoneRaw}`;
-        userData.ph = [await hashIdentifier(ph)];
-      }
+      const ph = await hashPhoneBr(perfilAntes?.phone);
+      if (ph) userData.ph = [ph];
+      await aplicarNomeUserData(userData, perfilAntes?.nome);
+      await aplicarCountryBr(userData);
       if (metaAttr.fbp) userData.fbp = metaAttr.fbp;
       if (metaAttr.fbc) userData.fbc = metaAttr.fbc;
       if (clientUa) userData.client_user_agent = clientUa;
@@ -206,6 +208,8 @@ Deno.serve(async (req) => {
         eventId: `mp-${payment.id}`,
         eventTime: Math.floor(new Date(payment.date_approved ?? Date.now()).getTime() / 1000),
         eventSourceUrl: metaAttr.event_source_url,
+        referrerUrl: metaAttr.referrer_url,
+        customerSegmentation: segmentation,
         userData,
         customData: {
           currency: "BRL",
@@ -214,7 +218,6 @@ Deno.serve(async (req) => {
           utm_source: utm.utm_source,
           utm_campaign: utm.utm_campaign,
           coupon: couponCode,
-          customer_segmentation: segmentation,
         },
       });
     }

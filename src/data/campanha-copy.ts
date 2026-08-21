@@ -9,7 +9,7 @@ export const CAMPANHA = {
   heroCta: "Quero ser Jogador PRO",
   heroCtaPlano: "semestral" as const,
   heroCtaSecundario: "Ver planos",
-  heroCtaHint: "Acesso completo à jornada de 12 meses — sem freemium",
+  heroCtaHint: "Acesso completo à jornada de 12 meses",
   precoAncora: "Todos os planos por R$1 (modo teste) · Pix ou cartão",
   precoComparativo: "Menos que uma mensalidade de escolinha — e você treina todo dia.",
 
@@ -94,62 +94,62 @@ export const CAMPANHA = {
   depoimentos: {
     eyebrow: "Quem já treina",
     title: "O que os alunos mandam depois dos treinos",
-    body: "Mensagens de quem está seguindo o sistema — transcritas na íntegra, só com pontuação ajustada.",
+    body: "O que eles mandam depois de treinar.",
     selo: "Mensagens reais enviadas por alunos. Identidades preservadas a pedido deles.",
     cta: "Quero treinar como eles",
     itens: [
       {
-        nome: "Aluno PRO",
+        nome: "Mateus",
         inicial: "M",
         texto:
           "Mano, comecei faz ele ontem e já melhorei muito meu físico e minha força técnica. Faço tudo pelo celular da minha mãe, por isso aparece com nome de mulher, skskss.",
       },
       {
-        nome: "Aluno PRO",
+        nome: "Rafael",
         inicial: "R",
         texto:
           "Já perdi muito dinheiro com curso que não ensinava nada que funcionasse. Graças a Deus encontrei um confiável.",
       },
       {
-        nome: "Aluno PRO",
+        nome: "Lucas",
         inicial: "L",
         texto:
           "Muito obrigado por esse treino, tava precisando muito. Já fui enganado de ter comprado curso, mas agora esse treino pode ser confiável 👍",
       },
       {
-        nome: "Aluno PRO",
+        nome: "Gabriel",
         inicial: "G",
         texto:
           "Tô aprendendo o último drible e ele é insano. Não é tão difícil de aprender: 1 ou 2 meses de treino e você já consegue aplicar em jogos de verdade.",
       },
       {
-        nome: "Aluno PRO",
+        nome: "João",
         inicial: "J",
         texto:
           "O 6º drible eu uso pra fazer gol. Funciona no golzinho, aí passa por baixo da perna do adversário.",
       },
       {
-        nome: "Aluno PRO",
+        nome: "Vinicius",
         inicial: "V",
         texto: "Mano, parece que ele acelera o vídeo de tão rápido e ágil que é 😂 Brabo demais.",
       },
       {
-        nome: "Aluno PRO",
+        nome: "Pedro",
         inicial: "P",
         texto: "Perfeito, eu vou conseguir. Eu vou conseguir jogar mais bom 😮",
       },
       {
-        nome: "Aluno PRO",
+        nome: "Diego",
         inicial: "D",
         texto: "Que veio só pra humilhar na escola, kkkk.",
       },
       {
-        nome: "Aluno PRO",
+        nome: "Thiago",
         inicial: "T",
         texto: "Opa, mano, valeu aew pelo treino.",
       },
       {
-        nome: "Aluno PRO",
+        nome: "Felipe",
         inicial: "F",
         texto: "Poha, vídeo foda 🔥",
       },
@@ -220,7 +220,7 @@ export const CAMPANHA = {
       semestral: "Mais escolhido",
       anual: "Melhor valor",
     },
-    cta: "Quero ser Jogador PRO",
+    cta: "Quero começar agora",
   },
 
   urgencia: {

@@ -8,12 +8,13 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { PlayerProvider } from "@/lib/player-store";
-import { META_PIXEL_ID, captureFbclid, trackMetaDedup } from "@/lib/meta-pixel";
+import { META_PIXEL_ID, captureFbclid, hydrateMetaIdentity, trackMetaDedup } from "@/lib/meta-pixel";
+import { supabase } from "@/integrations/supabase/client";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -117,14 +118,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function MetaPixelPageView() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const searchStr = useRouterState({
+    select: (s) => {
+      const loc = s.location as { searchStr?: string };
+      return loc.searchStr ?? "";
+    },
+  });
   const ultimoPath = useRef<string | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     captureUtmFromLocation();
     captureFbclid();
+  }, [pathname, searchStr]);
+
+  useEffect(() => {
+    void hydrateMetaIdentity();
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      void hydrateMetaIdentity();
+    });
+    return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
+    // fbclid precisa estar no cookie/localStorage ANTES do PageView (mesmo tick).
+    captureFbclid();
     // O script inline não dispara PageView — este é o único disparo (sem duplicar).
     if (ultimoPath.current === pathname) return;
     ultimoPath.current = pathname;

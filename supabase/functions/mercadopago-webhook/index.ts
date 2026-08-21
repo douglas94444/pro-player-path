@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createAdminClient, resolveSecret } from "../_shared/auth.ts";
 import { extenderAcesso } from "../_shared/acesso.ts";
-import { sendCapi, hashIdentifier } from "../_shared/capi.ts";
+import { sendCapi, hashIdentifier, hashPhoneBr, pickClientIp, aplicarNomeUserData, aplicarCountryBr } from "../_shared/capi.ts";
 import { verifyMpWebhookSignature } from "../_shared/mp.ts";
 
 Deno.serve(async (req) => {
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     if (userId && approved) {
       const { data: perfilAntes } = await admin
         .from("profiles")
-        .select("assinante, assinante_until, mp_payment_id")
+        .select("assinante, assinante_until, mp_payment_id, phone, nome")
         .eq("id", userId)
         .maybeSingle();
 
@@ -106,11 +106,23 @@ Deno.serve(async (req) => {
       if (capiToken) {
         const md = (payment.metadata ?? {}) as Record<string, string | number | null>;
         const email = String(payment.payer?.email ?? "").toLowerCase().trim();
-        const userData: Record<string, unknown> = { external_id: [await hashIdentifier(userId)] };
+        const userData: Record<string, unknown> = {
+          external_id: [await hashIdentifier(userId)],
+          subscription_id: String(payment.id),
+        };
         if (email) userData.em = [await hashIdentifier(email)];
+        const payerPhoneObj = payment.payer?.phone as { area_code?: string; number?: string } | undefined;
+        const payerPhone = `${payerPhoneObj?.area_code ?? ""}${payerPhoneObj?.number ?? ""}`;
+        const ph = await hashPhoneBr(perfilAntes?.phone || payerPhone);
+        if (ph) userData.ph = [ph];
+        await aplicarNomeUserData(userData, perfilAntes?.nome);
+        await aplicarCountryBr(userData);
         if (md.meta_fbp) userData.fbp = md.meta_fbp;
         if (md.meta_fbc) userData.fbc = md.meta_fbc;
         if (md.meta_client_user_agent) userData.client_user_agent = md.meta_client_user_agent;
+        const storedIp = typeof md.meta_client_ip === "string" ? md.meta_client_ip : "";
+        const ip = pickClientIp(storedIp ? storedIp.split(",").map((p) => p.trim()).filter(Boolean) : []);
+        if (ip) userData.client_ip_address = ip;
 
         const agora = Math.floor(Date.now() / 1000);
         const limite = agora - 7 * 24 * 3600;
@@ -128,6 +140,8 @@ Deno.serve(async (req) => {
           eventId: `mp-${payment.id}`,
           eventTime,
           eventSourceUrl: typeof md.meta_event_source_url === "string" ? md.meta_event_source_url : undefined,
+          referrerUrl: typeof md.meta_referrer_url === "string" ? md.meta_referrer_url : undefined,
+          customerSegmentation: segmentation,
           originalEventData:
             Number.isFinite(checkoutTime) && checkoutTime > limite
               ? { event_name: "InitiateCheckout", event_time: checkoutTime }
@@ -140,7 +154,6 @@ Deno.serve(async (req) => {
             coupon: md.coupon_code ?? undefined,
             utm_source: md.utm_source ?? undefined,
             utm_campaign: md.utm_campaign ?? undefined,
-            customer_segmentation: segmentation,
           },
         });
       }

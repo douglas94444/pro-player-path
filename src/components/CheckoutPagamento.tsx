@@ -118,7 +118,7 @@ export function CheckoutPagamento({ search }: { search: CheckoutSearch }) {
             if (id !== plano) escolherPlano(id);
           }}
         >
-          {({ dados, pagamento, cupom, cta, cupomCode }) => (
+          {({ dados, pagamento, cta, cupomCode }) => (
             <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
               <div className="space-y-4">
                 <CardSecao icone={CreditCard} titulo="Seu plano">
@@ -186,7 +186,6 @@ export function CheckoutPagamento({ search }: { search: CheckoutSearch }) {
                   </p>
                   {copy?.parcelas ? <p className="text-xs text-muted-foreground">{copy.parcelas}</p> : null}
 
-                  <div className="mt-5">{cupom}</div>
                   <div className="mt-5 hidden lg:block">{cta}</div>
                   <p className="mt-3 text-center text-[11px] text-muted-foreground">{CAMPANHA.garantia.curta}</p>
                   <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">

@@ -2,10 +2,9 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { sincronizarPagamento } from "@/lib/pagamento.functions";
-import { Clock, Loader2, Shield, Tag } from "lucide-react";
+import { Clock, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CheckoutAuth, type CheckoutDados } from "@/components/CheckoutAuth";
 import { MercadoPagoCheckout } from "@/components/MercadoPagoCheckout";
 import { PLANOS_ASSINATURA } from "@/data/training";
@@ -94,9 +93,6 @@ export function CheckoutOferta({
     }
   });
   const [cupomAplicado, setCupomAplicado] = useState<{ code: string; discount: number } | null>(null);
-  const [cupomDraft, setCupomDraft] = useState("");
-  const [cupomErro, setCupomErro] = useState<string | null>(null);
-  const [aplicandoCupom, setAplicandoCupom] = useState(false);
   const [docs, setDocs] = useState<{ cpf: string | null; phone: string | null } | null>(null);
   const docsProntos = !logado || docs !== null;
 
@@ -204,28 +200,6 @@ export function CheckoutOferta({
   );
 
 
-
-  const aplicarCupomManual = async () => {
-    setCupomErro(null);
-    const raw = cupomDraft.trim();
-    if (!raw) {
-      setCupomErro("Digite um código");
-      return;
-    }
-    setAplicandoCupom(true);
-    try {
-      const achado = await buscarCupomAtivo(raw);
-      if (!achado) {
-        setCupomErro("Cupom inválido ou esgotado");
-        return;
-      }
-      setCupomAplicado({ code: achado.code, discount: achado.discount_percent });
-      setCupomDraft("");
-      toast.success(`${achado.code} aplicado · ${achado.discount_percent}% off`);
-    } finally {
-      setAplicandoCupom(false);
-    }
-  };
 
   const checkoutTrackedRef = useRef(false);
   const abrirBrick = useCallback((plano: string) => {
@@ -336,49 +310,6 @@ export function CheckoutOferta({
     setDocs({ cpf: dados.cpf, phone: dados.phone });
   };
 
-  const cupomCampo = (
-    <div className={cn(page ? "text-left" : "mx-auto mb-4 max-w-sm")}>
-      <label htmlFor="cupom-checkout" className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-        <Tag className="h-3.5 w-3.5" />
-        Cupom de desconto
-      </label>
-      <div className="flex gap-2">
-        <Input
-          id="cupom-checkout"
-          value={cupomDraft}
-          onChange={(e) => {
-            setCupomDraft(e.target.value);
-            setCupomErro(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void aplicarCupomManual();
-            }
-          }}
-          placeholder="PRO10"
-          autoCapitalize="characters"
-          className="h-11 bg-background uppercase"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 shrink-0 px-4"
-          disabled={aplicandoCupom}
-          onClick={() => void aplicarCupomManual()}
-        >
-          {aplicandoCupom ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
-        </Button>
-      </div>
-      {cupomAplicado ? (
-        <p className="mt-1.5 text-xs font-semibold text-primary">
-          {cupomAplicado.code} ativo · {cupomAplicado.discount}% off
-        </p>
-      ) : null}
-      {cupomErro ? <p className="mt-1.5 text-xs text-destructive">{cupomErro}</p> : null}
-    </div>
-  );
-
   const pixBanner = pendingPix ? (
     <div className="mb-4 rounded-2xl border border-primary/30 bg-primary/10 p-4 text-center">
       <Clock className="mx-auto h-6 w-6 text-primary" />
@@ -408,7 +339,10 @@ export function CheckoutOferta({
       formId="checkout-dados"
       inicial={logado && precisaDocs ? "completar" : "cadastro"}
       onDados={onDados}
-      onAuthenticated={() => abrirBrick(escolhido)}
+      onAuthenticated={() => {
+        abrirBrick(escolhido);
+        rolarParaOferta();
+      }}
     />
   );
 
@@ -501,7 +435,7 @@ export function CheckoutOferta({
         {children({
           dados,
           pagamento,
-          cupom: cupomCampo,
+          cupom: null,
           cta,
           desconto: cupomAplicado?.discount ?? 0,
           cupomCode: cupomAplicado?.code ?? null,
@@ -513,8 +447,6 @@ export function CheckoutOferta({
   return (
     <div id="pagamento" className={page ? "scroll-mt-24" : "mt-8"}>
       <div className={cn("w-full", page ? "" : "mx-auto max-w-xl")}>
-        {page ? null : cupomCampo}
-
         {state.assinante ? (
           <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
             <Link to="/app">Você já é PRO — ir para o app</Link>
@@ -555,7 +487,7 @@ export function CheckoutOferta({
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparando seu checkout…
                 </>
               ) : (
-                <>Pagar com Mercado Pago — {precoLabel}</>
+                <>{CAMPANHA.oferta.cta} — {precoLabel}</>
               )}
             </Button>
             <p className={cn("mt-2 text-xs text-muted-foreground", !page && "text-center")}>

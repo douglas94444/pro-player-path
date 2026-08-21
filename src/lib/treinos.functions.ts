@@ -71,7 +71,7 @@ export const concluirTreinoServer = createServerFn({ method: "POST" })
         throw new Error(
           treinouPlanoHoje(sessoes, dataHoje)
             ? "Você já concluiu o treino do plano hoje. O próximo dia libera à meia-noite."
-            : "Este dia do plano ainda não foi liberado.",
+            : "Este dia do plano ainda não foi liberado. Conclua os anteriores, um por dia.",
         );
       }
     }

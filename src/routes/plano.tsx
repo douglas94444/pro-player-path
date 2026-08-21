@@ -99,14 +99,20 @@ function PlanoPage() {
             Você entrou no ciclo de manutenção. Continue o hábito com treinos diários rotativos.
           </p>
           {proximoPlano ? (
-            <Link
-              to="/treino/$treinoId"
-              params={{ treinoId: proximoPlano.treinoId }}
-              search={{ plano: proximoPlano.key }}
-              className="mt-3 inline-flex text-sm font-bold text-primary underline underline-offset-4"
-            >
-              Abrir treino de manutenção
-            </Link>
+            proximoLiberado ? (
+              <Link
+                to="/treino/$treinoId"
+                params={{ treinoId: proximoPlano.treinoId }}
+                search={{ plano: proximoPlano.key }}
+                className="mt-3 inline-flex text-sm font-bold text-primary underline underline-offset-4"
+              >
+                Abrir treino de manutenção
+              </Link>
+            ) : (
+              <p className="mt-2 text-xs font-semibold text-muted-foreground">
+                Libera em {espera} · um treino do plano por dia
+              </p>
+            )
           ) : null}
         </div>
       ) : null}
@@ -258,9 +264,9 @@ function PlanoPage() {
                             const proximoDoPlano = proximoPlano?.key === key;
                             const atual = proximoDoPlano && proximoLiberado;
                             const precisaAssinatura = !state.assinante;
-                            const bloqueadoData = proximoDoPlano && !proximoLiberado;
+                            const bloqueadoData = proximoDoPlano && !proximoLiberado && !concluido;
                             const bloqueadoOrdem =
-                              !concluido && !atual && !precisaAssinatura;
+                              !concluido && !atual && !bloqueadoData && !precisaAssinatura;
 
                             const statusLabel = concluido
                               ? "Concluído"
@@ -329,8 +335,15 @@ function PlanoPage() {
 
                             return (
                               <li key={key}>
-                                {bloqueadoOrdem ? (
-                                  <div className="opacity-90" aria-label={`Preview do dia ${dia.dia}`}>
+                                {bloqueadoData || bloqueadoOrdem ? (
+                                  <div
+                                    className="opacity-90"
+                                    aria-label={
+                                      bloqueadoData
+                                        ? `Dia ${dia.dia} libera em ${espera}`
+                                        : `Preview do dia ${dia.dia}`
+                                    }
+                                  >
                                     {inner}
                                   </div>
                                 ) : precisaAssinatura && !concluido ? (

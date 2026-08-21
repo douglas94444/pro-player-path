@@ -19,7 +19,6 @@ import { BeneficiosGrid } from "@/components/landing/BeneficiosGrid";
 import { PreviewTreinos } from "@/components/landing/PreviewTreinos";
 import { InclusoStack } from "@/components/landing/InclusoStack";
 import { PlanosTable } from "@/components/landing/PlanosTable";
-import { AvaliacoesWidget } from "@/components/landing/AvaliacoesWidget";
 import { SelosConfianca } from "@/components/landing/SelosConfianca";
 import { whatsappSupportHref } from "@/lib/product-config";
 
@@ -332,7 +331,6 @@ export function LandingPage({ search }: { search: LandingSearch }) {
         <Eyebrow>{CAMPANHA.depoimentos.eyebrow}</Eyebrow>
         <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{CAMPANHA.depoimentos.title}</h2>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">{CAMPANHA.depoimentos.body}</p>
-        <AvaliacoesWidget />
         <DepoimentosSection onCta={() => irParaCheckout(planoCheckout)} />
       </Section>
 
@@ -365,7 +363,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
           <GarantiaBadge />
         </div>
 
-        <Button asChild size="lg" className="mt-8 h-14 w-full text-base font-extrabold sm:w-auto sm:min-w-[280px]">
+        <Button asChild size="lg" className="mt-8 h-14 w-full text-base font-extrabold shadow-soft sm:w-auto sm:min-w-[280px]">
           <Link
             to="/checkout"
             search={searchCheckout({
@@ -380,7 +378,7 @@ export function LandingPage({ search }: { search: LandingSearch }) {
               utm_term: search.utm_term,
             })}
           >
-            Pagar no Mercado Pago —{" "}
+            {CAMPANHA.oferta.cta} —{" "}
             {CAMPANHA.planos.itens.find((p) => p.id === (planoAtivo ?? CAMPANHA.heroCtaPlano))?.preco ?? precoHero}
           </Link>
         </Button>

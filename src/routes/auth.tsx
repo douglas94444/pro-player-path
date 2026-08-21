@@ -118,7 +118,7 @@ function AuthPage() {
           setErro("Este e-mail já tem conta. Faça login ou use “Esqueci minha senha”.");
           return;
         }
-        trackMetaDedup("CompleteRegistration", { content_name: "email_signup", status: true });
+        trackMetaDedup("CompleteRegistration", { content_name: "email_signup", status: true }, { email, nome });
         if (!data.session) {
           const extra = await garantirSessaoAposCadastro(email, senha);
           if (!extra.session) {

@@ -54,7 +54,10 @@ export function planoKeyLiberada(key: string, sessoes: SessaoMin[], hoje = hojeB
   if (treinouPlanoHoje(sessoes, hoje)) return false;
   const pos = posicaoPlano(key);
   if (pos === 0) return true; // manutenção/ciclo: só o limite diário se aplica
-  return pos <= indiceLiberado(sessoes, hoje);
+  if (pos > indiceLiberado(sessoes, hoje)) return false;
+  const feitos = new Set(sessoes.map((s) => s.planoKey).filter(Boolean));
+  const proximo = PLANO_FLAT.find((p) => !feitos.has(p.key));
+  return !proximo || proximo.key === key;
 }
 
 /** Milissegundos até a virada do dia em Brasília. */

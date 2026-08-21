@@ -9,7 +9,7 @@ import { canAccessTreino } from "@/lib/access";
 import { usePlayer } from "@/lib/player-store";
 import { trackMetaCustom } from "@/lib/meta-pixel";
 import { hojeBR } from "@/lib/date";
-import { planoKeyLiberada } from "@/lib/liberacao";
+import { formatarEspera, planoKeyLiberada, proximaLiberacaoMs } from "@/lib/liberacao";
 import { toast } from "sonner";
 import { requestStreakReminderPermission, scheduleStreakReminder } from "@/lib/streak-reminder";
 import { shareProgress } from "@/lib/share-progress";
@@ -82,6 +82,7 @@ function TreinoPage() {
     canPromptAuth,
     markAuthPromptSeen,
     planoConcluidos,
+    treinouHojePlano,
   } = usePlayer();
   const treino = getTreino(treinoId);
   const videosCadastrados = useTreinoVideos(treinoId);
@@ -91,11 +92,16 @@ function TreinoPage() {
 
   useEffect(() => {
     if (!treino || bloqueado || liberadoPorData) return;
-    toast.info("Este dia ainda não foi liberado", {
-      description: "Você faz um treino do plano por dia. O próximo libera à meia-noite.",
-    });
+    toast.info(
+      treinouHojePlano ? "Você já concluiu o treino do plano hoje" : "Este dia ainda não foi liberado",
+      {
+        description: treinouHojePlano
+          ? `O próximo dia libera em ${formatarEspera(proximaLiberacaoMs())}.`
+          : "Conclua os dias anteriores. Um treino do plano por dia, à meia-noite de Brasília.",
+      },
+    );
     void navigate({ to: "/plano" });
-  }, [treino, bloqueado, liberadoPorData, navigate]);
+  }, [treino, bloqueado, liberadoPorData, treinouHojePlano, navigate]);
 
   useEffect(() => {
     if (!treino || !bloqueado) return;
@@ -192,6 +198,14 @@ function TreinoPage() {
             <Link to="/app">Voltar ao início</Link>
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (!liberadoPorData) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6 text-center">
+        <p className="text-sm text-muted-foreground">Voltando ao plano…</p>
       </div>
     );
   }

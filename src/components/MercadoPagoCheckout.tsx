@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, Copy, Loader2 } from "lucide-react";
 import { PLANOS_ASSINATURA } from "@/data/training";
 import { supabase } from "@/integrations/supabase/client";
-import { getFbc, trackMeta, trackMetaDedup } from "@/lib/meta-pixel";
+import { captureFbclid, getFbc, trackMeta, trackMetaDedup } from "@/lib/meta-pixel";
 import { getStoredUtm } from "@/lib/utm";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -173,6 +173,7 @@ export function MercadoPagoCheckout({
         /* ignore */
       }
       const fbp = document.cookie.match(/(^|; )_fbp=([^;]*)/)?.[2];
+      captureFbclid();
       const { data, error } = await supabase.functions.invoke("process-payment", {
         body: {
           plano: planoId,
@@ -186,6 +187,7 @@ export function MercadoPagoCheckout({
             fbc: getFbc() ?? null,
             client_user_agent: navigator.userAgent,
             event_source_url: window.location.href,
+            referrer_url: document.referrer || null,
             checkout_time: Math.floor(Date.now() / 1000),
           },
         },

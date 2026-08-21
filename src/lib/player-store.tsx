@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/use-auth";
 import { ensureAdminRole } from "@/lib/admin";
 import { maybeNotifyStreakOnOpen } from "@/lib/streak-reminder";
 import { hojeBR } from "@/lib/date";
-import { indiceLiberado, planoKeyLiberada, treinouPlanoHoje } from "@/lib/liberacao";
+import { indiceLiberado, planoKeyLiberada, proximaLiberacaoMs, treinouPlanoHoje } from "@/lib/liberacao";
 import { cicloSugerido, diasSemTreinar, treinoRetorno } from "@/lib/recommendations";
 import { concluirTreinoServer } from "@/lib/treinos.functions";
 import { acessoProAtivo, asPlanoAssinatura, type PlanoAssinatura } from "@/lib/acesso";
@@ -133,6 +133,10 @@ type Ctx = {
   proximoPlano: ProximoPlano | null;
   /** O próximo dia do plano já está liberado hoje? */
   proximoLiberado: boolean;
+  /** Próximo dia existe, mas a data/limite diário ainda não liberou. */
+  bloqueadoPorData: boolean;
+  /** Epoch (ms) da próxima virada em Brasília, ou null se já está liberado. */
+  liberadoEm: number | null;
   /** Último dia do plano guiado liberado pela data (1-based). */
   diasLiberados: number;
   /** Já concluiu o treino guiado de hoje? */
@@ -514,6 +518,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const diasLiberados = indiceLiberado(state.sessoes);
     const treinouHojePlano = treinouPlanoHoje(state.sessoes);
     const proximoLiberado = proximo ? planoKeyLiberada(proximo.key, state.sessoes) : false;
+    const bloqueadoPorData = Boolean(proximo && !proximoLiberado);
+    const liberadoEm = bloqueadoPorData ? Date.now() + proximaLiberacaoMs() : null;
 
     return {
       state,
@@ -529,6 +535,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       planoConcluidos: unicos,
       proximoPlano: proximo,
       proximoLiberado,
+      bloqueadoPorData,
+      liberadoEm,
       diasLiberados,
       treinouHojePlano,
       treinoDeHoje: getTreino(proximo?.treinoId ?? TREINOS[0]!.id),

@@ -1,6 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createUserClient } from "../_shared/auth.ts";
-import { hashIdentifier } from "../_shared/capi.ts";
+import {
+  aplicarCountryBr,
+  CAPI_EVENT_SOURCE_FALLBACK,
+  hashIdentifier,
+  normalizarNomeMeta,
+  normalizarTelefoneBr,
+  pickClientIpFromRequest,
+} from "../_shared/capi.ts";
 
 const ORIGENS_PERMITIDAS = [
   /^https:\/\/(www\.)?jogadorprosystem\.com$/,
@@ -19,6 +26,15 @@ const EVENTOS_PERMITIDOS = new Set([
   "Purchase",
   "Subscribe",
   "CompleteRegistration",
+  "LandingView",
+  "CheckoutPageView",
+  "PaywallHit",
+  "StartWorkout",
+  "CompleteWorkout",
+  "CompleteOnboarding",
+  "ScrollDepth",
+  "FaqOpen",
+  "WorkoutFeel",
 ]);
 
 function corsFor(req: Request): Record<string, string> {
@@ -91,7 +107,7 @@ Deno.serve(async (req) => {
     const userData: Record<string, unknown> = {};
     if (email) userData.em = [await hashIdentifier(email)];
 
-    const phoneRaw = typeof body.phone === "string" ? body.phone.replace(/\D/g, "") : "";
+    const phoneRaw = normalizarTelefoneBr(typeof body.phone === "string" ? body.phone : "");
     if (phoneRaw) userData.ph = [await hashIdentifier(phoneRaw)];
 
     const externalId = typeof body.external_id === "string" ? body.external_id.trim() : "";
@@ -101,13 +117,22 @@ Deno.serve(async (req) => {
       ];
     }
 
-    const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-    const ip = body.client_ip_address ?? forwarded;
+    const bodyIp = typeof body.client_ip_address === "string" ? body.client_ip_address : undefined;
+    const ip = pickClientIpFromRequest(req, bodyIp);
     if (ip) userData.client_ip_address = ip;
-    const ua = body.client_user_agent ?? req.headers.get("user-agent");
+    const ua =
+      (typeof body.client_user_agent === "string" && body.client_user_agent.trim()) ||
+      req.headers.get("user-agent") ||
+      undefined;
     if (ua) userData.client_user_agent = ua;
     if (body.fbp) userData.fbp = body.fbp;
     if (body.fbc) userData.fbc = body.fbc;
+
+    const fnRaw = typeof body.first_name === "string" ? normalizarNomeMeta(body.first_name) : "";
+    const lnRaw = typeof body.last_name === "string" ? normalizarNomeMeta(body.last_name) : "";
+    if (fnRaw) userData.fn = [await hashIdentifier(fnRaw)];
+    if (lnRaw) userData.ln = [await hashIdentifier(lnRaw)];
+    await aplicarCountryBr(userData);
 
     const temIdentificador = Boolean(
       userData.em || userData.ph || userData.external_id || userData.fbp || userData.fbc,
@@ -139,6 +164,13 @@ Deno.serve(async (req) => {
       };
     }
 
+    const origin = req.headers.get("origin") ?? "";
+    const eventSourceUrl =
+      (typeof body.event_source_url === "string" && body.event_source_url.trim()) ||
+      (origin ? `${origin}/` : CAPI_EVENT_SOURCE_FALLBACK);
+    const referrerUrl =
+      typeof body.referrer_url === "string" && body.referrer_url.trim() ? body.referrer_url : undefined;
+
     const payload = {
       access_token: accessToken,
       data: [
@@ -147,17 +179,17 @@ Deno.serve(async (req) => {
           event_time: eventTime,
           event_id: eventId,
           action_source: "website",
-          event_source_url: body.event_source_url ?? undefined,
-          referrer_url: body.referrer_url ?? undefined,
+          event_source_url: eventSourceUrl,
+          ...(referrerUrl ? { referrer_url: referrerUrl } : {}),
           ...(body.opt_out === true ? { opt_out: true } : {}),
           data_processing_options: [],
+          ...(segmentation ? { customer_segmentation: segmentation } : {}),
           ...(originalEventData ? { original_event_data: originalEventData } : {}),
           user_data: userData,
           custom_data: {
             currency,
             value,
             ...customData,
-            ...(segmentation ? { customer_segmentation: segmentation } : {}),
           },
         },
       ],

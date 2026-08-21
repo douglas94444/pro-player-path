@@ -10,9 +10,9 @@ import { canAccessTreino } from "@/lib/access";
 import { captureUtmFromLocation } from "@/lib/utm";
 import { diaBROffset } from "@/lib/date";
 import { MESES_PLANO, PLANO, TOTAL_MESES_PLANO } from "@/data/training";
+import { useEsperaLiberacao } from "@/hooks/use-liberacao";
 
 import { labelObjetivo, prefereModoRapido, treinoRapido } from "@/lib/recommendations";
-import { cn } from "@/lib/utils";
 import { DashboardStats } from "@/components/DashboardStats";
 
 export const Route = createFileRoute("/app")({
@@ -45,12 +45,15 @@ function Home() {
     semanaAtual,
     progressoSemana,
     proximoPlano,
+    proximoLiberado,
+    bloqueadoPorData,
     hydrated,
     planoCompleto,
     isPaused,
     totalTreinos,
     retomarAssinatura,
   } = usePlayer();
+  const espera = useEsperaLiberacao();
   const navigate = useNavigate();
   const semanaPlanoAtual = PLANO.find((s) => s.semana === semanaAtual);
   const mesAtual = semanaPlanoAtual?.mes ?? TOTAL_MESES_PLANO;
@@ -110,11 +113,21 @@ function Home() {
           Destravar treino PRO
         </Link>
       </Button>
-    ) : !proximoLiberado ? (
-      <Button asChild size="lg" variant="secondary" className="h-14 w-full text-base font-extrabold">
-        <Link to="/biblioteca">Treino de hoje concluído · libera em {espera}</Link>
-      </Button>
-    ) : (
+    ) : bloqueadoPorData ? (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-muted-foreground">
+          Treino de hoje concluído · libera em {espera}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button asChild size="lg" variant="secondary" className="h-12 text-sm font-extrabold">
+            <Link to="/biblioteca">Biblioteca</Link>
+          </Button>
+          <Button asChild size="lg" variant="secondary" className="h-12 text-sm font-extrabold">
+            <Link to="/progresso">Progresso</Link>
+          </Button>
+        </div>
+      </div>
+    ) : proximoLiberado ? (
       <Button asChild size="lg" className="h-14 w-full text-base font-extrabold">
         <Link
           to="/treino/$treinoId"
@@ -124,7 +137,7 @@ function Home() {
           <Play className="h-5 w-5" /> Começar agora
         </Link>
       </Button>
-    )
+    ) : null
   ) : null;
 
   return (
@@ -191,7 +204,7 @@ function Home() {
           <p className="text-xs text-muted-foreground">
             Você não treinou ontem. Uma sessão de 10–20 min hoje recupera o ritmo.
           </p>
-          {treinoDeHoje && !treinoBloqueado ? (
+          {treinoDeHoje && !treinoBloqueado && proximoLiberado ? (
             <Button asChild size="sm" className="mt-3 font-extrabold">
               <Link
                 to="/treino/$treinoId"
@@ -210,11 +223,13 @@ function Home() {
       <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr] lg:gap-5">
         <section className="rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-soft sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-            {planoCompleto
-              ? "Manutenção"
-              : proximoPlano
-                ? `Treino de hoje · Mês ${mesAtual} · Dia ${proximoPlano.dia} da semana ${semanaNoMes}`
-                : "Treino de hoje"}
+            {bloqueadoPorData
+              ? "Treino de hoje concluído"
+              : planoCompleto
+                ? "Manutenção"
+                : proximoPlano
+                  ? `Treino de hoje · Mês ${mesAtual} · Dia ${proximoPlano.dia} da semana ${semanaNoMes}`
+                  : "Treino de hoje"}
           </p>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
             {treinoDeHoje?.nome}
