@@ -200,7 +200,7 @@ function AuthPage() {
           {modo === "recuperar"
             ? "Informe o e-mail da sua conta e enviaremos um link para criar uma nova senha."
             : isCheckoutAuthFrom(from)
-            ? "Crie sua conta ou entre para continuar o pagamento no Mercado Pago."
+            ? "Crie sua conta ou entre para continuar o pagamento."
             : from === "admin"
               ? "Entre com uma conta admin para acessar o painel."
               : from === "pos-treino"

@@ -13,9 +13,9 @@ export const Route = createFileRoute("/checkout")({
       {
         name: "description",
         content:
-          "Assine no Mercado Pago: Pix ou cartão. Semestral R$147, anual R$197 ou mensal R$47. Garantia de 14 dias.",
+          "Assine com Pix ou cartão. Semestral R$147, anual R$197 ou mensal R$47. Garantia de 14 dias.",
       },
-      { property: "og:title", content: "Liberar acesso PRO — Mercado Pago" },
+      { property: "og:title", content: "Liberar acesso PRO" },
       {
         property: "og:description",
         content: "Checkout transparente. Pix e cartão. Acesso na aprovação.",

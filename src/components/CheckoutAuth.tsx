@@ -160,7 +160,7 @@ export function CheckoutAuth({
   const subtitulo =
     modo === "completar"
       ? "CPF e celular são usados no Pix e no comprovante."
-      : "Sem redirecionar: depois do login o Mercado Pago abre aqui mesmo.";
+      : "Sem redirecionar: depois do login o pagamento abre aqui mesmo.";
 
   return (
     <div className="text-left">

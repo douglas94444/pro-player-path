@@ -190,7 +190,7 @@ export function CheckoutPagamento({ search }: { search: CheckoutSearch }) {
                   <p className="mt-3 text-center text-[11px] text-muted-foreground">{CAMPANHA.garantia.curta}</p>
                   <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">
                     <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                    Pagamento seguro via Mercado Pago
+                    Pagamento seguro · Pix ou cartão
                   </p>
                   {zap ? (
                     <a

@@ -500,7 +500,7 @@ export function CheckoutOferta({
           <div className="mt-5 flex flex-col items-center gap-1.5 text-center text-xs text-muted-foreground">
             <p className="inline-flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5" />
-              Pagamento seguro via Mercado Pago
+              Pagamento seguro · Pix ou cartão
             </p>
             <p>
               {logado

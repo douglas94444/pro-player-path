@@ -163,7 +163,7 @@ export const CAMPANHA = {
     body: "Testou e não é pra você? Peça o reembolso em até 14 dias e devolvemos tudo. Assinatura sem fidelidade: você cancela quando quiser, sem multa.",
   },
 
-  pagamento: "Pix · Cartão em até 12x · Pagamento seguro via Mercado Pago",
+  pagamento: "Pix · Cartão em até 12x · Pagamento seguro",
 
   faq: [
     {
@@ -189,7 +189,7 @@ export const CAMPANHA = {
     {
       pergunta: "Quais são as formas de pagamento?",
       resposta:
-        "Pix (libera na hora da confirmação) e cartão de crédito ou débito pelo Mercado Pago. Semestral e anual podem ser parcelados em até 6x e 12x no cartão, conforme a operadora.",
+        "Pix (libera na hora da confirmação) e cartão de crédito ou débito. Semestral e anual podem ser parcelados em até 6x e 12x no cartão, conforme a operadora.",
     },
     {
       pergunta: "Como faço para cancelar?",
@@ -359,7 +359,7 @@ export const CAMPANHA = {
 
   selos: [
     "Acesso imediato após o pagamento",
-    "Pagamento seguro via Mercado Pago",
+    "Pagamento seguro · Pix ou cartão",
     "14 dias de garantia incondicional",
   ],
 } as const;

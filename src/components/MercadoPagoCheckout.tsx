@@ -102,7 +102,7 @@ export function MercadoPagoCheckout({
       setPublicKey(config.publicKey);
       setErroBrick(null);
     } catch {
-      setErroBrick("Não foi possível conectar ao Mercado Pago agora. Tente novamente em instantes.");
+      setErroBrick("Não foi possível abrir o pagamento agora. Tente novamente em instantes.");
     } finally {
       setCarregandoChave(false);
     }
@@ -128,7 +128,7 @@ export function MercadoPagoCheckout({
         setBrick(() => mod.Payment);
       })
       .catch((err) => {
-        if (vivo) setErroBrick(err instanceof Error ? err.message : "Não foi possível carregar o Mercado Pago.");
+        if (vivo) setErroBrick(err instanceof Error ? err.message : "Não foi possível abrir o pagamento agora.");
       });
     return () => {
       vivo = false;
@@ -238,7 +238,7 @@ export function MercadoPagoCheckout({
           });
         } else {
           toast.message("Pagamento pendente", {
-            description: "Assim que o Mercado Pago confirmar, seu acesso PRO será liberado.",
+            description: "Assim que o pagamento confirmar, seu acesso PRO será liberado.",
           });
         }
         onPendingRef.current?.();
@@ -260,9 +260,9 @@ export function MercadoPagoCheckout({
     const msg =
       error && typeof error === "object" && "message" in error && typeof error.message === "string"
         ? error.message
-        : "Não foi possível abrir o checkout do Mercado Pago.";
+        : "Não foi possível abrir o pagamento.";
     setErroBrick(msg);
-    toast.error("Erro no checkout Mercado Pago", { description: msg });
+    toast.error("Erro no pagamento", { description: msg });
   }, []);
 
   const onReady = useCallback(() => {
@@ -311,7 +311,7 @@ export function MercadoPagoCheckout({
       <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
         <p className="font-extrabold text-foreground">Não foi possível abrir o pagamento</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {erroBrick ?? "Não foi possível conectar ao Mercado Pago agora. Tente novamente em instantes."}
+          {erroBrick ?? "Não foi possível abrir o pagamento agora. Tente novamente em instantes."}
         </p>
         <Button type="button" className="mt-3" onClick={tentarDeNovo}>
           Tentar de novo
@@ -364,7 +364,7 @@ export function MercadoPagoCheckout({
       ) : null}
       {!pronto ? (
         <p className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Abrindo Mercado Pago…
+          <Loader2 className="h-4 w-4 animate-spin" /> Abrindo pagamento…
         </p>
       ) : null}
       {noCliente && Brick ? (
