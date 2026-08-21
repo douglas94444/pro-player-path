@@ -350,6 +350,9 @@ export function MercadoPagoCheckout({
             Abrir no app do banco
           </a>
         ) : null}
+        <Button type="button" variant="ghost" className="mt-3 w-full" onClick={tentarDeNovo}>
+          Pagar com cartão ou outro Pix
+        </Button>
       </div>
     );
   }
