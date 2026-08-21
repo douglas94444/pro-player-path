@@ -117,9 +117,9 @@ async function fetchPerfilMeta(userId: string): Promise<{ phone?: string | undef
 }
 
 async function resolverIdentidade(overrides?: {
-  email?: string | null;
-  phone?: string | null;
-  nome?: string | null;
+  email?: string | null | undefined;
+  phone?: string | null | undefined;
+  nome?: string | null | undefined;
 }): Promise<MetaIdentidade> {
   captureFbclid();
   const fbp = cookie("_fbp");
