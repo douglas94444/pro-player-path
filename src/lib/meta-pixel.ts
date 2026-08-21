@@ -13,13 +13,13 @@ declare global {
 type MetaPayload = Record<string, string | number | boolean | undefined>;
 
 export type MetaIdentidade = {
-  email?: string;
-  phone?: string;
-  firstName?: string;
-  lastName?: string;
-  externalId?: string;
-  fbp?: string;
-  fbc?: string;
+  email?: string | undefined;
+  phone?: string | undefined;
+  firstName?: string | undefined;
+  lastName?: string | undefined;
+  externalId?: string | undefined;
+  fbp?: string | undefined;
+  fbc?: string | undefined;
 };
 
 /** ID compartilhado cliente↔CAPI para o Meta deduplicar o mesmo evento. */
