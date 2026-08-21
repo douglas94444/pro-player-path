@@ -210,16 +210,16 @@ export function trackMetaDedup(
   event: string,
   payload?: MetaPayload,
   options?: {
-    eventId?: string;
-    email?: string | null;
-    phone?: string | null;
-    nome?: string | null;
-    custom?: boolean;
+    eventId?: string | undefined;
+    email?: string | null | undefined;
+    phone?: string | null | undefined;
+    nome?: string | null | undefined;
+    custom?: boolean | undefined;
     /** Unix em segundos — quando a ação ocorreu de fato. */
-    eventTime?: number;
+    eventTime?: number | undefined;
     /** Só atribuição, sem otimização de entrega. */
-    optOut?: boolean;
-    customerSegmentation?: string;
+    optOut?: boolean | undefined;
+    customerSegmentation?: string | undefined;
   },
 ) {
   if (typeof window === "undefined") return;
