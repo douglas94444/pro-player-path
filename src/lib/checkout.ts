@@ -114,3 +114,71 @@ export function traduzErroAuth(mensagem: string) {
   if (m.includes("rate limit") || m.includes("too many")) return "Muitas tentativas. Aguarde alguns minutos.";
   return mensagem;
 }
+
+const MSG_PAGAMENTO =
+  "Não foi possível concluir o pagamento. Tente Pix, outro cartão ou tente de novo em instantes.";
+
+export function traduzErroPagamento(raw: string | null | undefined): string {
+  const m = String(raw ?? "").trim();
+  if (!m) return MSG_PAGAMENTO;
+  const low = m.toLowerCase();
+  if (
+    low.includes("edge function") ||
+    low.includes("non-2xx") ||
+    low.includes("functionshttperror") ||
+    low.includes("failed to send a request")
+  ) {
+    return MSG_PAGAMENTO;
+  }
+  if (low === "invalid_coupon") return "Esse cupom não é válido.";
+  if (low === "coupon_exhausted") return "Esse cupom já esgotou.";
+  if (low === "invalid_plano") return "Escolha um plano para continuar.";
+  if (low === "payment_failed" || low === "payment_mismatch" || low === "error") {
+    return "Não foi possível confirmar o pagamento. Tente Pix ou outro cartão.";
+  }
+  if (low.includes("insufficient") || low.includes("cc_rejected_insufficient")) {
+    return "Saldo insuficiente neste cartão. Tente Pix ou outro cartão.";
+  }
+  if (low.includes("security_code") || low.includes("cvv")) {
+    return "Código de segurança inválido. Confira o CVV e tente de novo.";
+  }
+  if (low.includes("bad_filled") || low.includes("invalid card") || low.includes("cc_rejected")) {
+    return "Pagamento recusado. Confira os dados ou tente Pix.";
+  }
+  if (/https?:|supabase|stack trace|at\s+\w+\./i.test(m) || m.length > 160) return MSG_PAGAMENTO;
+  return m;
+}
+
+function erroDoCorpo(v: unknown): string | null {
+  if (!v || typeof v !== "object") return null;
+  const rec = v as Record<string, unknown>;
+  if (typeof rec.error === "string" && rec.error) return rec.error;
+  if (typeof rec.message === "string" && rec.message) return rec.message;
+  return null;
+}
+
+/** Lê o JSON da Edge Function em vez do “non-2xx” genérico do cliente Supabase. */
+export async function extrairErroPagamento(error: unknown, data?: unknown): Promise<string> {
+  const doData = erroDoCorpo(data);
+  if (doData) return traduzErroPagamento(doData);
+
+  if (error && typeof error === "object") {
+    const ctx = (error as { context?: unknown }).context;
+    if (ctx && typeof ctx === "object" && "json" in ctx && typeof (ctx as Response).json === "function") {
+      try {
+        const res = ctx as Response;
+        const body = await (typeof res.clone === "function" ? res.clone().json() : res.json());
+        const e = erroDoCorpo(body);
+        if (e) return traduzErroPagamento(e);
+      } catch {
+        /* ignore */
+      }
+    }
+    const nested = erroDoCorpo(ctx);
+    if (nested) return traduzErroPagamento(nested);
+    if ("message" in error && typeof (error as { message: unknown }).message === "string") {
+      return traduzErroPagamento((error as { message: string }).message);
+    }
+  }
+  return MSG_PAGAMENTO;
+}

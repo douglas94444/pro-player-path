@@ -5,6 +5,7 @@ import { PLANOS_ASSINATURA } from "@/data/training";
 import { supabase } from "@/integrations/supabase/client";
 import { captureFbclid, getFbc, trackMeta, trackMetaDedup } from "@/lib/meta-pixel";
 import { getStoredUtm } from "@/lib/utm";
+import { extrairErroPagamento, traduzErroPagamento } from "@/lib/checkout";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getMercadoPagoPublicKey } from "@/lib/mercadopago.functions";
@@ -194,8 +195,10 @@ export function MercadoPagoCheckout({
       });
 
       if (error) {
-        toast.error("Pagamento não concluído", { description: error.message });
-        throw error;
+        console.error("process-payment", error, data);
+        const msg = await extrairErroPagamento(error, data);
+        toast.error("Pagamento não concluído", { description: msg });
+        throw new Error(msg);
       }
 
       const payload = data as {
@@ -246,7 +249,7 @@ export function MercadoPagoCheckout({
       }
 
       toast.error("Pagamento não aprovado", {
-        description: payload?.status_detail ?? status,
+        description: traduzErroPagamento(payload?.status_detail ?? status),
       });
       intentKeyRef.current =
         typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `mp-${Date.now()}`;
@@ -257,10 +260,11 @@ export function MercadoPagoCheckout({
 
   const onError = useCallback((error: unknown) => {
     console.error(error);
-    const msg =
+    const msg = traduzErroPagamento(
       error && typeof error === "object" && "message" in error && typeof error.message === "string"
         ? error.message
-        : "Não foi possível abrir o pagamento.";
+        : "",
+    );
     setErroBrick(msg);
     toast.error("Erro no pagamento", { description: msg });
   }, []);
