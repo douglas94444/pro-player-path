@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Home, CalendarDays, Dumbbell, TrendingUp, User } from "lucide-react";
 import { usePlayerNav } from "@/lib/player-store";
+import { BotaoSair } from "@/components/BotaoSair";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -74,7 +75,10 @@ export function BottomNav() {
         <nav className="flex flex-1 flex-col gap-1 pl-1">
           <NavLinks orientation="vertical" />
         </nav>
-        <p className="px-2 text-[11px] text-muted-foreground">Treine como atleta, todo dia.</p>
+        <div className="mt-4 space-y-3 px-1">
+          <BotaoSair className="w-full justify-start" />
+          <p className="px-2 text-[11px] text-muted-foreground">Treine como atleta, todo dia.</p>
+        </div>
       </aside>
     </>
   );

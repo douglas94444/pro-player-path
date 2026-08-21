@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { BotaoSair } from "@/components/BotaoSair";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,7 +53,6 @@ function PerfilPage() {
     reset,
     logado,
     email,
-    sair,
     streak,
     isAdmin,
     treinoDeHoje,
@@ -151,9 +151,7 @@ function PerfilPage() {
                 <Link to="/admin">Painel admin</Link>
               </Button>
             ) : null}
-            <Button variant="outline" className="mt-4 w-full" onClick={() => void sair()}>
-              Sair da conta
-            </Button>
+            <BotaoSair full />
           </>
         ) : (
           <>

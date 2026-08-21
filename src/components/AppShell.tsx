@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
+import { BotaoSair } from "./BotaoSair";
 import { cn } from "@/lib/utils";
 
 export type AppShellProps = {
@@ -43,7 +44,10 @@ export function AppShell({
               <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">{subtitle}</p>
             ) : null}
           </div>
-          {action ? <div className="shrink-0">{action}</div> : null}
+          <div className="flex shrink-0 items-center gap-2">
+            {action}
+            <BotaoSair className="md:hidden" />
+          </div>
         </header>
         {children}
       </div>
